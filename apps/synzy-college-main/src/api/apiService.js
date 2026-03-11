@@ -1,0 +1,270 @@
+import axios from 'axios';
+import apiClient from './axios';
+
+const API = axios.create();
+
+let collegesData = [
+    {
+        id: 1,
+        basicInfo: { name: 'Delhi Public college, RK Puram', description: 'A premier institution known for its academic excellence and holistic development.', board: 'CBSE', state: 'Delhi', city: 'New Delhi', collegeMode: 'private', genderType: 'co-ed', shifts: ['morning'], feeRange: '75000 - 100000', upto: 'Class 12', email: 'contact@dpsrkp.net', mobileNo: '9876543210', website: 'https://dpsrkp.net/', languageMedium: ['English'], transportAvailable: 'yes' },
+        activityInfo: { activities: ['Focusing on Academics', 'Empowering in Sports', 'STEM Activities', 'Leadership Development'] },
+        alumniInfo: { topAlumnis: [{ name: 'Raghuram Rajan', percentage: 98 }], famousAlumnies: [{ name: 'Shah Rukh Khan', profession: 'Actor' }] },
+        amenitiesInfo: { predefinedAmenities: ['Library', 'Science Lab', 'Computer Lab', 'Sports Ground'], customAmenities: 'Robotics Lab, Swimming Pool' }
+    },
+    {
+        id: 2,
+        basicInfo: { name: 'Modern college, Barakhamba Road', description: 'Fostering creativity and critical thinking since 1920.', board: 'CBSE', state: 'Delhi', city: 'New Delhi', collegeMode: 'private', genderType: 'co-ed', shifts: ['morning'], feeRange: '1 Lakh - 2 Lakh', upto: 'Class 12', email: 'info@moderncollege.net', mobileNo: '9123456789', website: 'https://moderncollege.net/', languageMedium: ['English'], transportAvailable: 'yes' },
+        activityInfo: { activities: ['Empowering in Arts', 'Cultural Education', 'Technology Integration'] },
+        alumniInfo: { topAlumnis: [{ name: 'Khushwant Singh', percentage: 95 }], famousAlumnies: [{ name: 'Gurcharan Das', profession: 'Author' }] },
+        amenitiesInfo: { predefinedAmenities: ['Auditorium', 'Art Studio', 'Music Room'], customAmenities: 'Horse Riding Club' }
+    },
+];
+
+let studentApplicationsData = [
+    { id: 1, studentName: 'Rohan Sharma', class: '5', date: '2025-08-15', status: 'Pending', collegeId: 'college123', collegeEmail: 'contact@dpsrkp.net' },
+    { id: 2, studentName: 'Priya Singh', class: '6', date: '2025-08-14', status: 'Accepted', collegeId: 'college123', collegeEmail: 'contact@dpsrkp.net' },
+    { id: 3, studentName: 'Amit Kumar', class: '7', date: '2025-08-16', status: 'Pending', collegeId: 'college456', collegeEmail: 'info@moderncollege.net' },
+    { id: 4, studentName: 'Sneha Patel', class: '8', date: '2025-08-17', status: 'Accepted', collegeId: 'college456', collegeEmail: 'info@moderncollege.net' },
+];
+
+// In apiService.js
+
+// Fetch PDF data (the actual student application file)
+export const fetchStudentPDF = async (studId,applicationId) => {
+  try {
+    const res = await apiClient.get(`/api/users/pdf/view/${studId}/${applicationId}`, {
+      responseType: 'arraybuffer', // Get binary PDF data
+      headers: { 'X-Silent-Request': '1' }
+    });
+    
+    console.log(`✅ Fetched PDF for student ${studId}`);
+    
+    // Convert to blob if you need to display/download
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const pdfUrl = URL.createObjectURL(blob);
+    
+    return {
+      blob,
+      url: pdfUrl,
+      buffer: res.data
+    };
+  } catch (err) {
+    console.warn(`❌ Could not fetch PDF for ${studId}:`, err.message);
+    return null;
+  }
+};
+// CORRECTED: Properly fetch from Forms API with debugging
+
+export const fetchStudentApplications = async (collegeId) => {
+   
+    try {        
+        const res = await apiClient.get(`/form/college/${collegeId}`, { 
+            headers: { 'X-Silent-Request': '1' } 
+        });
+        
+        const raw = res?.data;
+        let forms = [];
+        if (Array.isArray(raw)) {
+            forms = raw;
+        } else if (Array.isArray(raw?.data)) {
+            forms = raw.data;
+        } else if (Array.isArray(raw?.forms)) {
+            forms = raw.forms;
+        }
+
+        console.log(`✅ Fetched ${forms.length} forms`);
+
+        if (forms.length === 0) {
+            console.warn('⚠️ No forms found for this college');
+            return { data: [] };
+        }
+
+         // Normalize and fetch PDF data for each form
+        const normalized = await Promise.all(
+    forms.map(async (form, idx) => {
+        // Extract studId - handle BOTH string and populated object
+        let studId = null;
+        
+        if (typeof form?.studId === 'string') {
+            // Case 1: studId is a plain string
+            studId = form.studId;
+            console.log(`✅ Form ${idx} - studId is string: ${studId}`);
+        } else if (typeof form?.studId === 'object' && form?.studId?._id) {
+            // Case 2: studId is populated object (has _id property)
+            studId = String(form.studId._id);
+            console.log(`✅ Form ${idx} - studId is populated, extracted _id: ${studId}`);
+        } else if (typeof form?.student === 'string') {
+            // Case 3: student field is a string
+            studId = form.student;
+        } else if (typeof form?.student === 'object' && form?.student?._id) {
+            // Case 4: student field is an object with _id property
+            studId = form.student._id;
+        }
+
+        console.log(`🔍 Form ${idx} - studId extracted:`, studId, 'from form:', form);
+        const applicationId =
+  typeof form?.applicationData?.applicationId === 'string'
+    ? form.applicationData.applicationId
+    : form?.applicationData?.applicationId?._id || null;
+
+
+        // Try to fetch PDF data, but don't let it break the entire process
+        let pdfData = null;
+        if (studId && applicationId) {
+            try {
+                pdfData = await fetchStudentPDF(studId,applicationId);
+            } catch (pdfError) {
+                console.warn(`⚠️ Could not fetch PDF for student ${studId}:`, pdfError.message);
+                pdfData = null;
+            }
+        }
+
+      // Fetch student application data using APPLICATION ID
+let studentName = '—';
+let studentClass = '—';
+let application = null;
+
+// ✅ CORRECT application_id extraction
+const application_id = form?.applicationId?._id || null;
+
+console.log('🆔 application_id (CORRECT):', application_id);
+console.log('🧾 applicationId object:', form?.applicationId);
+
+// ✅ student name is ALREADY available
+studentName = form?.applicationId?.name || '—';
+
+if (application_id) {
+  try {
+    console.log(`🔍 Fetching application ${application_id}`);
+
+    const appResponse = await apiClient.get(
+      `/application/${application_id}`
+    );
+
+    application = appResponse?.data?.data || null;
+
+    if (application) {
+      studentClass = application.standard || '—';
+
+      console.log(
+        `✅ SUCCESS → Name: ${studentName}, Class: ${studentClass}`
+      );
+    }
+  } catch (error) {
+    console.error(
+      `❌ Failed to fetch application ${application_id}`,
+      error?.response?.data || error.message
+    );
+  }
+} else {
+  console.warn('❌ application_id missing in form.applicationId');
+}
+return {
+  id: form?._id,
+  formId: form?._id,
+  studentName,                 // ✅ WORKS
+  standard: studentClass,      // ✅ WORKS
+  date: form?.createdAt
+    ? new Date(form.createdAt).toISOString().slice(0, 10)
+    : '—',
+  status: form?.status || 'Pending',
+  collegeId: form?.collegeId,
+  studId: application?.studId || form?.applicationId?.studId || null,
+  application_id,              // ✅ CORRECT application id
+  applicationData: form,
+  pdfUrl: pdfData?.url,
+  pdfBlob: pdfData?.blob,
+  _raw: form,
+};
+
+
+    })
+        );
+
+        console.log(`✅ Normalized ${normalized.length} forms`, normalized);
+        return { data: normalized };
+        
+    } catch (e) {
+        console.error(`❌ Error fetching forms:`, e);
+        console.error(`📍 Status: ${e?.response?.status}`);
+        console.error(`📝 Message: ${e?.response?.data?.message || e.message}`);
+        
+        // Check if it's a 404 - endpoint doesn't exist
+        if (e?.response?.status === 404) {
+            console.error('❌ Endpoint /api/form/college/:collegeId not found - check backend routes');
+        }
+        
+        throw e;
+    }
+};
+
+// Update form status
+export const updateApplicationStatus = async (formId, newStatus, collegeId, note = null) => {
+    const id = encodeURIComponent(formId);
+
+    try {
+        console.log(`🔄 Updating form ${id} to status: ${newStatus}`);
+        console.log(`📝 Note being sent:`, note);
+
+        // Include note in the request if provided
+        const requestBody = { status: newStatus };
+        if (note) {
+            requestBody.note = note;
+        }
+
+        console.log(`📤 Sending PUT /form/${id} with body:`, requestBody);
+
+        const res = await apiClient.put(
+            `/form/${id}`,
+            requestBody
+        );
+
+        console.log(`✅ Form updated successfully. Response:`, res?.data);
+        console.log(`📋 Full response data:`, res);
+        return res?.data || { ok: true };
+
+    } catch (e) {
+        console.error(`❌ Failed to update form:`, e.message);
+        console.error(`📍 Status: ${e?.response?.status}`);
+        console.error(`📝 Response:`, e?.response?.data);
+        throw e;
+    }
+};
+
+// View PDF in new tab
+export const viewPDFInNewTab = (studId) => {
+  if (!studId) {
+    console.warn('No student ID provided');
+    return;
+  }
+
+  // Use the correct backend URL based on environment
+  const apiBaseURL = import.meta.env.DEV ? '' : import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in';
+  const pdfUrl = import.meta.env.DEV
+    ? `/api/users/pdf/view/${studId}/${applicationId}`
+    : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
+
+  console.log('🔗 Opening PDF at:', pdfUrl);
+  window.open(pdfUrl, '_blank');
+};
+
+// Download PDF
+export const downloadPDF = async (studId, applicationId,studentName) => {
+  try {
+    const pdfData = await fetchStudentPDF(studId,applicationId);
+    if (!pdfData?.blob) {
+      console.error('Failed to download PDF');
+      return;
+    }
+    
+    const link = document.createElement('a');
+    link.href = pdfData.url;
+    link.download = `${studentName || 'student'}_application.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(pdfData.url);
+  } catch (err) {
+    console.error('Download error:', err);
+  }
+};

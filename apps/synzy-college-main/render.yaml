@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: smart-college-finder
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    region: oregon
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://api.synzy.in/api

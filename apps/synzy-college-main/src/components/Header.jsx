@@ -1,0 +1,200 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+   Menu, X, LogOut, User, ChevronDown, Shield, ArrowLeft } from 'lucide-react';
+import NotificationIcon from './NotificationIcon';
+// import Logo from './Logo';
+import logo from '../assets/logo.png';
+
+const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCount = 0, currentUser, onLogout }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const authPages = ['/login', '/signup', '/signup-college', '/forgot-password', '/admin/login', '/admin/signup'];
+  if (authPages.includes(location.pathname) || location.pathname.startsWith('/college-portal') || location.pathname.startsWith('/admin/dashboard')) {
+    return null;
+  }
+
+  const handleRegisterClick = () => {
+    if (currentUser && currentUser.userType === 'college') {
+      navigate('/college-portal');
+    } else {
+      navigate('/signup-college');
+    }
+  };
+
+  // Logo component
+  const Logo = () => (
+    <Link to="/" className="flex items-center gap-2">
+      <img src={logo} alt="Synzy Logo" className="w-30 h-12" />
+      {/* <span className="text-xl font-bold text-gray-800">Synzy</span> */}
+    </Link>
+  );
+
+  return (
+  <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+    <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
+  {/* Back Button - Extreme Left */}
+  <button 
+    onClick={() => navigate(-1)}
+    className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors absolute left-6"
+    title="Go back"
+  >
+    <ArrowLeft size={18} />
+    <span className="text-sm font-medium">Back</span>
+  </button>
+
+  {/* Logo - Moved left with ml-4 */}
+  <div className="flex-1 flex justify-center md:justify-start md:ml-4">
+    <Logo />
+  </div>
+  
+  {/* Navigation - Centered */}
+  <div className="hidden md:flex items-center justify-center flex-1 space-x-8">
+    {(!currentUser || currentUser.userType !== 'college') && (
+        <>
+            <Link to="/colleges" className="text-gray-600 hover:text-blue-600">Browse Colleges</Link>
+            {currentUser && (
+              <>
+                <Link to="/search-colleges" className="text-gray-600 hover:text-blue-600">Search Colleges</Link>
+                <Link to="/predictor" className="text-gray-600 hover:text-blue-600">Predict Colleges</Link>
+              </>
+            )}
+            <Link to="/compare" className="text-gray-600 hover:text-blue-600 relative">
+              Compare
+              {compareCount > 0 && <span className="absolute -top-2 -right-4 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{compareCount}</span>}
+            </Link>
+            {/* <Link to="/shortlist" className="text-gray-600 hover:text-blue-600 relative">
+              Shortlist
+              {shortlistCount > 0 && <span className="absolute -top-2 -right-6 bg-rose-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{shortlistCount}</span>}
+            </Link> */}
+            <Link to="/blog" className="text-gray-600 hover:text-blue-600">Blog</Link>
+        </>
+    )}
+
+     {currentUser && (currentUser.userType === 'parent' || currentUser.userType === 'student') && (
+        <Link to="/application-status" className="text-gray-600 hover:text-blue-600">Application Status</Link>
+      )}
+
+  </div>
+  
+  {/* Right Section - Auth/Profile */}
+  <div className="hidden md:flex items-center space-x-4">
+    {currentUser ? (
+        <>
+            <NotificationIcon />
+            <ProfileDropdown currentUser={currentUser} onLogout={onLogout} />
+        </>
+    ) : (
+        <>
+            <div className="flex items-center gap-2">
+              <college size={16} className="text-blue-600" />
+              <Link to="/signup-college" className="text-blue-600 hover:text-blue-700 font-medium">College Login</Link>
+            </div>
+        </>
+    )}
+  </div>
+  
+  {/* Mobile Menu Button */}
+  <div className="md:hidden">
+    <button onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}>
+      {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+    </button>
+  </div>
+</nav>
+    {isMobileMenuOpen && (
+      <div className="md:hidden bg-white shadow-lg absolute top-full left-0 w-full">
+        {(!currentUser || currentUser.userType !== 'college') && (
+          <>
+            <Link to="/colleges" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Browse colleges</Link>
+            {currentUser && (
+              <>
+                <Link to="/search-colleges" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Search colleges</Link>
+                <Link to="/predictor" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Predict colleges</Link>
+              </>
+            )}
+            <Link to="/compare" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Compare {compareCount > 0 && `(${compareCount})`}</Link>
+            <Link to="/shortlist" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Shortlist {shortlistCount > 0 && `(${shortlistCount})`}</Link>
+            <Link to="/blog" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Blog</Link>
+          </>
+        )}
+
+        {currentUser && (currentUser.userType === 'parent' || currentUser.userType === 'student') && (
+          <Link to="/application-status" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Application Status</Link>
+        )}
+                    
+
+        <div className="px-6 py-4 border-t">
+          {currentUser ? (
+            <>
+              {(currentUser.userType === 'student' || currentUser.userType === 'parent') && (
+                <div className="mb-4">
+                  <NotificationIcon />
+                </div>
+              )}
+              <button onClick={() => { onLogout(); setMobileMenuOpen(false); }} className="w-full text-center text-gray-600 hover:text-blue-600 flex items-center justify-center">
+                  <LogOut size={16} className="mr-1" /> Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="flex items-center justify-center gap-2 w-full text-center text-gray-600 hover:text-blue-600 mb-3 py-2 border-b border-gray-200" onClick={() => setMobileMenuOpen(false)}>
+                <User size={16} />
+                <span className="font-medium">User/Parent Login</span>
+              </Link>
+              <Link to="/signup-college" className="flex items-center justify-center gap-2 w-full text-center text-blue-600 hover:text-blue-700 py-2" onClick={() => setMobileMenuOpen(false)}>
+                <college size={16} />
+                <span className="font-medium">college Login</span>
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+  </header>
+  );
+};
+
+const ProfileDropdown = ({ currentUser, onLogout }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const displayName = (currentUser?.name || currentUser?.email?.split('@')[0] || 'Account');
+  const initials = (displayName?.[0] || 'U').toUpperCase();
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100">
+        <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+          {initials}
+        </div>
+        <span className="text-gray-700 hidden sm:block max-w-[140px] truncate">{displayName}</span>
+        <ChevronDown size={16} className="text-gray-500" />
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
+          {(currentUser.userType === 'parent' || currentUser.userType === 'student') && (
+            <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</Link>
+          )}
+          {currentUser.userType === 'college' && (
+            <Link to="/college-portal" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">college Portal</Link>
+          )}
+          <Link to="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Home</Link>
+          <button onClick={onLogout} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Header;
