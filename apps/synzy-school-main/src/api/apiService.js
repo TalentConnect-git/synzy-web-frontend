@@ -81,7 +81,7 @@ export const fetchStudentApplications = async (schoolId) => {
 
          // Normalize and fetch PDF data for each form
         const normalized = await Promise.all(
-    forms.map(async (form, idx) => {
+        forms.map(async (form, idx) => {
         // Extract studId - handle BOTH string and populated object
         let studId = null;
         
@@ -267,4 +267,15 @@ export const downloadPDF = async (studId, applicationId,studentName) => {
   } catch (err) {
     console.error('Download error:', err);
   }
+};
+//fetching applications count for a school
+export const fetchApplicationsCount = async (schoolId) => {
+  const res = await apiClient.get(`/form/school/${schoolId}`);
+
+  // console.log("🔍 Raw response:", res.data);
+
+  // ✅ FIXED LINE
+  const forms = res?.data?.data || res?.data || [];
+
+  return Array.isArray(forms) ? forms.length : 0;
 };

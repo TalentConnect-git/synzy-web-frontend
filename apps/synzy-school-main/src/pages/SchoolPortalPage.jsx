@@ -8,7 +8,7 @@ import {
   getSchoolByAuthId,
 } from "../api/adminService";
 import RegistrationPage from "./RegistrationPage";
-import { fetchStudentApplications, updateApplicationStatus } from "../api/apiService";
+import { fetchStudentApplications, updateApplicationStatus, fetchApplicationsCount } from "../api/apiService";
 import { getSchoolForms, updateFormStatus } from "../api/applicationService";
 import InterviewSchedulingModal from "../components/InterviewSchedulingModal";
 import WrittenExamSchedulingModal from "../components/WrittenExamSchedulingModal";
@@ -347,7 +347,7 @@ setApplications(allApplications);
       console.warn("⚠️ No current user found for ViewStudentApplications");
       setLoading(false);
     }
-  }, [currentUser, selectedStatus]);
+  }, [currentUser]);
 
   // Listen for new applications
   useEffect(() => {
@@ -367,6 +367,15 @@ setApplications(allApplications);
       window.removeEventListener('applicationAdded', handleNewApplication);
     };
   }, [detectedSchoolId]);
+
+  const filteredApplications = applications.filter((app) => {
+    if (selectedStatus === 'All') return true;
+
+    return (app.status || '')
+      .toLowerCase()
+      .trim() === selectedStatus.toLowerCase();
+  });
+
 
   const handleStatusChange = async (app, newStatus) => {
     // Try multiple possible form ID locations
@@ -866,7 +875,7 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
           </thead>
           <tbody>
             {(() => {
-              return applications.map((app, index) => {
+              return filteredApplications.map((app, index) => {
                 const statusLower = (app.status || '').toString().toLowerCase();
                 const isAccepted = statusLower === 'accepted';
                 const isRejected = statusLower === 'rejected';
@@ -927,18 +936,18 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
             })()}
           </tbody>
         </table>
-        {applications.length === 0 && (
+        {filteredApplications.length === 0 && (
           <p className="p-8 text-center text-gray-500">
             No student applications received yet.
           </p>
         )}
-        {applications.length > 0 && (() => {
-          const total = applications.length;
-          const pending = applications.filter(a => (a.status || '').toString().toLowerCase() === 'pending').length;
-          const interview = applications.filter(a => (a.status || '').toString().toLowerCase() === 'interview').length;
-          const writtenExam = applications.filter(a => (a.status || '').toString().toLowerCase() === 'writtenexam').length;
-          const accepted = applications.filter(a => (a.status || '').toString().toLowerCase() === 'accepted').length;
-          const rejected = applications.filter(a => (a.status || '').toString().toLowerCase() === 'rejected').length;
+        {filteredApplications.length > 0 && (() => {
+          const total = filteredApplications.length;
+          const pending = filteredApplications.filter(a => (a.status || '').toString().toLowerCase() === 'pending').length;
+          const interview = filteredApplications.filter(a => (a.status || '').toString().toLowerCase() === 'interview').length;
+          const writtenExam = filteredApplications.filter(a => (a.status || '').toString().toLowerCase() === 'writtenexam').length;
+          const accepted = filteredApplications.filter(a => (a.status || '').toString().toLowerCase() === 'accepted').length;
+          const rejected = filteredApplications.filter(a => (a.status || '').toString().toLowerCase() === 'rejected').length;
           return (
             <div className="px-4 py-3 bg-white flex items-center justify-between text-sm text-gray-700">
               <span>Total Applications: <span className="font-semibold">{total}</span></span>
@@ -1436,7 +1445,8 @@ const SchoolPortalPage = ({ currentUser, onLogout, onRegister }) => {
   const [hasProfile, setHasProfile] = useState(null);
   useEffect(() => {
     const redirectBasedOnApplications = async () => {
-      const idForQuery = currentUser?.schoolId || currentUser?._id;
+      // const idForQuery = currentUser?.schoolId || currentUser?._id;
+      const idForQuery = currentUser?.schoolId;
       if (!idForQuery) return;
 
       try {
@@ -1457,26 +1467,66 @@ const SchoolPortalPage = ({ currentUser, onLogout, onRegister }) => {
 
     redirectBasedOnApplications();
   }, [currentUser]);
+  
+  // useEffect(() => {
+  //   const loadCount = async () => {
+  //     // const idForQuery = currentUser?.schoolId || currentUser?._id;
+  //     const idForQuery = currentUser?.schoolId;
+  //     if (!idForQuery) return;
+  //     try {
+  //       const res = await fetchStudentApplications(idForQuery);
+  //       const apps = res?.data?.applications || res?.data || [];
+  //       const count = await fetchApplicationsCount(idForQuery);
+  //       setApplicationsCount(count);
+  //       // console.log("Applications API response:", res);
+  //       console.log("HEllo");
+  //       console.log("Extracted applications count:", count);
+  //     } catch (error) {
+  //       console.error("❌ Error loading applications count:", {
+  //         schoolId: idForQuery,
+  //         userId: currentUser?._id,
+  //         error: error.message,
+  //         fullError: error
+  //       });
+  //       setApplicationsCount(0);
+  //     }
+  //   };
+  //   loadCount();
+  // }, [currentUser?.schoolId, currentUser?._id]);
   useEffect(() => {
     const loadCount = async () => {
-      const idForQuery = currentUser?.schoolId || currentUser?._id;
-      if (!idForQuery) return;
+      if (!currentUser?._id) return;
+
       try {
-        const res = await fetchStudentApplications(idForQuery);
-        const apps = res?.data || [];
-        setApplicationsCount(Array.isArray(apps) ? apps.length : 0);
+        // 🔥 STEP 1: Get correct schoolId
+        const schoolProfileResponse = await getSchoolByAuthId(currentUser._id);
+        const schoolProfileData = schoolProfileResponse?.data?.data?.[0];
+
+        const schoolId = schoolProfileData?._id;
+
+        // console.log("🔍 Extracted schoolId:", schoolId);
+
+        if (!schoolId) {
+          console.warn("❌ No schoolId found");
+          setApplicationsCount(0);
+          return;
+        }
+
+        // 🔥 STEP 2: Call count API
+        const count = await fetchApplicationsCount(schoolId);
+
+        // console.log("✅ Applications count:", count);
+
+        setApplicationsCount(count);
+
       } catch (error) {
-        console.error("❌ Error loading applications count:", {
-          schoolId: idForQuery,
-          userId: currentUser?._id,
-          error: error.message,
-          fullError: error
-        });
+        console.error("❌ Error loading applications count:", error);
         setApplicationsCount(0);
       }
     };
+
     loadCount();
-  }, [currentUser?.schoolId, currentUser?._id]);
+  }, [currentUser]);
 
   useEffect(() => {
     // Assume registered for school users by default (hides link), refine after API check

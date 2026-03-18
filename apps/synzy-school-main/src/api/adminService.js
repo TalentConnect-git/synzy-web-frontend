@@ -135,7 +135,7 @@ export const getSchoolById1 = (schoolId, config) =>
   apiClient.get(`/admin/schools/${encodeURIComponent(schoolId)}`, config);
 
 export const updateSchoolInfo = (schoolId, data) =>
-  apiClient.put(`/admin/schools/auth/${encodeURIComponent(schoolId)}`, data);
+  apiClient.put(`/admin/schools/${encodeURIComponent(schoolId)}`, data);
 
 export const updateSchoolStatus = (schoolId, newStatus) =>
   apiClient.put(`/admin/schools/${encodeURIComponent(schoolId)}`, { status: newStatus });

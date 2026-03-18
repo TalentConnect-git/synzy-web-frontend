@@ -357,7 +357,8 @@ const RegistrationPage = () => {
   const [isLoadingExistingData, setIsLoadingExistingData] = useState(true);
   const hasCheckedForSchool = React.useRef(false); // Prevent multiple checks
   const photoInputRef = useRef(null);
-const videoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   // State with all the fields required by the backend schema
   const [formData, setFormData] = useState({
@@ -483,7 +484,7 @@ const videoInputRef = useRef(null);
   // Faculty Quality array: each entry will contain { name, qualification, awards, experience }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     // Special handling: keep ratio and numeric in sync
     if (name === 'TeacherToStudentRatio') {
       const raw = value.trim();
@@ -502,7 +503,12 @@ const videoInputRef = useRef(null);
       setFormData((prev) => ({ ...prev, TeacherToStudentRatio: value, studentsPerTeacher: students }));
       return;
     }
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let safeValue = value;
+
+    if (type === "number") {
+      safeValue = Math.max(0, Number(value || 0));
+    }
+    setFormData((prev) => ({ ...prev, [name]: safeValue }));
   };
 
 const handleUseCurrentLocation = () => {
@@ -510,7 +516,7 @@ const handleUseCurrentLocation = () => {
     toast.error("Geolocation is not supported by your browser.");
     return;
   }
-
+  setIsFetchingLocation(true);
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       try {
@@ -565,6 +571,8 @@ const handleUseCurrentLocation = () => {
       } catch (error) {
         console.error(error);
         toast.error("Failed to fetch location details.");
+      } finally {
+        setIsFetchingLocation(false);
       }
     },
     (err) => {
@@ -572,6 +580,8 @@ const handleUseCurrentLocation = () => {
       else if (err.code === 2) toast.error("Position unavailable.");
       else if (err.code === 3) toast.error("Location request timed out.");
       else toast.error("Could not get current location.");
+
+      setIsFetchingLocation(false);
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
@@ -2158,13 +2168,13 @@ const handleUseCurrentLocation = () => {
                   }
                 </p>
               </div>
-              {/* Debug info - remove in production */}
+              {/* Debug info - remove in production 
               {process.env.NODE_ENV === 'development' && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs">
                   <strong>Debug:</strong> hasExistingSchool={String(hasExistingSchool)}, isEditMode={String(isEditMode)}, 
                   schoolId={editingSchoolId || 'none'}, formData.name={formData.name || 'empty'}
                 </div>
-              )}
+              )}*/}
             </>
           )}
           
@@ -2366,9 +2376,19 @@ const handleUseCurrentLocation = () => {
                 <button
                   type="button"
                   onClick={handleUseCurrentLocation}
-                  className="h-10 mt-7 bg-indigo-600 text-white rounded-md px-4"
+                  disabled={isFetchingLocation}
+                  className={`h-10 mt-7 rounded-md px-4 flex items-center justify-center gap-2 
+                    ${isFetchingLocation ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white"}
+                  `}
                 >
-                  Use Current Location
+                  {isFetchingLocation ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      Fetching...
+                    </>
+                  ) : (
+                    "Use Current Location"
+                  )}
                 </button>
               </div>
               <div className="md:col-span-2 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-md">
@@ -2649,10 +2669,12 @@ const handleUseCurrentLocation = () => {
                   label="Teaching experience (yrs)"
                   name={`fq-exp-${index}`}
                   type="number"
+                  min="0"
                   value={fq.experience || ''}
                   onChange={(e) => {
+                    const value = Math.max(0, Number(e.target.value));
                     const list = facultyQuality.slice();
-                    list[index] = { ...list[index], experience: e.target.value };
+                    list[index] = { ...list[index], experience: value };
                     setFacultyQuality(list);
                   }}
                 />
@@ -2716,6 +2738,7 @@ const handleUseCurrentLocation = () => {
               label="Library - number of books"
               name="infraLibraryBooks"
               type="number"
+              min="0"
               value={formData.infraLibraryBooks}
               onChange={handleInputChange}
             />
@@ -2746,6 +2769,7 @@ const handleUseCurrentLocation = () => {
               label="Smart Classrooms - number"
               name="infraSmartClassrooms"
               type="number"
+              min="0"
               value={formData.infraSmartClassrooms}
               onChange={handleInputChange}
             />
@@ -3049,10 +3073,12 @@ const handleUseCurrentLocation = () => {
                       <td className="px-4 py-3">
                         <input
                           type="number"
+                          min="0"
                           value={fee.tuition || ''}
                           onChange={(e) => {
+                            const value = Math.max(0, Number(e.target.value));
                             const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], tuition: e.target.value };
+                            newFees[index] = { ...newFees[index], tuition: value };
                             setFormData(prev => ({ ...prev, classFees: newFees }));
                           }}
                           placeholder="0"
@@ -3062,10 +3088,12 @@ const handleUseCurrentLocation = () => {
                       <td className="px-4 py-3">
                         <input
                           type="number"
+                          min="0"
                           value={fee.activity || ''}
                           onChange={(e) => {
+                            const value = Math.max(0, Number(e.target.value));
                             const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], activity: e.target.value };
+                            newFees[index] = { ...newFees[index], activity: value };
                             setFormData(prev => ({ ...prev, classFees: newFees }));
                           }}
                           placeholder="0"
@@ -3075,10 +3103,12 @@ const handleUseCurrentLocation = () => {
                       <td className="px-4 py-3">
                         <input
                           type="number"
+                          min="0"
                           value={fee.transport || ''}
                           onChange={(e) => {
+                            const value = Math.max(0, Number(e.target.value));
                             const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], transport: e.target.value };
+                            newFees[index] = { ...newFees[index], transport: value };
                             setFormData(prev => ({ ...prev, classFees: newFees }));
                           }}
                           placeholder="0"
@@ -3088,10 +3118,12 @@ const handleUseCurrentLocation = () => {
                       <td className="px-4 py-3">
                         <input
                           type="number"
+                          min="0"
                           value={fee.hostel || ''}
                           onChange={(e) => {
+                            const value = Math.max(0, Number(e.target.value));
                             const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], hostel: e.target.value };
+                            newFees[index] = { ...newFees[index], hostel: value };
                             setFormData(prev => ({ ...prev, classFees: newFees }));
                           }}
                           placeholder="0"
@@ -3101,10 +3133,12 @@ const handleUseCurrentLocation = () => {
                       <td className="px-4 py-3">
                         <input
                           type="number"
+                          min="0"
                           value={fee.misc || ''}
                           onChange={(e) => {
+                            const value = Math.max(0, Number(e.target.value));
                             const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], misc: e.target.value };
+                            newFees[index] = { ...newFees[index], misc: value };
                             setFormData(prev => ({ ...prev, classFees: newFees }));
                           }}
                           placeholder="0"
@@ -3198,10 +3232,12 @@ const handleUseCurrentLocation = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
                       <input
                         type="number"
+                        min="0"
                         value={scholarship.amount || ''}
                         onChange={(e) => {
+                          const value = Math.max(0, Number(e.target.value));
                           const newScholarships = [...(formData.scholarships || [])];
-                          newScholarships[index] = { ...newScholarships[index], amount: e.target.value };
+                          newScholarships[index] = { ...newScholarships[index], amount: value };
                           setFormData(prev => ({ ...prev, scholarships: newScholarships }));
                         }}
                         placeholder="e.g., 5000, 10000"
@@ -3415,6 +3451,7 @@ const handleUseCurrentLocation = () => {
                 label="Average Class 10 Result (%)"
                 name="averageClass10Result"
                 type="number"
+                min="0"
                 value={formData.averageClass10Result}
                 onChange={handleInputChange}
               />
@@ -3422,6 +3459,7 @@ const handleUseCurrentLocation = () => {
                 label="Average Class 12 Result (%)"
                 name="averageClass12Result"
                 type="number"
+                min="0"
                 value={formData.averageClass12Result}
                 onChange={handleInputChange}
               />
@@ -3429,6 +3467,7 @@ const handleUseCurrentLocation = () => {
                 label="Average School Marks (%)"
                 name="averageSchoolMarks"
                 type="number"
+                min="0"
                 value={formData.averageSchoolMarks}
                 onChange={handleInputChange}
                 required
@@ -3534,10 +3573,12 @@ const handleUseCurrentLocation = () => {
                     label="Students"
                     name={`ex-students-${index}`}
                     type="number"
+                    min="0"
                     value={prog.studentsParticipated}
                     onChange={(e) => {
+                      const value = Math.max(0, Number(e.target.value));
                       const list = [...(formData.exchangePrograms || [])];
-                      list[index] = { ...list[index], studentsParticipated: e.target.value };
+                      list[index] = { ...list[index], studentsParticipated: value };
                       setFormData(prev => ({ ...prev, exchangePrograms: list }));
                     }}
                   />
@@ -3660,6 +3701,7 @@ const handleUseCurrentLocation = () => {
               label="Gender Ratio - Male (%)"
               name="genderRatioMale"
               type="number"
+              min="0"
               value={formData.genderRatioMale}
               onChange={handleInputChange}
             />
@@ -3667,6 +3709,7 @@ const handleUseCurrentLocation = () => {
               label="Gender Ratio - Female (%)"
               name="genderRatioFemale"
               type="number"
+              min="0"
               value={formData.genderRatioFemale}
               onChange={handleInputChange}
             />
@@ -3674,6 +3717,7 @@ const handleUseCurrentLocation = () => {
               label="Gender Ratio - Others (%)"
               name="genderRatioOthers"
               type="number"
+              min="0"
               value={formData.genderRatioOthers}
               onChange={handleInputChange}
             />
@@ -3704,8 +3748,9 @@ const handleUseCurrentLocation = () => {
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-4">Scholarship Coverage (%)</label>
               <input
-              type="number"
-                name="scholarshipDiversityCoverage"
+              type="number" 
+              min="0"
+              name="scholarshipDiversityCoverage"
               value={formData.scholarshipDiversityCoverage}
               onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
@@ -3731,7 +3776,8 @@ const handleUseCurrentLocation = () => {
                   </label>
                   <input
                   type="number"
-                    name="specialNeedsSupportPercentage"
+                  min="0 "
+                  name="specialNeedsSupportPercentage"
                   value={formData.specialNeedsSupportPercentage}
                   onChange={handleInputChange}
                     className="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
@@ -3882,7 +3928,7 @@ const handleUseCurrentLocation = () => {
                         </select>
                       </div>
                       <div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">
+  {/* <label className="block text-sm font-medium text-gray-700 mb-2">
     Application Fee (Optional)
   </label>
   <input
@@ -3902,7 +3948,7 @@ const handleUseCurrentLocation = () => {
       setAdmissionSteps(next);
     }}
     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-  />
+  /> */}
 </div>
 
                       {/* Age Criteria */}
@@ -4113,7 +4159,7 @@ const handleUseCurrentLocation = () => {
               >
                 🗑️ Clear Draft
               </button>
-              <button 
+              {/* <button 
                 type="button" 
                 disabled={isFirst} 
                 onClick={goPrev} 
@@ -4124,16 +4170,16 @@ const handleUseCurrentLocation = () => {
                 }`}
               >
                 ← Previous Slide
-              </button>
-              {!isLast ? (
-                <button 
-                  type="button" 
-                  onClick={goNext} 
-                  className="flex-1 px-6 py-4 font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-lg"
-                >
-                  Next Slide →
-                </button>
-              ) : (
+              </button> */}
+              {/* {!isLast ? (
+                // <button 
+                //   type="button" 
+                //   onClick={goNext} 
+                //   className="flex-1 px-6 py-4 font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-lg"
+                // >
+                //   Next Slide →
+                // </button>
+              ) : ( */}
                 <button
                   type="submit"
                   className="mt-8 w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-[1.01]"
@@ -4148,7 +4194,7 @@ const handleUseCurrentLocation = () => {
                     hasExistingSchool ? 'Update School Profile' : 'Submit Registration'
                   )}
                 </button>
-              )}
+              {/* )} */}
             </div>
           </div>
           </div>
