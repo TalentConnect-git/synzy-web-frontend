@@ -14,73 +14,118 @@ export const useInterviewNotifications = () => {
   const timeoutRef = useRef(null);
 
   // Check for interview notifications
+  // const checkNotifications = useCallback(async () => {
+  //   if (!currentUser || (currentUser.userType !== 'student' && currentUser.userType !== 'parent')) {
+  //     return;
+  //   }
+
+  //   const studentId = currentUser.studentId || currentUser._id;
+  //   if (!studentId) {
+  //     console.warn('No student ID available for interview notifications');
+  //     return;
+  //   }
+
+  //   // Validate studentId is a string and not undefined/null
+  //   if (typeof studentId !== 'string' || studentId === 'undefined' || studentId === 'null') {
+  //     console.warn('Invalid student ID for interview notifications:', studentId);
+  //     return;
+  //   }
+
+  //   // Cancel any existing request
+  //   if (abortControllerRef.current) {
+  //     abortControllerRef.current.abort();
+  //   }
+
+  //   // Clear any existing timeout
+  //   if (timeoutRef.current) {
+  //     clearTimeout(timeoutRef.current);
+  //   }
+
+  //   // Don't check if already checking
+  //   if (isChecking) {
+  //     return;
+  //   }
+
+  //   setIsChecking(true);
+  //   try {
+  //     const notification = await checkForInterviewNotifications(studentId);
+      
+  //     if (notification) {
+  //       // Check if this is a new notification (not already shown)
+  //       const notificationKey = `${notification.application._id}-${notification.application.updatedAt}`;
+  //       const lastShownKey = localStorage.getItem('lastInterviewNotification');
+        
+  //       if (notificationKey !== lastShownKey) {
+  //         setInterviewNotification(notification);
+  //         // Store this notification as shown
+  //         localStorage.setItem('lastInterviewNotification', notificationKey);
+  //       }
+  //     } else {
+  //       setInterviewNotification(null);
+  //     }
+  //   } catch (error) {
+  //     // Only log error if it's not an abort error
+  //     if (error.name !== 'AbortError') {
+  //       console.error('Error checking interview notifications:', error);
+  //     }
+  //     // Don't set notification to null on error, just log it
+  //   } finally {
+  //     setIsChecking(false);
+  //     setLastChecked(new Date());
+  //   }
+  // }, [currentUser, isChecking]);
+
+  const isCheckingRef = useRef(false);
+
   const checkNotifications = useCallback(async () => {
     if (!currentUser || (currentUser.userType !== 'student' && currentUser.userType !== 'parent')) {
       return;
     }
 
     const studentId = currentUser.studentId || currentUser._id;
-    if (!studentId) {
-      console.warn('No student ID available for interview notifications');
-      return;
-    }
+    if (!studentId) return;
 
-    // Validate studentId is a string and not undefined/null
-    if (typeof studentId !== 'string' || studentId === 'undefined' || studentId === 'null') {
-      console.warn('Invalid student ID for interview notifications:', studentId);
-      return;
-    }
+    if (isCheckingRef.current) return;
 
-    // Cancel any existing request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Don't check if already checking
-    if (isChecking) {
-      return;
-    }
-
+    isCheckingRef.current = true;
     setIsChecking(true);
+
     try {
       const notification = await checkForInterviewNotifications(studentId);
-      
+
       if (notification) {
-        // Check if this is a new notification (not already shown)
         const notificationKey = `${notification.application._id}-${notification.application.updatedAt}`;
         const lastShownKey = localStorage.getItem('lastInterviewNotification');
-        
+
         if (notificationKey !== lastShownKey) {
           setInterviewNotification(notification);
-          // Store this notification as shown
           localStorage.setItem('lastInterviewNotification', notificationKey);
         }
       } else {
         setInterviewNotification(null);
       }
     } catch (error) {
-      // Only log error if it's not an abort error
       if (error.name !== 'AbortError') {
         console.error('Error checking interview notifications:', error);
       }
-      // Don't set notification to null on error, just log it
     } finally {
+      isCheckingRef.current = false;
       setIsChecking(false);
       setLastChecked(new Date());
     }
-  }, [currentUser, isChecking]);
+  }, [currentUser]);
 
   // Check notifications on mount and when user changes
+  // useEffect(() => {
+  //   if (currentUser) {
+  //     checkNotifications();
+  //   }
+  // }, [currentUser, checkNotifications]);
   useEffect(() => {
     if (currentUser) {
       checkNotifications();
     }
-  }, [currentUser, checkNotifications]);
+  }, [currentUser]); 
 
   // Set up periodic checking (every 60 seconds with debouncing)
   useEffect(() => {

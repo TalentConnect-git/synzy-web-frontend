@@ -1,6 +1,6 @@
 import React, { useState, useEffect,useRef } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { getSafeNumber, blockInvalidNumberKeys } from "../utils/numberInput";
 
 import { useAuth } from "../context/AuthContext";
 import { PlusCircle, Trash2, Info, Building2, Users2, ShieldCheck, HeartHandshake, Heart, Globe2, Sparkles, Image, Award, DollarSign, Cpu, GraduationCap, CalendarDays, Upload, ToggleRight, Briefcase, Save, Edit2, Home} from "lucide-react";
@@ -47,6 +47,7 @@ import {
   getScholarshipsByCollege,
   addScholarship,
   upsertCourseFee,
+  getCourseFeesByCollege,
   getCollegeExams,
    getPlacementsByCollege,
 
@@ -59,7 +60,14 @@ import {
   updateHostel,
   deleteHostel
 } from "../api/adminService";
-import { addCourse as addCourseAPI, addExam as addExamAPI , addPlacement as addPlacementAPI, getCoursesByCollege } from "../api/adminService";
+import {
+  addCourse as addCourseAPI,
+  addExam as addExamAPI,
+  addPlacement as addPlacementAPI,
+  getCoursesByCollege,
+  updateCourse,
+  getPlacementsByCourse
+} from "../api/adminService";
 
 import { 
   getAlumniBycollege,
@@ -332,8 +340,12 @@ const DynamicElearningField = ({ label, value, onChange }) => {
             label="Usage %"
             name={`elearn-usage-${index}`}
             type="number"
+            min="0"
             value={item.usagePercentage}
-            onChange={(e) => handleChange(index, 'usagePercentage', e.target.value)}
+            onChange={(e) => {
+              const value = Math.max(0, Number(e.target.value));
+              handleChange(index, 'usagePercentage', value);
+            }}
           />
           <FormField
             label="Frequency"
@@ -364,466 +376,430 @@ const DynamicElearningField = ({ label, value, onChange }) => {
 
 const RegistrationPage = () => {
   const [hostels, setHostels] = useState([]);
-const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
 // Replace your existing loadAllCollegeData function with this enhanced version
-const loadAllCollegeData = async (college) => {
-  console.log('🎯 DEBUG - loadAllCollegeData called with college:', {
-  id: college._id,
-  name: college.name,
-  rank: college.rank,
-  ranking: college.ranking,
-  type_rank: typeof college.rank,
-  type_ranking: typeof college.ranking
-});
-  try {
-    console.log('📥 Loading all college data for:', college._id);
-    
-    // Clear any existing draft
+  const loadAllCollegeData = async (college) => {
+    console.log('🎯 DEBUG - loadAllCollegeData called with college:', {
+    id: college._id,
+    name: college.name,
+    ranking: college.ranking,
+    type_ranking: typeof college.ranking
+  });
     try {
-      localStorage.removeItem("collegeRegDraft");
-    } catch (error) {
-      console.error("Could not clear draft:", error);
-    }
-    
-    // Load basic college data
-    setFormData(prev => ({
-      ...prev,
-      name: college.name || "",
-      description: college.description || "",
-      address: college.address || "",
-      area: college.area || "",
-      city: college.city || "",
-      state: college.state || "",
-      country: college.country || "India",
-      pincode: college.pinCode ? String(college.pinCode) : "",
-      establishedYear: college.estYear ? String(college.estYear) : (college.establishedYear ? String(college.establishedYear) : ""),
-      board: college.board || "",
-      feeRange: college.feeRange || "",
-      upto: college.upto || "",
-      email: college.email || "",
-      website: college.website || "",
-      phoneNo: college.mobileNo || "",
-      collegeMode: college.collegeMode || "convent",
-      genderType: college.genderType === 'boy' ? 'boys' : college.genderType === 'girl' ? 'girls' : (college.genderType || 'co-ed'),
-      shifts: Array.isArray(college.shifts) ? college.shifts : ["morning"],
-      languageMedium: Array.isArray(college.languageMedium) ? college.languageMedium : ["English"],
-      transportAvailable: college.transportAvailable || "no",
-      latitude: college.lat != null ? String(college.lat) : (college.latitude != null ? String(college.latitude) : ""),
-      longitude: college.long != null ? String(college.long) : (college.longitude != null ? String(college.longitude) : ""),
-      TeacherToStudentRatio: college.TeacherToStudentRatio || "",
-      rank: college.rank || "",
-      ranking: college.rank || "",
-      acceptanceRate: college.acceptanceRate != null ? String(college.acceptanceRate) : "",
-      collegeInfo: college.collegeInfo || college.description || "",
-      streamsOffered: Array.isArray(college.streamsOffered) ? college.streamsOffered : 
-                  (college.stream ? [college.stream] : []),
-      specialist: Array.isArray(college.specialist) ? college.specialist : [],
-      tags: Array.isArray(college.tags) ? college.tags : []
-    }));
-    console.log('✅ Form data updated - ranking set to:', college.rank || "");
-
-    // Load social links
-    setSocialLinks({
-      instagramHandle: college.instagramHandle || "",
-      twitterHandle: college.twitterHandle || "",
-      linkedinHandle: college.linkedinHandle || ""
-    });
-
-    // Load logo if available
-    if (college.logo) {
-      const logoUrl = typeof college.logo === 'object' ? college.logo.url : college.logo;
-      if (logoUrl) setLogoPreview(logoUrl);
-    }
-
-    // Load all related data in parallel
-    const [
-      amenitiesRes,
-      activitiesRes,
-      infraRes,
-      feesRes,
-      academicsRes,
-      otherRes,
-      safetyRes,
-      techRes,
-      intlRes,
-      facultyRes,
-      timelineRes,
-      alumniRes,
-      coursesRes,
-      hostelsRes,
-      scholarshipsRes
-    ] = await Promise.allSettled([
-      getAmenitiesByCollegeId(college._id).catch(err => {
-        console.log('Amenities fetch failed:', err);
-        return { data: null };
-      }),
-      getActivitiesByCollegeId(college._id).catch(err => {
-        console.log('Activities fetch failed:', err);
-        return { data: null };
-      }),
-      getInfrastructureById(college._id).catch(err => {
-        console.log('Infrastructure fetch failed:', err);
-        return { data: null };
-      }),
-      getFeesAndScholarshipsById(college._id).catch(err => {
-        console.log('Fees fetch failed:', err);
-        return { data: null };
-      }),
-      getAcademicsById(college._id).catch(err => {
-        console.log('Academics fetch failed:', err);
-        return { data: null };
-      }),
-      getOtherDetailsById(college._id).catch(err => {
-        console.log('Other details fetch failed:', err);
-        return { data: null };
-      }),
-      getSafetyAndSecurityById(college._id).catch(err => {
-        console.log('Safety fetch failed:', err);
-        return { data: null };
-      }),
-      getTechnologyAdoptionById(college._id).catch(err => {
-        console.log('Technology fetch failed:', err);
-        return { data: null };
-      }),
-      getInternationalExposureById(college._id).catch(err => {
-        console.log('International fetch failed:', err);
-        return { data: null };
-      }),
-      getFacultyById(college._id).catch(err => {
-        console.log('Faculty fetch failed:', err);
-        return { data: null };
-      }),
-      getAdmissionTimelineById(college._id).catch(err => {
-        console.log('Timeline fetch failed:', err);
-        return { data: null };
-      }),
-      getAlumniBycollege(college._id).catch(err => {
-        console.log('Alumni fetch failed:', err);
-        return { data: null };
-      }),
-      getCoursesByCollege(college._id).catch(err => {
-        console.log('Courses fetch failed:', err);
-        return { data: [] };
-      }),
-      getHostelsByCollege(college._id).catch(err => {
-        console.log('Hostels fetch failed:', err);
-        return { data: [] };
-      }),
-      getScholarshipsByCollege(college._id).catch(err => {
-        console.log('Scholarships fetch failed:', err);
-        return { data: [] };
-      })
-    ]);
-
-    // Helper to log and extract data
-    const logAndExtract = (name, result) => {
-      console.log(`\n========== ${name} ==========`);
-      console.log('Status:', result.status);
+      console.log('📥 Loading all college data for:', college._id);
       
-      if (result.status === 'fulfilled' && result.value) {
-        console.log('Full response:', result.value);
-        console.log('Response data:', result.value.data);
-        console.log('Response data.data:', result.value.data?.data);
-        
-        // Try to extract the actual data
-        const extracted = result.value?.data?.data || result.value?.data || result.value;
-        console.log('Extracted data:', extracted);
-        return extracted;
-      } else if (result.status === 'rejected') {
-        console.log('Rejected with:', result.reason);
+      // Clear any existing draft
+      try {
+        localStorage.removeItem("collegeRegDraft");
+      } catch (error) {
+        console.error("Could not clear draft:", error);
       }
-      console.log('========== END ==========\n');
-      return null;
-    };
-
-    // ==================== COURSES ====================
-    const coursesData = logAndExtract('COURSES', coursesRes);
-    if (coursesData && Array.isArray(coursesData) && coursesData.length > 0) {
-      const transformedCourses = coursesData.map(course => ({
-        _id: course._id,
-        courseName: course.courseName || course.name || "",
-        duration: course.duration || "",
-        fees: course.fees || "",
-        category: course.category || "",
-        intake: course.intake || "",
-        exams: Array.isArray(course.exams) ? course.exams.map(exam => ({
-          examType: exam.examType || exam.examName || "",
-          metricType: exam.metricType || exam.marksType || "Rank",
-          minValue: exam.minValue || exam.minMarks || "",
-          maxValue: exam.maxValue || exam.maxMarks || ""
-        })) : [],
-        placements: Array.isArray(course.placements) ? course.placements.map(p => ({
-          year: p.year || "",
-          totalStudents: p.totalStudents || "",
-          placedStudents: p.placedStudents || "",
-          highestPackage: p.highestPackage || p.maxPackage || "",
-          minimumPackage: p.minimumPackage || p.minPackage || "",
-          averagePackage: p.averagePackage || "",
-          topRecruiters: Array.isArray(p.topRecruiters) ? p.topRecruiters : 
-                        (Array.isArray(p.companies) ? p.companies : [])
-        })) : []
-      }));
-      setCourses(transformedCourses);
-    }
-
-    // ==================== AMENITIES ====================
-    const amenities = logAndExtract('AMENITIES', amenitiesRes);
-    if (amenities) {
+      
+      // Load basic college data
       setFormData(prev => ({
         ...prev,
-        predefinedAmenities: Array.isArray(amenities.predefinedAmenities) ? amenities.predefinedAmenities : 
-                            (Array.isArray(amenities.amenities) ? amenities.amenities : [])
+        name: college.name || "",
+        description: college.description || "",
+        address: college.address || "",
+        area: college.area || "",
+        city: college.city || "",
+        state: college.state || "",
+        country: college.country || "India",
+        pincode: college.pinCode ? String(college.pinCode) : "",
+        establishedYear: college.estYear ? String(college.estYear) : (college.establishedYear ? String(college.establishedYear) : ""),
+        board: college.board || "",
+        feeRange: college.feeRange || "",
+        upto: college.upto || "",
+        email: college.email || "",
+        website: college.website || "",
+        phoneNo: college.mobileNo || "",
+        collegeMode: college.collegeMode || "convent",
+        genderType: college.genderType === 'boy' ? 'boys' : college.genderType === 'girl' ? 'girls' : (college.genderType || 'co-ed'),
+        shifts: Array.isArray(college.shifts) ? college.shifts : ["morning"],
+        languageMedium: Array.isArray(college.languageMedium) ? college.languageMedium : ["English"],
+        transportAvailable: college.transportAvailable || "no",
+        latitude: college.lat != null ? String(college.lat) : (college.latitude != null ? String(college.latitude) : ""),
+        longitude: college.long != null ? String(college.long) : (college.longitude != null ? String(college.longitude) : ""),
+        TeacherToStudentRatio: college.TeacherToStudentRatio || "",
+        // Backend may return either `rank` or `ranking`, so prefer whichever exists.
+        ranking: college.ranking ?? college.rank ?? "",
+        acceptanceRate: college.acceptanceRate != null ? String(college.acceptanceRate) : "",
+        collegeInfo: college.collegeInfo || college.description || "",
+        streamsOffered: Array.isArray(college.streamsOffered) ? college.streamsOffered : 
+                    (college.stream ? [college.stream] : []),
+        specialist: Array.isArray(college.specialist) ? college.specialist : [],
+        tags: Array.isArray(college.tags) ? college.tags : []
       }));
-      setCustomAmenities(Array.isArray(amenities.customAmenities) ? amenities.customAmenities : []);
-    }
+      console.log('✅ Form data updated - ranking set to:', (college.ranking ?? college.rank) || "");
 
-    // ==================== ACTIVITIES ====================
-    const activities = logAndExtract('ACTIVITIES', activitiesRes);
-    if (activities) {
-      setFormData(prev => ({
-        ...prev,
-        activities: Array.isArray(activities.activities) ? activities.activities : []
-      }));
-      setCustomActivities(Array.isArray(activities.customActivities) ? activities.customActivities : []);
-    }
+      // Load social links
+      setSocialLinks({
+        instagramHandle: college.instagramHandle || "",
+        twitterHandle: college.twitterHandle || "",
+        linkedinHandle: college.linkedinHandle || ""
+      });
 
-    // ==================== INFRASTRUCTURE ====================
-    const infra = logAndExtract('INFRASTRUCTURE', infraRes);
-    if (infra) {
-      setFormData(prev => ({
-        ...prev,
-        infraLabTypes: Array.isArray(infra.labs) ? infra.labs : [],
-        infraSportsTypes: Array.isArray(infra.sportsGrounds) ? infra.sportsGrounds : [],
-        infraLibraryBooks: infra.libraryBooks != null ? String(infra.libraryBooks) : "",
-        infraSmartClassrooms: infra.smartClassrooms != null ? String(infra.smartClassrooms) : ""
-      }));
-    }
+      // Load logo if available
+      if (college.logo) {
+        const logoUrl = typeof college.logo === 'object' ? college.logo.url : college.logo;
+        if (logoUrl) setLogoPreview(logoUrl);
+      }
 
-    // ==================== SAFETY ====================
-    const safety = logAndExtract('SAFETY', safetyRes);
-    if (safety) {
-      setFormData(prev => ({
-        ...prev,
-        cctvCoveragePercentage: safety.cctvCoveragePercentage != null ? String(safety.cctvCoveragePercentage) : "0",
-        medicalFacility: {
-          doctorAvailability: safety.medicalFacility?.doctorAvailability || "",
-          medkitAvailable: safety.medicalFacility?.medkitAvailable || false,
-          ambulanceAvailable: safety.medicalFacility?.ambulanceAvailable || false
-        },
-        transportSafety: {
-          gpsTrackerAvailable: safety.transportSafety?.gpsTrackerAvailable || false,
-          driversVerified: safety.transportSafety?.driversVerified || false
-        },
-        fireSafetyMeasures: Array.isArray(safety.fireSafetyMeasures) ? safety.fireSafetyMeasures : [],
-        visitorManagementSystem: safety.visitorManagementSystem || false
-      }));
-    }
+      // Load all related data in parallel
+      const [
+        amenitiesRes,
+        activitiesRes,
+        infraRes,
+        feesRes,
+        academicsRes,
+        otherRes,
+        safetyRes,
+        techRes,
+        intlRes,
+        facultyRes,
+        timelineRes,
+        alumniRes,
+        coursesRes,
+        hostelsRes,
+        scholarshipsRes
+      ] = await Promise.allSettled([
+        getAmenitiesByCollegeId(college._id).catch(err => {
+          console.log('Amenities fetch failed:', err);
+          return { data: null };
+        }),
+        getActivitiesByCollegeId(college._id).catch(err => {
+          console.log('Activities fetch failed:', err);
+          return { data: null };
+        }),
+        getInfrastructureById(college._id).catch(err => {
+          console.log('Infrastructure fetch failed:', err);
+          return { data: null };
+        }),
+        getFeesAndScholarshipsById(college._id).catch(err => {
+          console.log('Fees fetch failed:', err);
+          return { data: null };
+        }),
+        getAcademicsById(college._id).catch(err => {
+          console.log('Academics fetch failed:', err);
+          return { data: null };
+        }),
+        getOtherDetailsById(college._id).catch(err => {
+          console.log('Other details fetch failed:', err);
+          return { data: null };
+        }),
+        getSafetyAndSecurityById(college._id).catch(err => {
+          console.log('Safety fetch failed:', err);
+          return { data: null };
+        }),
+        getTechnologyAdoptionById(college._id).catch(err => {
+          console.log('Technology fetch failed:', err);
+          return { data: null };
+        }),
+        getInternationalExposureById(college._id).catch(err => {
+          console.log('International fetch failed:', err);
+          return { data: null };
+        }),
+        getFacultyById(college._id).catch(err => {
+          console.log('Faculty fetch failed:', err);
+          return { data: null };
+        }),
+        getAdmissionTimelineById(college._id).catch(err => {
+          console.log('Timeline fetch failed:', err);
+          return { data: null };
+        }),
+        getAlumniBycollege(college._id).catch(err => {
+          console.log('Alumni fetch failed:', err);
+          return { data: null };
+        }),
+        getCoursesByCollege(college._id).catch(err => {
+          console.log('Courses fetch failed:', err);
+          return { data: [] };
+        }),
+        getHostelsByCollege(college._id).catch(err => {
+          console.log('Hostels fetch failed:', err);
+          return { data: [] };
+        }),
+        getScholarshipsByCollege(college._id).catch(err => {
+          console.log('Scholarships fetch failed:', err);
+          return { data: [] };
+        })
+      ]);
 
-    // ==================== TECHNOLOGY ====================
-    const tech = logAndExtract('TECHNOLOGY', techRes);
-    if (tech) {
-      setFormData(prev => ({
-        ...prev,
-        smartClassroomsPercentage: tech.smartClassroomsPercentage != null ? String(tech.smartClassroomsPercentage) : "0",
-        eLearningPlatforms: Array.isArray(tech.eLearningPlatforms) ? tech.eLearningPlatforms : []
-      }));
-    }
-
-    // ==================== INTERNATIONAL ====================
-    const intl = logAndExtract('INTERNATIONAL', intlRes);
-    if (intl) {
-      setFormData(prev => ({
-        ...prev,
-        exchangePrograms: Array.isArray(intl.exchangePrograms) ? intl.exchangePrograms.map(p => ({
-          partnercollege: p.partnercollege || "",
-          type: p.type || p.programType || "",
-          duration: p.duration || "",
-          studentsParticipated: p.studentsParticipated || "",
-          activeSince: p.activeSince || ""
-        })) : [],
-        globalTieUps: Array.isArray(intl.globalTieUps) ? intl.globalTieUps.map(t => ({
-          partnerName: t.partnerName || "",
-          nature: t.nature || t.natureOfTieUp || "",
-          activeSince: t.activeSince || "",
-          description: t.description || ""
-        })) : []
-      }));
-    }
-
-    // ==================== FACULTY ====================
-    const faculty = logAndExtract('FACULTY', facultyRes);
-    if (faculty && faculty.facultyMembers) {
-      setFacultyQuality(faculty.facultyMembers.map(f => ({
-        name: f.name || "",
-        qualification: f.qualification || "",
-        awards: Array.isArray(f.awards) ? f.awards.join(', ') : (f.awards || ""),
-        experience: f.experience || ""
-      })));
-    }
-
-    // ==================== ALUMNI ====================
-    const alumni = logAndExtract('ALUMNI', alumniRes);
-    if (alumni) {
-      setFamousAlumnies(Array.isArray(alumni.famousAlumnies) ? alumni.famousAlumnies : []);
-      setTopAlumnies(Array.isArray(alumni.topAlumnis) ? alumni.topAlumnis : []);
-      setOtherAlumnies(Array.isArray(alumni.alumnis) ? alumni.alumnis : []);
-    }
-
-    // ==================== ADMISSION TIMELINE ====================
-    const timeline = logAndExtract('TIMELINE', timelineRes);
-    if (timeline && timeline.timelines) {
-      setAdmissionSteps(timeline.timelines.map(t => ({
-        admissionStartDate: t.admissionStartDate ? new Date(t.admissionStartDate).toISOString().split('T')[0] : "",
-        admissionEndDate: t.admissionEndDate ? new Date(t.admissionEndDate).toISOString().split('T')[0] : "",
-        status: t.status || "",
-        applicationFee: t.applicationFee || 0,
-        courseId: t.courseId || "",
-        documentsRequired: Array.isArray(t.documentsRequired) ? t.documentsRequired : [],
-        eligibility: {
-          minQualification: t.eligibility?.minQualification || "",
-          otherInfo: t.eligibility?.otherInfo || ""
+      // Helper to log and extract data
+      const logAndExtract = (name, result) => {
+        console.log(`\n========== ${name} ==========`);
+        console.log('Status:', result.status);
+        
+        if (result.status === 'fulfilled' && result.value) {
+          console.log('Full response:', result.value);
+          console.log('Response data:', result.value.data);
+          console.log('Response data.data:', result.value.data?.data);
+          
+          // Try to extract the actual data
+          const extracted = result.value?.data?.data || result.value?.data || result.value;
+          console.log('Extracted data:', extracted);
+          return extracted;
+        } else if (result.status === 'rejected') {
+          console.log('Rejected with:', result.reason);
         }
-      })));
+        console.log('========== END ==========\n');
+        return null;
+      };
+
+      // ==================== COURSES ====================
+      const coursesData = logAndExtract('COURSES', coursesRes);
+      if (coursesData && Array.isArray(coursesData) && coursesData.length > 0) {
+        const transformedCourses = coursesData.map(course => ({
+          _id: course._id,
+          courseName: course.courseName || course.name || "",
+          duration: course.duration || "",
+          fees: course.fees || "",
+          category: course.category || "",
+          intake: course.intake || "",
+          exams: Array.isArray(course.exams) ? course.exams.map(exam => ({
+            examType: exam.examType || exam.examName || "",
+            metricType: exam.metricType || exam.marksType || "Rank",
+            minValue: exam.minValue || exam.minMarks || "",
+            maxValue: exam.maxValue || exam.maxMarks || ""
+          })) : [],
+          placements: Array.isArray(course.placements) ? course.placements.map(p => ({
+            year: p.year || "",
+            totalStudents: p.totalStudents || "",
+            placedStudents: p.placedStudents || "",
+            highestPackage: p.highestPackage || p.maxPackage || "",
+            minimumPackage: p.minimumPackage || p.minPackage || "",
+            averagePackage: p.averagePackage || "",
+            topRecruiters: Array.isArray(p.topRecruiters) ? p.topRecruiters : 
+                          (Array.isArray(p.companies) ? p.companies : [])
+          })) : []
+        }));
+        setCourses(transformedCourses);
+      }
+
+      // ==================== AMENITIES ====================
+      const amenities = logAndExtract('AMENITIES', amenitiesRes);
+      if (amenities) {
+        setFormData(prev => ({
+          ...prev,
+          predefinedAmenities: Array.isArray(amenities.predefinedAmenities) ? amenities.predefinedAmenities : 
+                              (Array.isArray(amenities.amenities) ? amenities.amenities : [])
+        }));
+        setCustomAmenities(Array.isArray(amenities.customAmenities) ? amenities.customAmenities : []);
+      }
+
+      // ==================== ACTIVITIES ====================
+      const activities = logAndExtract('ACTIVITIES', activitiesRes);
+      if (activities) {
+        setFormData(prev => ({
+          ...prev,
+          activities: Array.isArray(activities.activities) ? activities.activities : []
+        }));
+        setCustomActivities(Array.isArray(activities.customActivities) ? activities.customActivities : []);
+      }
+
+      // ==================== INFRASTRUCTURE ====================
+      const infra = logAndExtract('INFRASTRUCTURE', infraRes);
+      if (infra) {
+        setFormData(prev => ({
+          ...prev,
+          infraLabTypes: Array.isArray(infra.labs) ? infra.labs : [],
+          infraSportsTypes: Array.isArray(infra.sportsGrounds) ? infra.sportsGrounds : [],
+          infraLibraryBooks: infra.libraryBooks != null ? String(infra.libraryBooks) : "",
+          infraSmartClassrooms: infra.smartClassrooms != null ? String(infra.smartClassrooms) : ""
+        }));
+      }
+
+      // ==================== SAFETY ====================
+      const safety = logAndExtract('SAFETY', safetyRes);
+      if (safety) {
+        setFormData(prev => ({
+          ...prev,
+          cctvCoveragePercentage: safety.cctvCoveragePercentage != null ? String(safety.cctvCoveragePercentage) : "0",
+          medicalFacility: {
+            doctorAvailability: safety.medicalFacility?.doctorAvailability || "",
+            medkitAvailable: safety.medicalFacility?.medkitAvailable || false,
+            ambulanceAvailable: safety.medicalFacility?.ambulanceAvailable || false
+          },
+          transportSafety: {
+            gpsTrackerAvailable: safety.transportSafety?.gpsTrackerAvailable || false,
+            driversVerified: safety.transportSafety?.driversVerified || false
+          },
+          fireSafetyMeasures: Array.isArray(safety.fireSafetyMeasures) ? safety.fireSafetyMeasures : [],
+          visitorManagementSystem: safety.visitorManagementSystem || false
+        }));
+      }
+
+      // ==================== TECHNOLOGY ====================
+      const tech = logAndExtract('TECHNOLOGY', techRes);
+      if (tech) {
+        setFormData(prev => ({
+          ...prev,
+          smartClassroomsPercentage: tech.smartClassroomsPercentage != null ? String(tech.smartClassroomsPercentage) : "0",
+          eLearningPlatforms: Array.isArray(tech.eLearningPlatforms) ? tech.eLearningPlatforms : []
+        }));
+      }
+
+      // ==================== INTERNATIONAL ====================
+      const intl = logAndExtract('INTERNATIONAL', intlRes);
+      if (intl) {
+        setFormData(prev => ({
+          ...prev,
+          exchangePrograms: Array.isArray(intl.exchangePrograms) ? intl.exchangePrograms.map(p => ({
+            partnercollege: p.partnercollege || "",
+            type: p.type || p.programType || "",
+            duration: p.duration || "",
+            studentsParticipated: p.studentsParticipated || "",
+            activeSince: p.activeSince || ""
+          })) : [],
+          globalTieUps: Array.isArray(intl.globalTieUps) ? intl.globalTieUps.map(t => ({
+            partnerName: t.partnerName || "",
+            nature: t.nature || t.natureOfTieUp || "",
+            activeSince: t.activeSince || "",
+            description: t.description || ""
+          })) : []
+        }));
+      }
+
+      // ==================== FACULTY ====================
+      const faculty = logAndExtract('FACULTY', facultyRes);
+      if (faculty && faculty.facultyMembers) {
+        setFacultyQuality(faculty.facultyMembers.map(f => ({
+          name: f.name || "",
+          qualification: f.qualification || "",
+          awards: Array.isArray(f.awards) ? f.awards.join(', ') : (f.awards || ""),
+          experience: f.experience || ""
+        })));
+      }
+
+      // ==================== ALUMNI ====================
+      const alumni = logAndExtract('ALUMNI', alumniRes);
+      if (alumni) {
+        setFamousAlumnies(Array.isArray(alumni.famousAlumnies) ? alumni.famousAlumnies : []);
+        setTopAlumnies(Array.isArray(alumni.topAlumnis) ? alumni.topAlumnis : []);
+        setOtherAlumnies(Array.isArray(alumni.alumnis) ? alumni.alumnis : []);
+      }
+
+      // ==================== ADMISSION TIMELINE ====================
+      const timeline = logAndExtract('TIMELINE', timelineRes);
+      if (timeline && timeline.timelines) {
+        setAdmissionSteps(timeline.timelines.map(t => ({
+          admissionStartDate: t.admissionStartDate ? new Date(t.admissionStartDate).toISOString().split('T')[0] : "",
+          admissionEndDate: t.admissionEndDate ? new Date(t.admissionEndDate).toISOString().split('T')[0] : "",
+          status: t.status || "",
+          applicationFee: t.applicationFee || 0,
+          courseId: t.courseId || "",
+          documentsRequired: Array.isArray(t.documentsRequired) ? t.documentsRequired : [],
+          eligibility: {
+            minQualification: t.eligibility?.minQualification || "",
+            otherInfo: t.eligibility?.otherInfo || ""
+          }
+        })));
+      }
+
+      // ==================== HOSTELS ====================
+      const hostelsData = logAndExtract('HOSTELS', hostelsRes);
+      if (hostelsData && Array.isArray(hostelsData) && hostelsData.length > 0) {
+        setHostels(hostelsData.map(hostel => ({
+          ...hostel,
+          _isNew: false
+        })));
+      }
+
+      // ==================== SCHOLARSHIPS ====================
+      const scholarshipsData = logAndExtract('SCHOLARSHIPS', scholarshipsRes);
+      if (scholarshipsData && Array.isArray(scholarshipsData) && scholarshipsData.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          scholarships: scholarshipsData.map(s => ({
+            name: s.name || "",
+            type: s.type || "",
+            amount: s.amount || "",
+            documentsRequired: Array.isArray(s.documentsRequired) ? s.documentsRequired : []
+          }))
+        }));
+      }
+
+      // ==================== OTHER DETAILS ====================
+      const other = logAndExtract('OTHER DETAILS', otherRes);
+      if (other) {
+        setFormData(prev => ({
+          ...prev,
+          genderRatioMale: other.genderRatio?.male != null ? String(other.genderRatio.male) : "",
+          genderRatioFemale: other.genderRatio?.female != null ? String(other.genderRatio.female) : "",
+          genderRatioOthers: other.genderRatio?.others != null ? String(other.genderRatio.others) : "",
+          scholarshipDiversityTypes: Array.isArray(other.scholarshipDiversity?.types) ? other.scholarshipDiversity.types : [],
+          scholarshipDiversityCoverage: other.scholarshipDiversity?.studentsCoveredPercentage != null ? 
+                                        String(other.scholarshipDiversity.studentsCoveredPercentage) : "",
+          specialNeedsStaff: other.specialNeedsSupport?.dedicatedStaff || false,
+          specialNeedsSupportPercentage: other.specialNeedsSupport?.studentsSupportedPercentage != null ? 
+                                        String(other.specialNeedsSupport.studentsSupportedPercentage) : "",
+          specialNeedsFacilities: Array.isArray(other.specialNeedsSupport?.facilitiesAvailable) ? 
+                                other.specialNeedsSupport.facilitiesAvailable : []
+        }));
+      }
+
+      // ==================== FEES ====================
+      const fees = logAndExtract('FEES', feesRes);
+      if (fees) {
+        setFormData(prev => ({
+          ...prev,
+          feesTransparency: fees.feesTransparency != null ? 
+            (fees.feesTransparency === 100 ? 'full' :
+            fees.feesTransparency === 50 ? 'partial' :
+            fees.feesTransparency === 0 ? 'low' : String(fees.feesTransparency)) : "",
+          classFees: Array.isArray(fees.classFees) ? fees.classFees.map(fee => ({
+            ...fee,
+            tuition: fee.tuition || "",
+            activity: fee.activity || "",
+            transport: fee.transport || "",
+            hostel: fee.hostel || "",
+            misc: fee.misc || ""
+          })) : []
+        }));
+      }
+
+      // ==================== ACADEMICS ====================
+      const academics = logAndExtract('ACADEMICS', academicsRes);
+      if (academics) {
+        setFormData(prev => ({
+          ...prev,
+          averageClass10Result: academics.averageClass10Result || "",
+          averageClass12Result: academics.averageClass12Result || "",
+          averagecollegeMarks: academics.averagecollegeMarks || "75",
+          specialExamsTraining: Array.isArray(academics.specialExamsTraining) ? academics.specialExamsTraining : [],
+          extraCurricularActivities: Array.isArray(academics.extraCurricularActivities) ? academics.extraCurricularActivities : []
+        }));
+      }
+
+      toast.success("✅ All college data loaded successfully!");
+      console.log('🎉 Data loading complete!');
+      
+    } catch (error) {
+      console.error("❌ Error loading college data:", error);
+      toast.error("Some data could not be loaded. Please check the form.");
     }
+  };
 
-    // ==================== HOSTELS ====================
-    const hostelsData = logAndExtract('HOSTELS', hostelsRes);
-    if (hostelsData && Array.isArray(hostelsData) && hostelsData.length > 0) {
-      setHostels(hostelsData.map(hostel => ({
-        ...hostel,
-        _isNew: false
-      })));
-    }
-
-    // ==================== SCHOLARSHIPS ====================
-    const scholarshipsData = logAndExtract('SCHOLARSHIPS', scholarshipsRes);
-    if (scholarshipsData && Array.isArray(scholarshipsData) && scholarshipsData.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        scholarships: scholarshipsData.map(s => ({
-          name: s.name || "",
-          type: s.type || "",
-          amount: s.amount || "",
-          documentsRequired: Array.isArray(s.documentsRequired) ? s.documentsRequired : []
-        }))
-      }));
-    }
-
-    // ==================== OTHER DETAILS ====================
-    const other = logAndExtract('OTHER DETAILS', otherRes);
-    if (other) {
-      setFormData(prev => ({
-        ...prev,
-        genderRatioMale: other.genderRatio?.male != null ? String(other.genderRatio.male) : "",
-        genderRatioFemale: other.genderRatio?.female != null ? String(other.genderRatio.female) : "",
-        genderRatioOthers: other.genderRatio?.others != null ? String(other.genderRatio.others) : "",
-        scholarshipDiversityTypes: Array.isArray(other.scholarshipDiversity?.types) ? other.scholarshipDiversity.types : [],
-        scholarshipDiversityCoverage: other.scholarshipDiversity?.studentsCoveredPercentage != null ? 
-                                      String(other.scholarshipDiversity.studentsCoveredPercentage) : "",
-        specialNeedsStaff: other.specialNeedsSupport?.dedicatedStaff || false,
-        specialNeedsSupportPercentage: other.specialNeedsSupport?.studentsSupportedPercentage != null ? 
-                                      String(other.specialNeedsSupport.studentsSupportedPercentage) : "",
-        specialNeedsFacilities: Array.isArray(other.specialNeedsSupport?.facilitiesAvailable) ? 
-                               other.specialNeedsSupport.facilitiesAvailable : []
-      }));
-    }
-
-    // ==================== FEES ====================
-    const fees = logAndExtract('FEES', feesRes);
-    if (fees) {
-      setFormData(prev => ({
-        ...prev,
-        feesTransparency: fees.feesTransparency != null ? 
-          (fees.feesTransparency === 100 ? 'full' :
-           fees.feesTransparency === 50 ? 'partial' :
-           fees.feesTransparency === 0 ? 'low' : String(fees.feesTransparency)) : "",
-        classFees: Array.isArray(fees.classFees) ? fees.classFees.map(fee => ({
-          ...fee,
-          tuition: fee.tuition || "",
-          activity: fee.activity || "",
-          transport: fee.transport || "",
-          hostel: fee.hostel || "",
-          misc: fee.misc || ""
-        })) : []
-      }));
-    }
-
-    // ==================== ACADEMICS ====================
-    const academics = logAndExtract('ACADEMICS', academicsRes);
-    if (academics) {
-      setFormData(prev => ({
-        ...prev,
-        averageClass10Result: academics.averageClass10Result || "",
-        averageClass12Result: academics.averageClass12Result || "",
-        averagecollegeMarks: academics.averagecollegeMarks || "75",
-        specialExamsTraining: Array.isArray(academics.specialExamsTraining) ? academics.specialExamsTraining : [],
-        extraCurricularActivities: Array.isArray(academics.extraCurricularActivities) ? academics.extraCurricularActivities : []
-      }));
-    }
-
-    toast.success("✅ All college data loaded successfully!");
-    console.log('🎉 Data loading complete!');
-    
-  } catch (error) {
-    console.error("❌ Error loading college data:", error);
-    toast.error("Some data could not be loaded. Please check the form.");
-  }
-};
-
-const emptyHostel = {
-  hostelName: "",
-  type: "",
-  capacity: "",
-  availableSeats: "",
-  feePerYear: "",
-  facilities: [],
-  rules: "",
-  contactPerson: {
-    name: "",
-    phone: ""
-  },
-  isActive: true
-};
+  const emptyHostel = {
+    hostelName: "",
+    type: "",
+    capacity: "",
+    availableSeats: "",
+    feePerYear: "",
+    facilities: [],
+    rules: "",
+    contactPerson: {
+      name: "",
+      phone: ""
+    },
+    isActive: true
+  };
 
   const [customStream, setCustomStream] = useState("");
 
   const [courses, setCourses] = useState([
-  {
-    courseName: "",
-    duration: "",
-    fees: "",
-    category: "",
-    intake: "",
-
-    // MULTIPLE EXAMS PER COURSE
-   exams: [
-  {
-    examType: "",
-    metricType: "Rank", // Rank | Percentile | Percentage
-    minValue: "",
-    maxValue: ""
-  }
-],
-
-    placements: [
-      {
-        year: "",
-        totalStudents: "",
-        placedStudents: "",
-        highestPackage: "",
-        minimumPackage: "",
-        averagePackage: "",
-        topRecruiters: [""]
-      }
-    ]
-  }
-]);
-
-
-const addCourse = () => {
-  setCourses(prev => [
-    ...prev,
     {
       courseName: "",
       duration: "",
@@ -831,14 +807,15 @@ const addCourse = () => {
       category: "",
       intake: "",
 
-      exams: [
-  {
-    examType: "",
-    metricType: "Rank", // Rank | Percentile | Percentage
-    minValue: "",
-    maxValue: ""
-  }
-],
+      // MULTIPLE EXAMS PER COURSE
+    exams: [
+    {
+      examType: "",
+      metricType: "Rank", // Rank | Percentile | Percentage
+      minValue: "",
+      maxValue: ""
+    }
+  ],
 
       placements: [
         {
@@ -846,67 +823,101 @@ const addCourse = () => {
           totalStudents: "",
           placedStudents: "",
           highestPackage: "",
-            minimumPackage: "",
+          minimumPackage: "",
           averagePackage: "",
           topRecruiters: [""]
         }
       ]
     }
   ]);
-};
-const addExam = (cIndex) => {
-  const updated = [...courses];
-  updated[cIndex].exams.push({
-    examType: "",
-    metricType: "Rank",
-    minValue: "",
-    maxValue: ""
-  });
-  setCourses(updated);
-};
-
-const updateExam = (cIndex, eIndex, field, value) => {
-  const updated = [...courses];
-  updated[cIndex].exams[eIndex][field] = value;
-  setCourses(updated);
-};
-
-const removeExam = (cIndex, eIndex) => {
-  const updated = [...courses];
-  updated[cIndex].exams = updated[cIndex].exams.filter(
-    (_, i) => i !== eIndex
-  );
-  setCourses(updated);
-};
-
-const updateCourse = (index, field, value) => {
-  const updated = [...courses];
-  updated[index][field] = value;
-  setCourses(updated);
-};
 
 
-const removeCourse = (index) => {
-  setCourses(prev => prev.filter((_, i) => i !== index));
-};
-const updatePlacement = (cIndex, pIndex, field, value) => {
-  const updated = [...courses];
-  updated[cIndex].placements[pIndex][field] = value;
-  setCourses(updated);
-};
-const addPlacement = (courseIndex) => {
-  const updated = [...courses];
-  updated[courseIndex].placements.push({
-    year: "",
-    totalStudents: "",
-    placedStudents: "",
-    highestPackage: "",
-      minimumPackage: "",
-    averagePackage: "",
-    topRecruiters: []
-  });
-  setCourses(updated);
-};
+  const addCourse = () => {
+    setCourses(prev => [
+      ...prev,
+      {
+        courseName: "",
+        duration: "",
+        fees: "",
+        category: "",
+        intake: "",
+
+        exams: [
+    {
+      examType: "",
+      metricType: "Rank", // Rank | Percentile | Percentage
+      minValue: "",
+      maxValue: ""
+    }
+  ],
+
+        placements: [
+          {
+            year: "",
+            totalStudents: "",
+            placedStudents: "",
+            highestPackage: "",
+              minimumPackage: "",
+            averagePackage: "",
+            topRecruiters: [""]
+          }
+        ]
+      }
+    ]);
+  };
+  const addExam = (cIndex) => {
+    const updated = [...courses];
+    updated[cIndex].exams.push({
+      examType: "",
+      metricType: "Rank",
+      minValue: "",
+      maxValue: ""
+    });
+    setCourses(updated);
+  };
+
+  const updateExam = (cIndex, eIndex, field, value) => {
+    const updated = [...courses];
+    updated[cIndex].exams[eIndex][field] = value;
+    setCourses(updated);
+  };
+
+  const removeExam = (cIndex, eIndex) => {
+    const updated = [...courses];
+    updated[cIndex].exams = updated[cIndex].exams.filter(
+      (_, i) => i !== eIndex
+    );
+    setCourses(updated);
+  };
+
+  const updateCourse = (index, field, value) => {
+    const updated = [...courses];
+    updated[index][field] = value;
+    setCourses(updated);
+  };
+
+
+  const removeCourse = (index) => {
+    setCourses(prev => prev.filter((_, i) => i !== index));
+  };
+  const updatePlacement = (cIndex, pIndex, field, value) => {
+    const updated = [...courses];
+    updated[cIndex].placements[pIndex][field] = value;
+    setCourses(updated);
+  };
+  const addPlacement = (courseIndex) => {
+    const updated = [...courses];
+    updated[courseIndex].placements.push({
+      year: "",
+      totalStudents: "",
+      placedStudents: "",
+      highestPackage: "",
+        minimumPackage: "",
+      averagePackage: "",
+      topRecruiters: []
+    });
+    setCourses(updated);
+  };
  const removePlacement = (cIndex, pIndex) => {
     const updated = [...courses];
     updated[cIndex].placements = updated[cIndex].placements.filter(
@@ -928,40 +939,40 @@ const addPlacement = (courseIndex) => {
     };
   });
 };
-const handleFeeChange = (index, field, value) => {
-  setFormData((prev) => {
-    const updated = [...prev.classFees];
-    updated[index] = {
-      ...updated[index],
-      [field]: value
-    };
-    return { ...prev, classFees: updated };
-  });
-};
+  const handleFeeChange = (index, field, value) => {
+    setFormData((prev) => {
+      const updated = [...prev.classFees];
+      updated[index] = {
+        ...updated[index],
+        [field]: value
+      };
+      return { ...prev, classFees: updated };
+    });
+  };
 
 
 
-const addCustomStream = (custom) => {
-  const val = custom.trim();
-  if (!val) return;
+  const addCustomStream = (custom) => {
+    const val = custom.trim();
+    if (!val) return;
 
-  setFormData(prev => {
-    const current = Array.isArray(prev.streamsOffered)
-      ? prev.streamsOffered
-      : [];
+    setFormData(prev => {
+      const current = Array.isArray(prev.streamsOffered)
+        ? prev.streamsOffered
+        : [];
 
-    return {
-      ...prev,
-      streamsOffered: current.includes(val)
-        ? current
-        : [...current, val]
-    };
-  });
-};
+      return {
+        ...prev,
+        streamsOffered: current.includes(val)
+          ? current
+          : [...current, val]
+      };
+    });
+  };
 
 
-const photoInputRef = useRef(null);
-const videoInputRef = useRef(null);
+  const photoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const navigate = useNavigate();
   const { user: currentUser, updateUserContext } = useAuth();
@@ -971,6 +982,35 @@ const videoInputRef = useRef(null);
   const [hasExistingcollege, setHasExistingcollege] = useState(false);
   const [isLoadingExistingData, setIsLoadingExistingData] = useState(true);
   const hasCheckedForcollege = React.useRef(false); // Prevent multiple checks
+
+  // When editing an existing college, we capture an initial snapshot so we can
+  // avoid calling APIs for sections whose data didn't change.
+  const initialSnapshotRef = useRef(null);
+
+  const stableStringify = (value) => {
+    const sortRecursively = (v) => {
+      if (Array.isArray(v)) return v.map(sortRecursively);
+      if (v && typeof v === "object" && v.constructor === Object) {
+        return Object.keys(v)
+          .sort()
+          .reduce((acc, key) => {
+            acc[key] = sortRecursively(v[key]);
+            return acc;
+          }, {});
+      }
+      return v;
+    };
+    return JSON.stringify(sortRecursively(value));
+  };
+
+  const isSectionChanged = (key, currentValue) => {
+    const initial = initialSnapshotRef.current;
+    if (!hasExistingcollege || !initial || !Object.prototype.hasOwnProperty.call(initial, key)) {
+      // Create flow or snapshot not ready -> assume changed.
+      return true;
+    }
+    return stableStringify(initial[key]) !== stableStringify(currentValue);
+  };
 
   // State with all the fields required by the backend schema
   const [formData, setFormData] = useState({
@@ -998,7 +1038,7 @@ const videoInputRef = useRef(null);
     latitude: "",
     longitude: "",
     TeacherToStudentRatio: "", // Updated: matches backend field name
-    rank: "", // Added: matches backend field
+    ranking: "", // Added: matches backend field
     specialist: [], // Added: matches backend field
     tags: [], // Added: matches backend field
     
@@ -1099,12 +1139,14 @@ const videoInputRef = useRef(null);
   // Faculty Quality array: each entry will contain { name, qualification, awards, experience }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    // Special handling: keep ratio and numeric in sync
+    const { name, value, type } = e.target;
+
+    // 🔥 Special case (keep as is)
     if (name === 'TeacherToStudentRatio') {
       const raw = value.trim();
       let students = '';
       const parts = raw.split(':').map(p => p.trim());
+
       if (parts.length === 2) {
         const teacher = Number(parts[0]);
         const stud = Number(parts[1]);
@@ -1112,13 +1154,37 @@ const videoInputRef = useRef(null);
           students = String(stud);
         }
       } else if (/^\d+$/.test(raw)) {
-        // allow entering just the student count
         students = raw;
       }
-      setFormData((prev) => ({ ...prev, TeacherToStudentRatio: value, studentsPerTeacher: students }));
+
+      setFormData((prev) => ({
+        ...prev,
+        TeacherToStudentRatio: value,
+        studentsPerTeacher: students
+      }));
       return;
     }
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // 🔥 GLOBAL NUMBER HANDLING (NEW)
+    let finalValue = value;
+
+    if (type === "number") {
+      if (value === "") {
+        finalValue = "";
+      } else {
+        let num = Number(value);
+
+        if (isNaN(num)) num = 0;
+        if (num < 0) num = 0;
+
+        finalValue = num;
+      }
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: finalValue,
+    }));
   };
 
 const handleUseCurrentLocation = () => {
@@ -1126,7 +1192,7 @@ const handleUseCurrentLocation = () => {
     toast.error("Geolocation is not supported by your browser.");
     return;
   }
-
+  setIsFetchingLocation(true);
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       try {
@@ -1181,6 +1247,8 @@ const handleUseCurrentLocation = () => {
       } catch (error) {
         console.error(error);
         toast.error("Failed to fetch location details.");
+      } finally {
+        setIsFetchingLocation(false); 
       }
     },
     (err) => {
@@ -1188,6 +1256,8 @@ const handleUseCurrentLocation = () => {
       else if (err.code === 2) toast.error("Position unavailable.");
       else if (err.code === 3) toast.error("Location request timed out.");
       else toast.error("Could not get current location.");
+
+      setIsFetchingLocation(false); 
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
@@ -1452,7 +1522,7 @@ const normalizePlacementsForBackend = (courses, courseIdMap) => {
         longitude: Number(formData.longitude), // Mandatory for distance calculation
         // Match backend field casing (backend expects capitalized key)
         TeacherToStudentRatio: formData.TeacherToStudentRatio,
-        rank: formData.rank,
+        ranking: formData.ranking,
         streamsOffered: Array.isArray(formData.streamsOffered) ? formData.streamsOffered : [],
         specialist: Array.isArray(formData.specialist) ? formData.specialist : [],
         tags: Array.isArray(formData.tags) ? formData.tags : [],
@@ -1511,6 +1581,85 @@ payload.stream =
     }
   };
 
+      const currentBasicRaw = {
+        name: formData.name,
+        description: formData.description,
+        address: formData.address,
+        area: formData.area,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+        establishedYear: formData.establishedYear,
+        feeRange: formData.feeRange,
+        email: formData.email,
+        website: formData.website,
+        phoneNo: formData.phoneNo,
+        collegeMode: formData.collegeMode,
+        genderType: formData.genderType,
+        shifts: formData.shifts,
+        languageMedium: formData.languageMedium,
+        transportAvailable: formData.transportAvailable,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        TeacherToStudentRatio: formData.TeacherToStudentRatio,
+        ranking: formData.ranking,
+        streamsOffered: formData.streamsOffered,
+        specialist: formData.specialist,
+        tags: formData.tags,
+        acceptanceRate: formData.acceptanceRate,
+        collegeInfo: formData.collegeInfo,
+        socialLinks: { ...socialLinks },
+      };
+
+      const amenitiesChanged = isSectionChanged("amenities", {
+        predefinedAmenities: formData.predefinedAmenities,
+        customAmenities: customAmenities || [],
+      });
+      const activitiesChanged = isSectionChanged("activities", {
+        activities: formData.activities,
+        customActivities: customActivities || [],
+      });
+      const alumniChanged = isSectionChanged("alumni", {
+        famousAlumnies: famousAlumnies || [],
+        topAlumnies: topAlumnies || [],
+        otherAlumnies: otherAlumnies || [],
+      });
+      const infrastructureChanged = isSectionChanged("infrastructure", {
+        infraLabTypes: formData.infraLabTypes,
+        infraSportsTypes: formData.infraSportsTypes,
+        infraLibraryBooks: formData.infraLibraryBooks,
+        infraSmartClassrooms: formData.infraSmartClassrooms,
+      });
+      const facultyChanged = isSectionChanged("faculty", facultyQuality || []);
+      // Technology Adoption removed from submit
+      const safetyChanged = isSectionChanged("safety", {
+        cctvCoveragePercentage: formData.cctvCoveragePercentage,
+        medicalFacility: formData.medicalFacility,
+        transportSafety: formData.transportSafety,
+        fireSafetyMeasures: formData.fireSafetyMeasures,
+        visitorManagementSystem: formData.visitorManagementSystem,
+      });
+
+      const internationalChanged = isSectionChanged("international", {
+        exchangePrograms: formData.exchangePrograms,
+        globalTieUps: formData.globalTieUps,
+      });
+
+      // Academics removed from submit
+
+      const diversityChanged = isSectionChanged("diversity", {
+        genderRatioMale: formData.genderRatioMale,
+        genderRatioFemale: formData.genderRatioFemale,
+        genderRatioOthers: formData.genderRatioOthers,
+        scholarshipDiversityTypes: formData.scholarshipDiversityTypes,
+        scholarshipDiversityCoverage: formData.scholarshipDiversityCoverage,
+        specialNeedsStaff: formData.specialNeedsStaff,
+        specialNeedsSupportPercentage: formData.specialNeedsSupportPercentage,
+        specialNeedsFacilities: formData.specialNeedsFacilities,
+      });
+
+      const basicChanged = isSectionChanged("basic", currentBasicRaw);
+
       // Always include authId to ensure it's set (for both new and existing colleges)
       // This is crucial for deduplication and tracking which user owns which college
      // 🔑 Attach authId safely
@@ -1533,8 +1682,11 @@ try {
   if (collegeId) {
     // 🟢 UPDATE FLOW (SAFE, NO DUPLICATES)
     console.log('✅ Updating existing college:', collegeId);
-
-    await updateCollegeByAuthId(collegeId, payload);
+    if (basicChanged) {
+      await updateCollegeByAuthId(collegeId, payload);
+    } else {
+      console.log("⏭️ Skipping college basic update (no changes detected)");
+    }
 
     setIsEditMode(true);
     setEditingcollegeId(collegeId);
@@ -1572,7 +1724,7 @@ try {
       const promises = [];
 
       // Add/Update amenities
-      if (formData.predefinedAmenities?.length > 0 || customAmenities?.length > 0) {
+      if (amenitiesChanged && (hasExistingcollege || formData.predefinedAmenities?.length > 0 || customAmenities?.length > 0)) {
         const payloadAmenities = {
           collegeId,
           predefinedAmenities: formData.predefinedAmenities || [],
@@ -1582,7 +1734,7 @@ try {
       }
 
       // Add/Update activities
-      if (formData.activities?.length > 0 || customActivities?.length > 0) {
+      if (activitiesChanged && (hasExistingcollege || formData.activities?.length > 0 || customActivities?.length > 0)) {
         const payloadActivities = {
           collegeId,
           activities: formData.activities || [],
@@ -1594,7 +1746,7 @@ try {
       // Add alumni if any (skip for now as there's no alumni UI)
       // TODO: Uncomment when alumni UI is added
       
-      if (famousAlumnies.length > 0 || topAlumnies.length > 0 || otherAlumnies.length > 0) {
+      if (alumniChanged && (hasExistingcollege || famousAlumnies.length > 0 || topAlumnies.length > 0 || otherAlumnies.length > 0)) {
         
         const alumniPayload = {
           collegeId,
@@ -1613,7 +1765,14 @@ try {
       
 
       // Add/Update infrastructure
-      if (formData.infraLabTypes?.length > 0 || formData.infraSportsTypes?.length > 0 || formData.infraLibraryBooks || formData.infraSmartClassrooms) {
+      if (
+        infrastructureChanged &&
+        (hasExistingcollege ||
+          formData.infraLabTypes?.length > 0 ||
+          formData.infraSportsTypes?.length > 0 ||
+          formData.infraLibraryBooks ||
+          formData.infraSmartClassrooms)
+      ) {
         const payloadInfra = {
           collegeId,
           labs: formData.infraLabTypes || [],
@@ -1635,7 +1794,7 @@ try {
       
 
       // Add/Update Faculty Quality
-      if (facultyQuality && facultyQuality.length > 0) {
+      if (facultyQuality && facultyQuality.length > 0 && facultyChanged) {
         const cleanFaculty = facultyQuality
           .filter(f => f.name || f.qualification || f.awards || f.experience !== undefined)
           .map(f => ({
@@ -1646,7 +1805,7 @@ try {
           }))
           .filter(f => f.name && f.qualification && f.experience !== undefined);
         
-        if (cleanFaculty.length > 0) {
+        if (cleanFaculty.length > 0 || hasExistingcollege) {
           const payloadFaculty = { collegeId, facultyMembers: cleanFaculty };
           promises.push(updateOrAdd(updateFaculty, addFaculty, collegeId, payloadFaculty));
         }
@@ -1655,26 +1814,25 @@ try {
       // Add Admission Timeline if any (matching backend AdmissionTimeline model)
     
 
-      // Add/Update Technology Adoption
-    // Corrected Technology Adoption block:
-// Add/Update Technology Adoption
-if ((formData.smartClassroomsPercentage !== '' && formData.smartClassroomsPercentage != null) || (formData.eLearningPlatforms?.length > 0)) {
-  const payloadTech = {
-    collegeId, // Use the resolved ID
-    smartClassroomsPercentage: (formData.smartClassroomsPercentage === '' || formData.smartClassroomsPercentage == null) ? undefined : Number(formData.smartClassroomsPercentage),
-    eLearningPlatforms: formData.eLearningPlatforms || []
-  };
-
-  // We call the add function directly because no update route exists.
-  // Most backends treat the "Add" of a sub-resource as an "Upsert" if the collegeId is provided.
-  
-}
+      // Technology Adoption removed from submit
 
       // Add/Update Safety & Security
-      if ((formData.cctvCoveragePercentage !== '' && formData.cctvCoveragePercentage != null) || formData.medicalFacility?.doctorAvailability || 
-          formData.medicalFacility?.medkitAvailable || formData.medicalFacility?.ambulanceAvailable ||
-          formData.transportSafety?.gpsTrackerAvailable || formData.transportSafety?.driversVerified ||
-          formData.fireSafetyMeasures?.length > 0 || formData.visitorManagementSystem) {
+      if (
+        safetyChanged &&
+        (
+          hasExistingcollege ||
+          (
+            (formData.cctvCoveragePercentage !== '' && formData.cctvCoveragePercentage != null) ||
+            formData.medicalFacility?.doctorAvailability ||
+            formData.medicalFacility?.medkitAvailable ||
+            formData.medicalFacility?.ambulanceAvailable ||
+            formData.transportSafety?.gpsTrackerAvailable ||
+            formData.transportSafety?.driversVerified ||
+            formData.fireSafetyMeasures?.length > 0 ||
+            formData.visitorManagementSystem
+          )
+        )
+      ) {
         const payloadSafety = {
           collegeId,
           cctvCoveragePercentage: (formData.cctvCoveragePercentage === '' || formData.cctvCoveragePercentage == null) ? undefined : Number(formData.cctvCoveragePercentage),
@@ -1751,8 +1909,11 @@ if ((formData.smartClassroomsPercentage !== '' && formData.smartClassroomsPercen
         };
       });
 
-      // Only proceed if we have valid data
-      if (validExchangePrograms.length > 0 || validGlobalTieUps.length > 0) {
+      // Only proceed if we have valid data (or user cleared it while editing)
+      if (
+        internationalChanged &&
+        (hasExistingcollege || validExchangePrograms.length > 0 || validGlobalTieUps.length > 0)
+      ) {
         console.log('Sending international exposure data:', {
           collegeId,
           exchangePrograms: validExchangePrograms,
@@ -1760,31 +1921,34 @@ if ((formData.smartClassroomsPercentage !== '' && formData.smartClassroomsPercen
         });
         
         const payloadIntl = { collegeId, exchangePrograms: validExchangePrograms, globalTieUps: validGlobalTieUps };
-        promises.push(updateOrAdd(updateInternationalExposure, addInternationalExposure, collegeId, payloadIntl));
+        if (internationalChanged) {
+          promises.push(updateOrAdd(updateInternationalExposure, addInternationalExposure, collegeId, payloadIntl));
+        } else {
+          console.log("⏭️ Skipping international exposure update (no changes detected)");
+        }
       } else {
         console.log('No valid international exposure data to send');
       }
 
-      // Add/Update Academics (simplified - only summary fields)
-      if ((formData.averageClass10Result !== '' && formData.averageClass10Result != null) || (formData.averageClass12Result !== '' && formData.averageClass12Result != null) || (formData.averagecollegeMarks !== '' && formData.averagecollegeMarks != null) || 
-          formData.specialExamsTraining?.length > 0 || formData.extraCurricularActivities?.length > 0) {
-        const payloadAcademics = {
-          collegeId,
-          averageClass10Result: (formData.averageClass10Result === '' || formData.averageClass10Result == null) ? undefined : Number(formData.averageClass10Result),
-          averageClass12Result: (formData.averageClass12Result === '' || formData.averageClass12Result == null) ? undefined : Number(formData.averageClass12Result),
-          averagecollegeMarks: (formData.averagecollegeMarks === '' || formData.averagecollegeMarks == null) ? 75 : Number(formData.averagecollegeMarks), // Required field, default to 75
-          specialExamsTraining: formData.specialExamsTraining || [],
-          extraCurricularActivities: formData.extraCurricularActivities || []
-        };
-        console.log('📚 Sending Academics payload:', payloadAcademics);
-       
-      }
+      // Academics removed from submit
 
       // Add/Update other details (matching backend OtherDetails model)
-      if ((formData.genderRatioMale !== '' && formData.genderRatioMale != null) || (formData.genderRatioFemale !== '' && formData.genderRatioFemale != null) || (formData.genderRatioOthers !== '' && formData.genderRatioOthers != null) ||
-          formData.scholarshipDiversityTypes?.length > 0 || (formData.scholarshipDiversityCoverage !== '' && formData.scholarshipDiversityCoverage != null) ||
-          formData.specialNeedsStaff || (formData.specialNeedsSupportPercentage !== '' && formData.specialNeedsSupportPercentage != null) ||
-          formData.specialNeedsFacilities?.length > 0) {
+      if (
+        diversityChanged &&
+        (
+          hasExistingcollege ||
+          (
+            (formData.genderRatioMale !== '' && formData.genderRatioMale != null) ||
+            (formData.genderRatioFemale !== '' && formData.genderRatioFemale != null) ||
+            (formData.genderRatioOthers !== '' && formData.genderRatioOthers != null) ||
+            formData.scholarshipDiversityTypes?.length > 0 ||
+            (formData.scholarshipDiversityCoverage !== '' && formData.scholarshipDiversityCoverage != null) ||
+            formData.specialNeedsStaff ||
+            (formData.specialNeedsSupportPercentage !== '' && formData.specialNeedsSupportPercentage != null) ||
+            formData.specialNeedsFacilities?.length > 0
+          )
+        )
+      ) {
         
         // Ensure non-negative values for gender ratios
         const maleRatio = formData.genderRatioMale ? Math.max(0, Number(formData.genderRatioMale)) : 0;
@@ -1813,211 +1977,375 @@ if ((formData.smartClassroomsPercentage !== '' && formData.smartClassroomsPercen
 
       // Wait for all related data to be created
       await Promise.all(promises);
-      // ========================
-// 🔹 BUILD COURSE LOOKUP MAPS (SAFE)
-// ========================
-let courseIndexMap = {};
-let courseIdMapById = {};
-let courseIdMapByName = {};
-
-try {
-  const courseRes = await getCoursesByCollege(collegeId);
-  const courses = courseRes?.data?.data || courseRes?.data || [];
-
-  courses.forEach((course, index) => {
-    if (!course?._id) return;
-
-    courseIndexMap[index] = course._id;
-    courseIdMapById[String(course._id)] = course._id;
-
-    if (course.name) {
-      courseIdMapByName[course.name.trim().toLowerCase()] = course._id;
-    }
-  });
-
-  console.log("✅ Course Index Map:", courseIndexMap);
-} catch (err) {
-  console.error("❌ Failed to fetch courses for admission timeline", err);
-}
+      // Courses/admission sub-resources are handled below (and only saved when changed).
 
       // =======================
 // =======================
 // ADD COURSES (ONE BY ONE)
 // =======================
-const saveAllCollegeData = async (collegeId, courses, admissionSteps) => {
-  try {
-    console.log('📚 Saving courses for college:', collegeId);
+// const saveAllCollegeData = async (collegeId, courses, admissionSteps) => {
+//   try {
+//     console.log('📚 Saving courses for college:', collegeId);
     
-    // Filter out empty courses
-    const validCourses = courses.filter(c => c.courseName?.trim());
+//     // Filter out empty courses
+//     const validCourses = courses.filter(c => c.courseName?.trim());
     
-    if (validCourses.length === 0) {
-      console.log('No courses to save');
-      return;
-    }
+//     if (validCourses.length === 0) {
+//       console.log('No courses to save');
+//       return;
+//     }
 
-    // Save each course individually
-    const savedCourseIds = [];
+//     // Save each course individually
+//     const savedCourseIds = [];
     
-    for (const course of validCourses) {
-      try {
-        // Prepare course payload
-        const coursePayload = {
-          collegeId,
-          courseName: course.courseName,
-          duration: course.duration,
-          fees: course.fees ? Number(course.fees) : 0,
-          category: course.category,
-          intake: course.intake ? Number(course.intake) : 0
-        };
+//     for (const course of validCourses) {
+//       try {
+//         // Prepare course payload
+//         const coursePayload = {
+//           collegeId,
+//           courseName: course.courseName,
+//           duration: course.duration,
+//           fees: course.fees ? Number(course.fees) : 0,
+//           category: course.category,
+//           intake: course.intake ? Number(course.intake) : 0
+//         };
 
-        console.log('Saving course:', coursePayload);
+//         console.log('Saving course:', coursePayload);
         
-        // Save the course
-        const response = await addCourseAPI({
-          collegeId,
-          courses: [coursePayload]
-        });
+//         // Save the course
+//         const response = await addCourseAPI({
+//           collegeId,
+//           courses: [coursePayload]
+//         });
         
-        // Extract saved course ID
-        const savedCourse = response?.data?.data?.[0] || response?.data?.courses?.[0];
-        if (savedCourse?._id) {
-          savedCourseIds.push(savedCourse._id);
-          console.log('✅ Course saved with ID:', savedCourse._id);
-        }
-      } catch (error) {
-        console.error('❌ Failed to save course:', error);
-      }
-    }
+//         // Extract saved course ID
+//         const savedCourse = response?.data?.data?.[0] || response?.data?.courses?.[0];
+//         if (savedCourse?._id) {
+//           savedCourseIds.push(savedCourse._id);
+//           console.log('✅ Course saved with ID:', savedCourse._id);
+//         }
+//       } catch (error) {
+//         console.error('❌ Failed to save course:', error);
+//       }
+//     }
 
-    if (savedCourseIds.length === 0) {
-      throw new Error("No courses were saved successfully");
-    }
+//     if (savedCourseIds.length === 0) {
+//       throw new Error("No courses were saved successfully");
+//     }
 
-    // Fetch all saved courses to get complete data
-    const courseRes = await getCoursesByCollege(collegeId);
-    const savedCourses = courseRes?.data?.data || courseRes?.data || [];
+//     // Fetch all saved courses to get complete data
+//     const courseRes = await getCoursesByCollege(collegeId);
+//     const savedCourses = courseRes?.data?.data || courseRes?.data || [];
     
-    if (!savedCourses.length) {
-      throw new Error("No courses found after save");
-    }
+//     if (!savedCourses.length) {
+//       throw new Error("No courses found after save");
+//     }
 
-    // Create course ID map
-    const courseIdMap = {};
-    savedCourses.forEach((course, index) => {
-      if (course?._id) {
-        courseIdMap[index] = course._id;
-      }
-    });
+//     // Create course ID map
+//     const courseIdMap = {};
+//     savedCourses.forEach((course, index) => {
+//       if (course?._id) {
+//         courseIdMap[index] = course._id;
+//       }
+//     });
 
-    console.log("✅ Course ID Map:", courseIdMap);
+//     console.log("✅ Course ID Map:", courseIdMap);
 
-    // Save exams for each course
-    for (let cIndex = 0; cIndex < validCourses.length; cIndex++) {
-      const course = validCourses[cIndex];
-      const courseId = courseIdMap[cIndex];
+//     // Save exams for each course
+//     for (let cIndex = 0; cIndex < validCourses.length; cIndex++) {
+//       const course = validCourses[cIndex];
+//       const courseId = courseIdMap[cIndex];
       
-      if (!courseId) continue;
+//       if (!courseId) continue;
 
-      // Save exams
-      if (course.exams?.length > 0) {
-        const validExams = course.exams.filter(e => e.examType?.trim());
+//       // Save exams
+//       if (course.exams?.length > 0) {
+//         const validExams = course.exams.filter(e => e.examType?.trim());
         
-        for (const exam of validExams) {
-          try {
-            const examPayload = {
-              courseId,
-              examName: exam.examType,
-              marksType: exam.metricType || "Rank",
-              minMarks: exam.minValue ? Number(exam.minValue) : 0,
-              maxMarks: exam.maxValue ? Number(exam.maxValue) : 100
-            };
+//         for (const exam of validExams) {
+//           try {
+//             const examPayload = {
+//               courseId,
+//               examName: exam.examType,
+//               marksType: exam.metricType || "Rank",
+//               minMarks: exam.minValue ? Number(exam.minValue) : 0,
+//               maxMarks: exam.maxValue ? Number(exam.maxValue) : 100
+//             };
             
-            await addExamAPI(examPayload);
-            console.log('✅ Exam saved for course:', courseId);
-          } catch (error) {
-            console.error('❌ Failed to save exam:', error);
-          }
-        }
-      }
+//             await addExamAPI(examPayload);
+//             console.log('✅ Exam saved for course:', courseId);
+//           } catch (error) {
+//             console.error('❌ Failed to save exam:', error);
+//           }
+//         }
+//       }
 
-      // Save placements
-      if (course.placements?.length > 0) {
-        const validPlacements = course.placements.filter(p => p.year);
+//       // Save placements
+//       if (course.placements?.length > 0) {
+//         const validPlacements = course.placements.filter(p => p.year);
         
-        for (const placement of validPlacements) {
-          try {
-            const placementPayload = {
-              courseId,
-              year: Number(placement.year),
-              totalStudents: Number(placement.totalStudents || 0),
-              placedStudents: Number(placement.placedStudents || 0),
-              minPackage: Number(placement.minimumPackage || 0),
-              maxPackage: Number(placement.highestPackage || 0),
-              averagePackage: Number(placement.averagePackage || 0),
-              companies: (placement.topRecruiters || []).filter(Boolean)
-            };
+//         for (const placement of validPlacements) {
+//           try {
+//             const placementPayload = {
+//               courseId,
+//               year: Number(placement.year),
+//               totalStudents: Number(placement.totalStudents || 0),
+//               placedStudents: Number(placement.placedStudents || 0),
+//               minPackage: Number(placement.minimumPackage || 0),
+//               maxPackage: Number(placement.highestPackage || 0),
+//               averagePackage: Number(placement.averagePackage || 0),
+//               companies: (placement.topRecruiters || []).filter(Boolean)
+//             };
             
-            await addPlacementAPI(placementPayload);
-            console.log('✅ Placement saved for course:', courseId);
-          } catch (error) {
-            console.error('❌ Failed to save placement:', error);
-          }
-        }
-      }
-    }
+//             await addPlacementAPI(placementPayload);
+//             console.log('✅ Placement saved for course:', courseId);
+//           } catch (error) {
+//             console.error('❌ Failed to save placement:', error);
+//           }
+//         }
+//       }
+//     }
 
-    // Save admission timelines
-    if (admissionSteps?.length > 0) {
-      const validTimelines = admissionSteps.filter(t => 
-        t.admissionStartDate && t.admissionEndDate && t.courseId
-      );
+//     // Save admission timelines
+//     if (admissionSteps?.length > 0) {
+//       const validTimelines = admissionSteps.filter(t => 
+//         t.admissionStartDate && t.admissionEndDate && t.courseId
+//       );
 
-      if (validTimelines.length > 0) {
-        const timelinePayload = {
-          collegeId,
-          timelines: validTimelines.map(t => ({
-            admissionStartDate: new Date(t.admissionStartDate),
-            admissionEndDate: new Date(t.admissionEndDate),
-            status: t.status || "Ongoing",
-            applicationFee: Number(t.applicationFee || 0),
-            course: t.courseId,
-            documentsRequired: t.documentsRequired || [],
-            eligibility: {
-              minQualification: t.eligibility?.minQualification || "",
-              otherInfo: t.eligibility?.otherInfo || ""
-            }
-          }))
-        };
+//       if (validTimelines.length > 0) {
+//         const timelinePayload = {
+//           collegeId,
+//           timelines: validTimelines.map(t => ({
+//             admissionStartDate: new Date(t.admissionStartDate),
+//             admissionEndDate: new Date(t.admissionEndDate),
+//             status: t.status || "Ongoing",
+//             applicationFee: Number(t.applicationFee || 0),
+//             course: t.courseId,
+//             documentsRequired: t.documentsRequired || [],
+//             eligibility: {
+//               minQualification: t.eligibility?.minQualification || "",
+//               otherInfo: t.eligibility?.otherInfo || ""
+//             }
+//           }))
+//         };
 
-        try {
-          await updateAdmissionTimeline(collegeId, timelinePayload);
-          console.log('✅ Admission timelines saved');
-        } catch (error) {
-          if (error?.response?.status === 404) {
-            await addAdmissionTimeline(timelinePayload);
-          } else {
-            throw error;
-          }
-        }
-      }
-    }
+//         try {
+//           await updateAdmissionTimeline(collegeId, timelinePayload);
+//           console.log('✅ Admission timelines saved');
+//         } catch (error) {
+//           if (error?.response?.status === 404) {
+//             await addAdmissionTimeline(timelinePayload);
+//           } else {
+//             throw error;
+//           }
+//         }
+//       }
+//     }
 
-    toast.success("Details saved successfully!");
+//     toast.success("Details saved successfully!");
     
-  } catch (err) {
-    console.error("❌ Save failed:", err);
-    toast.error(err.message || "Something went wrong while saving data");
-    throw err; // Re-throw to handle in the main submit function
-  }
-};
+//   } catch (err) {
+//     console.error("❌ Save failed:", err);
+//     toast.error(err.message || "Something went wrong while saving data");
+//     throw err; // Re-throw to handle in the main submit function
+//   }
+// };
+  const saveAllCollegeData = async (collegeId, courses, admissionSteps) => {
+    try {
+      console.log('📚 Saving courses for college:', collegeId);
+
+      // Filter valid courses
+      const validCourses = courses.filter(c => c.courseName?.trim());
+
+      if (validCourses.length === 0) {
+        console.log('No courses to save');
+        return;
+      }
+
+      // ✅ STEP 1: Fetch existing courses FIRST
+      const existingRes = await getCoursesByCollege(collegeId);
+      const existingCourses = existingRes?.data?.data || existingRes?.data || [];
+
+      console.log("📦 Existing courses:", existingCourses);
+
+      const savedCourseIds = [];
+      const courseIdMap = {}; // 🔥 FIXED mapping by name
+
+      for (const course of validCourses) {
+        try {
+          const trimmedName = course.courseName.trim();
+
+          // ✅ STEP 2: Check if course already exists
+          const existing = existingCourses.find(
+            (c) => c.courseName?.trim().toLowerCase() === trimmedName.toLowerCase()
+          );
+
+          if (existing?._id) {
+            console.log("⚡ Course already exists:", existing._id);
+
+            savedCourseIds.push(existing._id);
+            courseIdMap[trimmedName] = existing._id;
+
+            continue; // ⛔ skip creation
+          }
+
+          // ✅ STEP 3: Create only if not exists
+          const coursePayload = {
+            collegeId,
+            courseName: trimmedName,
+            duration: course.duration,
+            fees: course.fees ? Number(course.fees) : 0,
+            category: course.category,
+            intake: course.intake ? Number(course.intake) : 0
+          };
+
+          console.log('Saving NEW course:', coursePayload);
+
+          const response = await addCourseAPI({
+            collegeId,
+            courses: [coursePayload]
+          });
+
+          const savedCourse =
+            response?.data?.data?.[0] || response?.data?.courses?.[0];
+
+          if (savedCourse?._id) {
+            savedCourseIds.push(savedCourse._id);
+            courseIdMap[trimmedName] = savedCourse._id;
+
+            console.log('✅ Course saved with ID:', savedCourse._id);
+          }
+        } catch (error) {
+          console.error('❌ Failed to save course:', error);
+        }
+      }
+
+      if (savedCourseIds.length === 0) {
+        throw new Error("No courses were saved successfully");
+      }
+
+      console.log("✅ Course ID Map:", courseIdMap);
+
+      // ✅ STEP 4: Save exams & placements using FIXED mapping
+      for (const course of validCourses) {
+        const courseId = courseIdMap[course.courseName?.trim()];
+
+        if (!courseId) continue;
+
+        // Exams
+        if (course.exams?.length > 0) {
+          const validExams = course.exams.filter(e => e.examType?.trim());
+
+          for (const exam of validExams) {
+            try {
+              const examPayload = {
+                courseId,
+                examName: exam.examType,
+                marksType: exam.metricType || "Rank",
+                minMarks: exam.minValue ? Number(exam.minValue) : 0,
+                maxMarks: exam.maxValue ? Number(exam.maxValue) : 100
+              };
+
+              await addExamAPI(examPayload);
+              console.log('✅ Exam saved for course:', courseId);
+            } catch (error) {
+              console.error('❌ Failed to save exam:', error);
+            }
+          }
+        }
+
+        // Placements
+        if (course.placements?.length > 0) {
+          const validPlacements = course.placements.filter(p => p.year);
+
+          for (const placement of validPlacements) {
+            try {
+              const placementPayload = {
+                courseId,
+                year: Number(placement.year),
+                totalStudents: Number(placement.totalStudents || 0),
+                placedStudents: Number(placement.placedStudents || 0),
+                minPackage: Number(placement.minimumPackage || 0),
+                maxPackage: Number(placement.highestPackage || 0),
+                averagePackage: Number(placement.averagePackage || 0),
+                companies: (placement.topRecruiters || []).filter(Boolean)
+              };
+
+              await addPlacementAPI(placementPayload);
+              console.log('✅ Placement saved for course:', courseId);
+            } catch (error) {
+              console.error('❌ Failed to save placement:', error);
+            }
+          }
+        }
+      }
+
+      // ✅ STEP 5: Admission timelines (unchanged)
+      if (admissionSteps?.length > 0) {
+        const validTimelines = admissionSteps.filter(
+          t => t.admissionStartDate && t.admissionEndDate && t.courseId
+        );
+
+        if (validTimelines.length > 0) {
+          const timelinePayload = {
+            collegeId,
+            timelines: validTimelines.map(t => ({
+              admissionStartDate: new Date(t.admissionStartDate),
+              admissionEndDate: new Date(t.admissionEndDate),
+              status: t.status || "Ongoing",
+              applicationFee: Number(t.applicationFee || 0),
+              course: t.courseId,
+              documentsRequired: t.documentsRequired || [],
+              eligibility: {
+                minQualification: t.eligibility?.minQualification || "",
+                otherInfo: t.eligibility?.otherInfo || ""
+              }
+            }))
+          };
+
+          try {
+            await updateAdmissionTimeline(collegeId, timelinePayload);
+            console.log('✅ Admission timelines saved');
+          } catch (error) {
+            if (error?.response?.status === 404) {
+              await addAdmissionTimeline(timelinePayload);
+            } else {
+              throw error;
+            }
+          }
+        }
+      }
+
+      toast.success("Details saved successfully!");
+
+    } catch (err) {
+      console.error("❌ Save failed:", err);
+      toast.error(err.message || "Something went wrong while saving data");
+      throw err;
+    }
+  };
 
 
 
-     await saveAllCollegeData(collegeId, courses, admissionSteps);
+     const coursesChanged = isSectionChanged("courses", courses || []);
+     const admissionStepsChanged = isSectionChanged("admissionSteps", admissionSteps || []);
+     if (coursesChanged || admissionStepsChanged) {
+       await saveAllCollegeData(collegeId, courses, admissionSteps);
+     } else {
+       console.log("⏭️ Skipping courses/admission timeline save (no changes detected)");
+     }
 
-if (formData.classFees?.length > 0 || (formData.feesTransparency !== '' && formData.feesTransparency != null)) {
-        // Validate and clean classFees
+const feesChanged = isSectionChanged("fees", {
+  feesTransparency: formData.feesTransparency,
+  classFees: formData.classFees || [],
+  scholarships: formData.scholarships || [],
+});
+
+const hasFeeInputs = formData.classFees?.length > 0 || (formData.feesTransparency !== '' && formData.feesTransparency != null);
+const hasScholarshipInputs = formData.scholarships?.length > 0;
+
+if (feesChanged && (hasFeeInputs || hasScholarshipInputs)) {
+       // Validate and clean classFees
        const validClassFees = (formData.classFees || [])
   .filter(fee => fee.courseId && fee.tuition !== "")
   .map(fee => ({
@@ -2050,7 +2378,7 @@ if (formData.classFees?.length > 0 || (formData.feesTransparency !== '' && formD
           return scholarship;
         });*/
 
-        if (validClassFees.length > 0 || validScholarships.length > 0 || (formData.feesTransparency !== '' && formData.feesTransparency != null)) {
+        if (validClassFees.length > 0 || (formData.scholarships?.length > 0) || (formData.feesTransparency !== '' && formData.feesTransparency != null)) {
           // Map transparency string values to numbers (if backend expects numbers)
           let transparencyValue;
           if (formData.feesTransparency === 'full') transparencyValue = 100;
@@ -2090,14 +2418,24 @@ if (formData.scholarships?.length > 0) {
 }
 
           
-          const payloadFees = {
-            collegeId,
-            feesTransparency: transparencyValue,
-            classFees: validClassFees,
+          // const payloadFees = {
+          //   collegeId,
+          //   feesTransparency: transparencyValue,
+          //   classFees: validClassFees,
            
-          };
+          // };
+          // console.log('💰 Sending Fees & Scholarships:', payloadFees);
+          // promises.push(upsertCourseFee(payloadFees));
+          const payloadFees = validClassFees.map(fee => ({
+            ...fee,
+            collegeId,
+          }));
+
           console.log('💰 Sending Fees & Scholarships:', payloadFees);
-          promises.push(upsertCourseFee(payloadFees));
+
+          if (payloadFees.length > 0) {
+            await upsertCourseFee(payloadFees);
+          }
          
         }
       }
@@ -2108,7 +2446,7 @@ if (formData.scholarships?.length > 0) {
       if (logoFile) {
         const logoFormData = new FormData();
         logoFormData.append('logo', logoFile);
-        await apiClient.post(`/admin/${collegeId}/upload/logo`, logoFormData, {
+        await apiClient.post(`colleges/${collegeId}/upload/logo`, logoFormData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
@@ -2353,29 +2691,56 @@ if (formData.scholarships?.length > 0) {
    useEffect(() => {
   if (!selectedCollegeId) return;
 
+  // const fetchAllData = async () => {
+  //   try {
+  //     // 1️⃣ Fetch Courses
+  //     const courseRes = await getCoursesByCollege(selectedCollegeId);
+  //     const fetchedCourses = courseRes?.data?.courses || courseRes?.data || [];
+
+  //     if (fetchedCourses.length > 0) {
+  //       setCourses(fetchedCourses);
+  //     }
+
+  //     // 2️⃣ Fetch Hostels
+  //     const hostelRes = await getHostelsByCollege(selectedCollegeId);
+  //     const fetchedHostels = hostelRes?.data?.data || hostelRes?.data || [];
+
+  //     if (fetchedHostels.length > 0) {
+  //       setHostels(fetchedHostels);
+  //     }
+
+  //   } catch (err) {
+  //     console.error("Error loading data:", err);
+  //   }
+  // };
   const fetchAllData = async () => {
     try {
       // 1️⃣ Fetch Courses
       const courseRes = await getCoursesByCollege(selectedCollegeId);
-      const fetchedCourses = courseRes?.data?.courses || courseRes?.data || [];
 
-      if (fetchedCourses.length > 0) {
-        setCourses(fetchedCourses);
-      }
+      console.log("🔥 COURSE API RAW:", courseRes);
+      console.log("🔥 COURSE API DATA:", courseRes.data);
+
+      // ✅ Always set (even if empty)
+      const fetchedCourses = Array.isArray(courseRes?.data)
+        ? courseRes.data
+        : courseRes?.data?.courses || [];
+
+      setCourses(fetchedCourses);
+
+      console.log("✅ FINAL COURSES STATE:", fetchedCourses);
 
       // 2️⃣ Fetch Hostels
       const hostelRes = await getHostelsByCollege(selectedCollegeId);
+
       const fetchedHostels = hostelRes?.data?.data || hostelRes?.data || [];
 
-      if (fetchedHostels.length > 0) {
-        setHostels(fetchedHostels);
-      }
+      setHostels(fetchedHostels);
 
     } catch (err) {
-      console.error("Error loading data:", err);
+      console.error("❌ Error loading data:", err);
     }
   };
-
   fetchAllData();
 }, [selectedCollegeId]);
 
@@ -2432,7 +2797,41 @@ useEffect(() => {
 
   fetchScholarships();
 }, [editingcollegeId]);
+  //to fetch course fees for the selected college and populate the form when editing an existing college profile. This ensures that the fee details are pre-filled for the user to review and update as needed.
+  useEffect(() => {
+    const loadFees = async () => {
+      if (!editingcollegeId) return;
 
+      try {
+        const res = await getCourseFeesByCollege(editingcollegeId);
+
+        const fees = res?.data?.data || res?.data || [];
+
+        console.log("📥 Fees from API:", fees);
+
+        // 🔥 Map backend → frontend structure
+        const mappedFees = fees.map(fee => ({
+          courseId: fee.courseId?._id || fee.courseId,
+          courseDuration: fee.courseDuration || "",
+          tuition: fee.tuition ?? "",
+          activity: fee.activity ?? "",
+          transport: fee.transport ?? "",
+          hostel: fee.hostel ?? "",
+          misc: fee.misc ?? "",
+        }));
+
+        setFormData(prev => ({
+          ...prev,
+          classFees: mappedFees
+        }));
+
+      } catch (err) {
+        console.error("❌ Failed to load course fees", err);
+      }
+    };
+
+    loadFees();
+  }, [editingcollegeId]);
 
 
 
@@ -2443,6 +2842,99 @@ useEffect(() => {
       checkForExistingcollege();
     }
   }, [currentUser?._id]); // Re-run when currentUser becomes available
+
+  // Capture the initial state once, after the existing college is loaded.
+  // Used to avoid calling APIs for unchanged sections.
+  useEffect(() => {
+    if (isLoadingExistingData) return;
+    if (!hasExistingcollege) return;
+    if (initialSnapshotRef.current) return;
+    if (!formData?.name || !formData?.email) return;
+
+    initialSnapshotRef.current = {
+      basic: {
+        name: formData.name,
+        description: formData.description,
+        address: formData.address,
+        area: formData.area,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+        establishedYear: formData.establishedYear,
+        feeRange: formData.feeRange,
+        email: formData.email,
+        website: formData.website,
+        phoneNo: formData.phoneNo,
+        collegeMode: formData.collegeMode,
+        genderType: formData.genderType,
+        shifts: formData.shifts,
+        languageMedium: formData.languageMedium,
+        transportAvailable: formData.transportAvailable,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        TeacherToStudentRatio: formData.TeacherToStudentRatio,
+        ranking: formData.ranking,
+        streamsOffered: formData.streamsOffered,
+        specialist: formData.specialist,
+        tags: formData.tags,
+        acceptanceRate: formData.acceptanceRate,
+        collegeInfo: formData.collegeInfo,
+        socialLinks: { ...socialLinks },
+      },
+      amenities: {
+        predefinedAmenities: formData.predefinedAmenities,
+        customAmenities,
+      },
+      activities: {
+        activities: formData.activities,
+        customActivities,
+      },
+      alumni: { famousAlumnies, topAlumnies, otherAlumnies },
+      infrastructure: {
+        infraLabTypes: formData.infraLabTypes,
+        infraSportsTypes: formData.infraSportsTypes,
+        infraLibraryBooks: formData.infraLibraryBooks,
+        infraSmartClassrooms: formData.infraSmartClassrooms,
+      },
+      faculty: facultyQuality,
+      safety: {
+        cctvCoveragePercentage: formData.cctvCoveragePercentage,
+        medicalFacility: formData.medicalFacility,
+        transportSafety: formData.transportSafety,
+        fireSafetyMeasures: formData.fireSafetyMeasures,
+        visitorManagementSystem: formData.visitorManagementSystem,
+      },
+      international: {
+        exchangePrograms: formData.exchangePrograms,
+        globalTieUps: formData.globalTieUps,
+      },
+      diversity: {
+        genderRatioMale: formData.genderRatioMale,
+        genderRatioFemale: formData.genderRatioFemale,
+        genderRatioOthers: formData.genderRatioOthers,
+        scholarshipDiversityTypes: formData.scholarshipDiversityTypes,
+        scholarshipDiversityCoverage: formData.scholarshipDiversityCoverage,
+        specialNeedsStaff: formData.specialNeedsStaff,
+        specialNeedsSupportPercentage: formData.specialNeedsSupportPercentage,
+        specialNeedsFacilities: formData.specialNeedsFacilities,
+      },
+      fees: {
+        feesTransparency: formData.feesTransparency,
+        classFees: formData.classFees,
+        scholarships: formData.scholarships,
+      },
+      courses,
+      admissionSteps,
+    };
+  }, [
+    isLoadingExistingData,
+    hasExistingcollege,
+    editingcollegeId,
+    formData?.name,
+    formData?.email,
+    courses,
+    admissionSteps,
+  ]);
 
   // Debug: Log state changes (remove this in production)
   useEffect(() => {
@@ -2632,7 +3124,6 @@ const checkForExistingcollege = async () => {
       latitude: college.lat != null ? String(college.lat) : (college.latitude != null ? String(college.latitude) : ""),
       longitude: college.long != null ? String(college.long) : (college.longitude != null ? String(college.longitude) : ""),
       TeacherToStudentRatio: college.TeacherToStudentRatio || "",
-      rank: college.rank || "",
       ranking: college.ranking || college.rank || "",
       acceptanceRate: college.acceptanceRate != null ? String(college.acceptanceRate) : "",
       streamsOffered: Array.isArray(formData.streamsOffered) ? formData.streamsOffered : [],
@@ -3047,7 +3538,7 @@ const checkForExistingcollege = async () => {
         latitude: college.latitude != null ? String(college.latitude) : "",
         longitude: college.longitude != null ? String(college.longitude) : "",
         TeacherToStudentRatio: college.TeacherToStudentRatio || "",
-        rank: college.rank || "",
+        ranking: college.ranking ?? college.ranking ?? "",
          streamsOffered: Array.isArray(formData.streamsOffered) ? formData.streamsOffered : [],
         specialist: Array.isArray(college.specialist) ? college.specialist : [],
         tags: Array.isArray(college.tags) ? college.tags : []
@@ -3100,6 +3591,7 @@ const checkForExistingcollege = async () => {
       const intl = val(intlRes) || {};
       const faculty = val(facultyRes) || {};
       const timeline = val(timelineRes) || {};
+      
 
       // Prefill arrays/booleans safely
       setFormData(prev => ({
@@ -3441,9 +3933,21 @@ const checkForExistingcollege = async () => {
                 <button
                   type="button"
                   onClick={handleUseCurrentLocation}
-                  className="h-10 mt-7 bg-indigo-600 text-white rounded-md px-4"
+                  disabled={isFetchingLocation}
+                  className={`h-10 mt-7 rounded-md px-4 flex items-center justify-center gap-2 ${
+                    isFetchingLocation
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-indigo-600 text-white"
+                  }`}
                 >
-                  Use Current Location
+                  {isFetchingLocation ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      Fetching...
+                    </>
+                  ) : (
+                    "Use Current Location"
+                  )}
                 </button>
               </div>
               <div className="md:col-span-2 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-md">
@@ -3492,13 +3996,28 @@ const checkForExistingcollege = async () => {
               required 
               />
               <FormField 
-  label="Ranking"
-  name="rank"  // ← Change from "ranking" to "rank"
-  type="number"
-  value={formData.rank}  // ← Change from formData.ranking to formData.rank
-  onChange={handleInputChange} 
-  required 
-/>
+                label="Ranking"
+                name="ranking"
+                type="number"
+                min="0"
+                value={formData.ranking}
+                onChange={(e) => {
+                  const value = Math.max(0, Number(e.target.value));
+                  handleInputChange({
+                    target: {
+                      name: "ranking",
+                      value
+                    }
+                  });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e") {
+                    e.preventDefault();
+                  }
+                }}
+                required 
+              />
+
         <FormField
          label="Acceptance Rate" 
          name="acceptanceRate"
@@ -3789,10 +4308,17 @@ const checkForExistingcollege = async () => {
         <FormField
           label="Student Strength"
           type="number"
+          min="0"
           value={course.intake}
-          onChange={(e) =>
-            updateCourse(cIndex, "intake", e.target.value)
-          }
+          onChange={(e) => {
+            const value = Math.max(0, Number(e.target.value));
+            updateCourse(cIndex, "intake", value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "-" || e.key === "e") {
+              e.preventDefault();
+            }
+          }}
           required
         />
 
@@ -3858,32 +4384,49 @@ const checkForExistingcollege = async () => {
     <input
       className="border px-3 py-2 rounded"
       type="number"
+      min="0"
       placeholder={`Min ${exam.metricType}`}
       value={exam.minValue}
-      onChange={(e) =>
-        updateExam(
-          cIndex,
-          eIndex,
-          "minValue",
-          e.target.value
-        )
-      }
+      onChange={(e) => {
+        const value = Math.max(0, Number(e.target.value || 0));
+        updateExam(cIndex, eIndex, "minValue", value);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "-" || e.key === "e") {
+          e.preventDefault();
+        }
+      }}
     />
 
     {/* Max Value */}
     <input
       className="border px-3 py-2 rounded"
       type="number"
+      min="0"
       placeholder={`Max ${exam.metricType}`}
       value={exam.maxValue}
-      onChange={(e) =>
-        updateExam(
-          cIndex,
-          eIndex,
-          "maxValue",
-          e.target.value
-        )
-      }
+      onChange={(e) => {
+        const val = e.target.value;
+
+        if (val === "") {
+          updateExam(cIndex, eIndex, "maxValue", "");
+          return;
+        }
+
+        let value = Math.max(0, Number(val));
+
+        // 🔥 ensure max >= min
+        if (exam.minValue !== "" && value < exam.minValue) {
+          value = exam.minValue;
+        }
+
+        updateExam(cIndex, eIndex, "maxValue", value);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "-" || e.key === "e") {
+          e.preventDefault();
+        }
+      }}
     />
   </React.Fragment>
 ))}
@@ -3936,90 +4479,161 @@ const checkForExistingcollege = async () => {
               <input
                 className="border px-3 py-2 rounded"
                 type="number"
+                min="1900"
+                max={new Date().getFullYear()}
                 placeholder="Year"
                 value={place.year}
-                onChange={(e) =>
-                  updatePlacement(
-                    cIndex,
-                    pIndex,
-                    "year",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+
+                  if (val === "") {
+                    updatePlacement(cIndex, pIndex, "year", "");
+                    return;
+                  }
+
+                  let value = Number(val);
+
+                  // enforce range
+                  const currentYear = new Date().getFullYear();
+                  if (value < 1900) value = 1900;
+                  if (value > currentYear) value = currentYear;
+
+                  updatePlacement(cIndex, pIndex, "year", value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e") {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <input
                 className="border px-3 py-2 rounded"
                 type="number"
+                min="0"
                 placeholder="Total Students"
                 value={place.totalStudents}
-                onChange={(e) =>
-                  updatePlacement(
-                    cIndex,
-                    pIndex,
-                    "totalStudents",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+
+                  if (val === "") {
+                    updatePlacement(cIndex, pIndex, "totalStudents", "");
+                    return;
+                  }
+
+                  let value = Math.max(0, Number(val));
+
+                  updatePlacement(cIndex, pIndex, "totalStudents", value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e") {
+                    e.preventDefault();
+                  }
+                }}
               />
 
               <input
                 className="border px-3 py-2 rounded"
                 type="number"
+                min="0"
                 placeholder="Placed Students"
                 value={place.placedStudents}
-                onChange={(e) =>
-                  updatePlacement(
-                    cIndex,
-                    pIndex,
-                    "placedStudents",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  let value = getSafeNumber(e.target.value);
+
+                  // 🔥 enforce logical rule
+                  if (
+                    place.totalStudents !== "" &&
+                    value > place.totalStudents
+                  ) {
+                    value = place.totalStudents;
+                  }
+
+                  updatePlacement(cIndex, pIndex, "placedStudents", value);
+                }}
+                onKeyDown={blockInvalidNumberKeys}
               />
 
               <input
                 className="border px-3 py-2 rounded"
                 type="number"
+                min="0"
+                step="0.1"
                 placeholder="Highest Package (LPA)"
                 value={place.highestPackage}
-                onChange={(e) =>
-                  updatePlacement(
-                    cIndex,
-                    pIndex,
-                    "highestPackage",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  const value = getSafeNumber(e.target.value, {
+                    min: 0,
+                    max: 100, // optional realistic cap (100 LPA)
+                  });
+
+                  updatePlacement(cIndex, pIndex, "highestPackage", value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e") {
+                    e.preventDefault();
+                  }
+                }}
               />
                <input
                 className="border px-3 py-2 rounded"
                 type="number"
+                min="0"
+                step="0.1"
                 placeholder="Minimum Package (LPA)"
                 value={place.minimumPackage}
-                onChange={(e) =>
-                  updatePlacement(
-                    cIndex,
-                    pIndex,
-                    "minimumPackage",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  let value = getSafeNumber(e.target.value, { min: 0 });
+
+                  // 🔥 enforce: min ≤ highest
+                  if (
+                    place.highestPackage !== "" &&
+                    value > place.highestPackage
+                  ) {
+                    value = place.highestPackage;
+                  }
+
+                  // optional formatting
+                  value = Number(value.toFixed(1));
+
+                  updatePlacement(cIndex, pIndex, "minimumPackage", value);
+                }}
+                onKeyDown={blockInvalidNumberKeys}
               />
+
 
               <input
                 className="border px-3 py-2 rounded"
                 type="number"
+                min="0"
+                step="0.1"
                 placeholder="Average Package (LPA)"
                 value={place.averagePackage}
-                onChange={(e) =>
-                  updatePlacement(
-                    cIndex,
-                    pIndex,
-                    "averagePackage",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  let value = getSafeNumber(e.target.value, { min: 0 });
+
+                  // 🔥 enforce lower bound
+                  if (
+                    place.minimumPackage !== "" &&
+                    value < place.minimumPackage
+                  ) {
+                    value = place.minimumPackage;
+                  }
+
+                  // 🔥 enforce upper bound
+                  if (
+                    place.highestPackage !== "" &&
+                    value > place.highestPackage
+                  ) {
+                    value = place.highestPackage;
+                  }
+
+                  // optional formatting
+                  value = Number(value.toFixed(1));
+
+                  updatePlacement(cIndex, pIndex, "averagePackage", value);
+                }}
+                onKeyDown={blockInvalidNumberKeys}
               />
             </div>
 
@@ -4182,39 +4796,63 @@ const checkForExistingcollege = async () => {
           />
 
           {/* Capacity */}
-          <FormField
-            label="Capacity *"
-            type="number"
-            value={hostel.capacity ?? ""}
-            onChange={(e) => {
-              const list = [...hostels];
-              list[index].capacity = Number(e.target.value);
-              setHostels(list);
-            }}
-          />
+         <FormField
+          label="Capacity *"
+          type="number"
+          min="0"
+          value={hostel.capacity ?? ""}
+          onChange={(e) => {
+            const value = getSafeNumber(e.target.value, { min: 0 });
+
+            const list = [...hostels];
+            list[index].capacity = value;
+            setHostels(list);
+          }}
+          onKeyDown={blockInvalidNumberKeys}
+        />
 
           {/* Available Seats */}
           <FormField
             label="Available Seats *"
             type="number"
+            min="0"
             value={hostel.availableSeats ?? ""}
             onChange={(e) => {
-              const list = [...hostels];
-              list[index].availableSeats = Number(e.target.value);
-              setHostels(list);
+              let value = getSafeNumber(e.target.value, { min: 0 });
+
+              // 🔥 enforce: availableSeats ≤ capacity
+              if (
+                hostel.capacity !== "" &&
+                value > hostel.capacity
+              ) {
+                value = hostel.capacity;
+              }
+
+              setHostels((prev) => {
+                const list = [...prev];
+                list[index].availableSeats = value;
+                return list;
+              });
             }}
+            onKeyDown={blockInvalidNumberKeys}
           />
 
           {/* Fee Per Year */}
           <FormField
             label="Fee Per Year *"
             type="number"
+            min="0"
             value={hostel.feePerYear ?? ""}
             onChange={(e) => {
-              const list = [...hostels];
-              list[index].feePerYear = Number(e.target.value);
-              setHostels(list);
+              const value = getSafeNumber(e.target.value, { min: 0 });
+
+              setHostels((prev) => {
+                const list = [...prev];
+                list[index].feePerYear = value;
+                return list;
+              });
             }}
+            onKeyDown={blockInvalidNumberKeys}
           />
 
           {/* Active */}
@@ -4283,8 +4921,7 @@ const checkForExistingcollege = async () => {
                 const list = [...hostels];
                 list[index].facilities = e.target.value
                   .split(",")
-                  .map(f => f.trim())
-                  .filter(Boolean);
+                  .map(f => f.trim()); // ✅ removed filter
                 setHostels(list);
               }}
               className="w-full px-3 py-2 border rounded-md"
@@ -4520,12 +5157,21 @@ setHostels(list);
                   label="Teaching experience (yrs)"
                   name={`fq-exp-${index}`}
                   type="number"
-                  value={fq.experience || ''}
+                  min="0"
+                  value={fq.experience ?? ""}
                   onChange={(e) => {
-                    const list = facultyQuality.slice();
-                    list[index] = { ...list[index], experience: e.target.value };
-                    setFacultyQuality(list);
+                    const value = getSafeNumber(e.target.value, {
+                      min: 0,
+                      max: 60, // realistic upper bound
+                    });
+
+                    setFacultyQuality((prev) => {
+                      const list = [...prev];
+                      list[index] = { ...list[index], experience: value };
+                      return list;
+                    });
                   }}
+                  onKeyDown={blockInvalidNumberKeys}
                 />
                 <button
                   type="button"
@@ -4598,6 +5244,7 @@ setHostels(list);
               label="Library - number of books"
               name="infraLibraryBooks"
               type="number"
+              min="0"
               value={formData.infraLibraryBooks}
               onChange={handleInputChange}
             />
@@ -4628,6 +5275,7 @@ setHostels(list);
               label="Smart Classrooms - number"
               name="infraSmartClassrooms"
               type="number"
+              min="0"
               value={formData.infraSmartClassrooms}
               onChange={handleInputChange}
             />
@@ -4891,16 +5539,16 @@ setHostels(list);
           {/* Class-wise Fees Table */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-700">Class-wise Fees Table</h3>
+              <h3 className="text-lg font-medium text-gray-700">Course-wise Fees Table</h3>
               <button
                 type="button"
                 onClick={() => {
-                  const newFees = [...(formData.classFees || []), { className: '', tuition: '', activity: '', transport: '', hostel: '', misc: '' }];
+                  const newFees = [...(formData.classFees || []), { courseId: '', tuition: '', activity: '', transport: '', hostel: '', misc: '' }];
                   setFormData(prev => ({ ...prev, classFees: newFees }));
                 }}
                 className="flex items-center text-sm text-indigo-600"
               >
-                <PlusCircle size={16} className="mr-1" /> Add Class
+                <PlusCircle size={16} className="mr-1" /> Add Course
               </button>
             </div>
             
@@ -4909,10 +5557,7 @@ setHostels(list);
                 <thead className="bg-gray-50 sticky top-0">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-  Duration
-</th>
-
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">💰 Tuition</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🎭 Activity</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🚌 Transport</th>
@@ -4961,12 +5606,21 @@ setHostels(list);
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={fee.tuition || ''}
+                          min="0"
+                          value={fee.tuition ?? ""}
                           onChange={(e) => {
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], tuition: e.target.value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
+                            const value = getSafeNumber(e.target.value, { min: 0 });
+
+                            setFormData((prev) => {
+                              const newFees = [...(prev.classFees || [])];
+                              newFees[index] = {
+                                ...newFees[index],
+                                tuition: value,
+                              };
+                              return { ...prev, classFees: newFees };
+                            });
                           }}
+                          onKeyDown={blockInvalidNumberKeys}
                           placeholder="0"
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
@@ -4974,12 +5628,21 @@ setHostels(list);
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={fee.activity || ''}
+                          min="0"
+                          value={fee.activity ?? ""}
                           onChange={(e) => {
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], activity: e.target.value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
+                            const value = getSafeNumber(e.target.value, { min: 0 });
+
+                            setFormData((prev) => {
+                              const newFees = [...(prev.classFees || [])];
+                              newFees[index] = {
+                                ...newFees[index],
+                                activity: value,
+                              };
+                              return { ...prev, classFees: newFees };
+                            });
                           }}
+                          onKeyDown={blockInvalidNumberKeys}
                           placeholder="0"
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
@@ -4987,12 +5650,21 @@ setHostels(list);
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={fee.transport || ''}
+                          min="0"
+                          value={fee.transport ?? ""}
                           onChange={(e) => {
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], transport: e.target.value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
+                            const value = getSafeNumber(e.target.value, { min: 0 });
+
+                            setFormData((prev) => {
+                              const newFees = [...(prev.classFees || [])];
+                              newFees[index] = {
+                                ...newFees[index],
+                                transport: value,
+                              };
+                              return { ...prev, classFees: newFees };
+                            });
                           }}
+                          onKeyDown={blockInvalidNumberKeys}
                           placeholder="0"
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
@@ -5000,12 +5672,21 @@ setHostels(list);
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={fee.hostel || ''}
+                          min="0"
+                          value={fee.hostel ?? ""}
                           onChange={(e) => {
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], hostel: e.target.value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
+                            const value = getSafeNumber(e.target.value, { min: 0 });
+
+                            setFormData((prev) => {
+                              const newFees = [...(prev.classFees || [])];
+                              newFees[index] = {
+                                ...newFees[index],
+                                hostel: value,
+                              };
+                              return { ...prev, classFees: newFees };
+                            });
                           }}
+                          onKeyDown={blockInvalidNumberKeys}
                           placeholder="0"
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
                         />
@@ -5013,11 +5694,31 @@ setHostels(list);
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={fee.misc || ''}
+                          min="0"
+                          value={fee.misc ?? ""}
                           onChange={(e) => {
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], misc: e.target.value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
+                            const val = e.target.value;
+
+                            let value;
+                            if (val === "") {
+                              value = "";
+                            } else {
+                              value = Math.max(0, Number(val));
+                            }
+
+                            setFormData((prev) => {
+                              const newFees = [...(prev.classFees || [])];
+                              newFees[index] = {
+                                ...newFees[index],
+                                misc: value,
+                              };
+                              return { ...prev, classFees: newFees };
+                            });
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "-" || e.key === "e") {
+                              e.preventDefault();
+                            }
                           }}
                           placeholder="0"
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
@@ -5112,12 +5813,21 @@ setHostels(list);
                       <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
                       <input
                         type="number"
-                        value={scholarship.amount || ''}
+                        min="0"
+                        value={scholarship.amount ?? ""}
                         onChange={(e) => {
-                          const newScholarships = [...(formData.scholarships || [])];
-                          newScholarships[index] = { ...newScholarships[index], amount: e.target.value };
-                          setFormData(prev => ({ ...prev, scholarships: newScholarships }));
+                          const value = getSafeNumber(e.target.value, { min: 0 });
+
+                          setFormData((prev) => {
+                            const newScholarships = [...(prev.scholarships || [])];
+                            newScholarships[index] = {
+                              ...newScholarships[index],
+                              amount: value,
+                            };
+                            return { ...prev, scholarships: newScholarships };
+                          });
                         }}
+                        onKeyDown={blockInvalidNumberKeys}
                         placeholder="e.g., 5000, 10000"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
                       />
@@ -5390,12 +6100,21 @@ setHostels(list);
                     label="Students"
                     name={`ex-students-${index}`}
                     type="number"
-                    value={prog.studentsParticipated}
+                    min="0"
+                    value={prog.studentsParticipated ?? ""}
                     onChange={(e) => {
-                      const list = [...(formData.exchangePrograms || [])];
-                      list[index] = { ...list[index], studentsParticipated: e.target.value };
-                      setFormData(prev => ({ ...prev, exchangePrograms: list }));
+                      const value = getSafeNumber(e.target.value, { min: 0 });
+
+                      setFormData((prev) => {
+                        const list = [...(prev.exchangePrograms || [])];
+                        list[index] = {
+                          ...list[index],
+                          studentsParticipated: value,
+                        };
+                        return { ...prev, exchangePrograms: list };
+                      });
                     }}
+                    onKeyDown={blockInvalidNumberKeys}
                   />
                   <div className="flex items-end gap-2">
                     <FormField
@@ -5516,6 +6235,7 @@ setHostels(list);
               label="Gender Ratio - Male (%)"
               name="genderRatioMale"
               type="number"
+              min="0"
               value={formData.genderRatioMale}
               onChange={handleInputChange}
             />
@@ -5523,6 +6243,7 @@ setHostels(list);
               label="Gender Ratio - Female (%)"
               name="genderRatioFemale"
               type="number"
+              min="0"
               value={formData.genderRatioFemale}
               onChange={handleInputChange}
             />
@@ -5530,6 +6251,7 @@ setHostels(list);
               label="Gender Ratio - Others (%)"
               name="genderRatioOthers"
               type="number"
+              min="0"
               value={formData.genderRatioOthers}
               onChange={handleInputChange}
             />
@@ -5561,7 +6283,8 @@ setHostels(list);
               <label className="block text-lg font-semibold text-gray-800 mb-4">Scholarship Coverage (%)</label>
               <input
               type="number"
-                name="scholarshipDiversityCoverage"
+              min="0"
+              name="scholarshipDiversityCoverage"
               value={formData.scholarshipDiversityCoverage}
               onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
@@ -5587,7 +6310,8 @@ setHostels(list);
                   </label>
                   <input
                   type="number"
-                    name="specialNeedsSupportPercentage"
+                  min="0"
+                  name="specialNeedsSupportPercentage"
                   value={formData.specialNeedsSupportPercentage}
                   onChange={handleInputChange}
                     className="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
@@ -5769,12 +6493,17 @@ setHostels(list);
             <input
               type="number"
               min="0"
-              value={timeline.applicationFee ?? 0}
+              value={timeline.applicationFee ?? ""}
               onChange={(e) => {
-                const next = [...admissionSteps];
-                next[index].applicationFee = Number(e.target.value) || 0;
-                setAdmissionSteps(next);
+                const value = getSafeNumber(e.target.value, { min: 0 });
+
+                setAdmissionSteps((prev) => {
+                  const next = [...prev];
+                  next[index].applicationFee = value === "" ? 0 : value;
+                  return next;
+                });
               }}
+              onKeyDown={blockInvalidNumberKeys}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
@@ -6021,7 +6750,7 @@ setHostels(list);
               >
                 🗑️ Clear Draft
               </button>
-              <button 
+              {/* <button 
                 type="button" 
                 disabled={isFirst} 
                 onClick={goPrev} 
@@ -6041,7 +6770,7 @@ setHostels(list);
                 >
                   Next Slide →
                 </button>
-              ) : (
+              ) : ( */}
                 <button
                   type="submit"
                   className="mt-8 w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-[1.01]"
@@ -6056,7 +6785,7 @@ setHostels(list);
                     hasExistingcollege ? 'Update college Profile' : 'Submit Registration'
                   )}
                 </button>
-              )}
+              {/* )} */}
             </div>
           </div>
           </div>

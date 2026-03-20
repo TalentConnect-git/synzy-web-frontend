@@ -5,7 +5,7 @@ import forgotPasswordClient from "../api/forgotPasswordClient";
  */
 export const sendForgotPasswordOtp = (email) => {
   return forgotPasswordClient.post(
-    "/auth/forgot-password/send-otp",
+    "auth/forgot-password/send-otp",
     { email }
   );
 };
@@ -19,7 +19,7 @@ export const verifyForgotPasswordOtp = ({
   newPassword,
 }) => {
   return forgotPasswordClient.post(
-    "/auth/forgot-password/verify-otp",
+    "auth/forgot-password/verify-otp",
     {
       email,
       otp,

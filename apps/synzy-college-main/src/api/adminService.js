@@ -361,7 +361,7 @@ export const updatePlacement = (placementId, data) =>
 export const addScholarship = (data) =>
   apiClient.post('/colleges/scholarship/add', data);
 export const getFeesAndScholarshipsById = (collegeId) => {
-  return apiClient.get(`colleges/fees-scholarships/${encodeURIComponent(collegeId)}`);
+  return apiClient.get(`colleges/scholarship/${encodeURIComponent(collegeId)}`);
 };
 export const getInfrastructureById = (collegeId) => {
   return apiClient.get(`/colleges/infrastructure/${encodeURIComponent(collegeId)}`);

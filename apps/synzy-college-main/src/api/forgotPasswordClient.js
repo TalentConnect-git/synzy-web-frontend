@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const forgotPasswordClient = axios.create({
-  baseURL: "https://api.synzy.in/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },

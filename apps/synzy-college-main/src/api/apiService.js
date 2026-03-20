@@ -268,3 +268,14 @@ export const downloadPDF = async (studId, applicationId,studentName) => {
     console.error('Download error:', err);
   }
 };
+//fetching applications count for a school
+export const fetchApplicationsCount = async (collegeId) => {
+  
+  const res = await apiClient.get(`/form/college/${collegeId}`);
+  // console.log("🔍 Raw response:", res.data);
+
+  // ✅ FIXED LINE
+  const forms = res?.data?.data || res?.data || [];
+
+  return Array.isArray(forms) ? forms.length : 0;
+};
