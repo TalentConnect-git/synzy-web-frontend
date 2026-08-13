@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { getCurrentLocation, addDistanceToSchools } from "../utils/distanceUtils";
 import { addScoresToSchools } from "../utils/scoreUtils";
+import BackButton from "../components/BackButton";
+import SEO from "../components/SEO";
 
 const SchoolsPage = ({
   onCompareToggle,
@@ -190,7 +192,13 @@ const SchoolsPage = ({
 
   return (
     <div className="bg-gray-100 min-h-screen">
+      <SEO 
+        title="Browse Schools | Compare Schools by Board, Location & Fees | Synzy" 
+        description="Explore the best schools on Synzy. Compare schools by CBSE, ICSE, IB boards, fees, location, and facilities."
+        canonical="https://synzy.in/schools"
+      />
       <div className="container mx-auto px-6 py-8">
+        <BackButton />
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Explore Schools</h1>
           <div className="flex items-center gap-4">

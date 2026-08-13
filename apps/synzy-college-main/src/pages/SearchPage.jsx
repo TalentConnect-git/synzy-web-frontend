@@ -3,6 +3,7 @@ import { Search, ArrowLeft, ChevronRight, ChevronDown, MapPin, GraduationCap, Bu
 import { useNavigate } from 'react-router-dom';
 import { searchcolleges } from '../api/searchService';
 import CollegeCard from '../components/CollegeCard';
+import BackButton from '../components/BackButton';
 
 const states = [
   'Maharashtra', 'Karnataka', 'Delhi', 'Kerala', 'Gujarat', 'Tamil Nadu',
@@ -584,13 +585,8 @@ const SearchPage = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-full"
-              >
-                <ArrowLeft size={20} className="text-gray-600" />
-              </button>
-              <h1 className="text-xl font-semibold text-gray-900">Search colleges</h1>
+              <BackButton />
+              <h1 className="text-xl font-semibold text-gray-900 ml-4">Search colleges</h1>
             </div>
             <button
               onClick={clearAll}

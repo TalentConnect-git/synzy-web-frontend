@@ -20,21 +20,21 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     // In development, use proxy (no /api prefix needed)
     // In production, the base URL already includes /api
-   // Only prepend /api IF baseURL does NOT already contain /api
-if (
-  import.meta.env.DEV &&
-  !apiBaseURL.endsWith('/api') &&
-  !config.url.startsWith('/api/')
-) {
-  config.url = `/api${config.url.startsWith('/') ? '' : '/'}${config.url}`;
-}
+    // Only prepend /api IF baseURL does NOT already contain /api
+    if (
+      import.meta.env.DEV &&
+      !apiBaseURL.endsWith('/api') &&
+      !config.url.startsWith('/api/')
+    ) {
+      config.url = `/api${config.url.startsWith('/') ? '' : '/'}${config.url}`;
+    }
 
-    
+
     // CORS is handled by the proxy
-    
+
     // Optional silent flag to reduce console noise for internal retries
     const isSilent = config.headers && (config.headers['X-Silent-Request'] === '1');
     if (!isSilent) {
@@ -76,11 +76,11 @@ apiClient.interceptors.response.use(
     );
 
     const isSilent = error.config?.headers && (error.config.headers['X-Silent-Request'] === '1');
-    
+
     if (!isSearch404 && !isApplicationCheck404 && !isSchoolSubResource404 && !isSilent) {
       console.error('❌ API Error:', error.config?.url, error.response?.status, error.response?.data);
     }
-    
+
     let message;
     if (status === 401) {
       message = 'Invalid credentials or session expired. Please try logging in again.';
@@ -90,7 +90,7 @@ apiClient.interceptors.response.use(
     } else {
       message = error.response?.data?.message || error.message || 'Request failed';
     }
-    
+
     error.normalizedMessage = message;
     return Promise.reject(error);
   }

@@ -19,6 +19,7 @@ import { searchcolleges } from '../api/searchService';
 import { getUserPreferences } from '../api/preferencesService';
 import CollegeCard from '../components/CollegeCard';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const HomePage = ({ onCompareToggle, comparisonList, shortlist, onShortlistToggle }) => {
   const navigate = useNavigate();
@@ -206,6 +207,11 @@ const HomePage = ({ onCompareToggle, comparisonList, shortlist, onShortlistToggl
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
+      <SEO 
+        title="Find & Compare Top Colleges | Synzy" 
+        description="Discover, compare and explore colleges with Synzy. Find institutions based on location, courses, facilities, fees and more."
+        canonical="https://synzy.in/"
+      />
       {/* Back Button */}
       {/* <button
         onClick={() => navigate(-1)}

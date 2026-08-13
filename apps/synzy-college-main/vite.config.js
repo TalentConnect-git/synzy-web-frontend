@@ -21,7 +21,7 @@ export default defineConfig({
   },
   server: {
     historyApiFallback: true,
-    
+
     proxy: {
       '/api': {
         target: 'https://mycampusinfo-server.onrender.com',

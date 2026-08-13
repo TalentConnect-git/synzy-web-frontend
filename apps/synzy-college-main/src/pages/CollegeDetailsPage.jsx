@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import ReviewSection_fixed from "../components/ReviewSection_fixed";
 import { getAlumniBycollege } from "../api/collegeService";
+import SEO from "../components/SEO";
 
 const InfoBox = ({ icon, label, value }) => (
   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -322,8 +323,32 @@ const collegeDetailsPage = ({ shortlist, onShortlistToggle }) => {
 
   const isShortlisted = shortlist.some((item) => item._id === college._id);
 
+  // Prepare structured data (JSON-LD)
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": college.name,
+    "description": college.description,
+    "url": college.website || `https://synzy.in/college/${college._id}`,
+    "logo": typeof college.logo === "object" ? college.logo?.url : college.logo,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": college.city,
+      "addressRegion": college.state,
+      "streetAddress": college.area || college.location
+    },
+    "telephone": college.mobileNo
+  };
+
   return (
     <div className="bg-gray-100">
+      <SEO 
+        title={`${college.name} | Courses, Fees & Admission | Synzy`}
+        description={`Explore ${college.name} in ${college.city || college.location}. View college information, courses, facilities, admission details and other important information.`}
+        canonical={`https://synzy.in/college/${college._id}`}
+        image={typeof college.logo === "object" ? college.logo?.url : college.logo}
+        structuredData={structuredData}
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white shadow-lg rounded-lg p-6 mb-8 relative">
           <div className="mb-4">

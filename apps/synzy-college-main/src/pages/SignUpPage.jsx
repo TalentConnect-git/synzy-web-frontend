@@ -18,7 +18,7 @@ const signUpSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
-const SignUpPage = () => {
+const SignUpPage = ({ iscollegeSignUp = false }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { setAuthSession } = useAuth();
@@ -43,7 +43,7 @@ const SignUpPage = () => {
         name: data.name,
         email: data.email,
         password: data.password,
-        userType: "college", 
+        userType: iscollegeSignUp ? "college" : "student", 
         authProvider: "email",
       };
 
@@ -54,9 +54,13 @@ const SignUpPage = () => {
 
         setAuthSession(user, token);
 
-        toast.success("college account created successfully!");
+        toast.success(iscollegeSignUp ? "College account created successfully!" : "Account created successfully!");
         
-        navigate("/college-portal/register", { replace: true });
+        if (iscollegeSignUp) {
+          navigate("/college-portal/register", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
       }
     } catch (error) {
       console.error("Signup error:", error);
@@ -83,7 +87,7 @@ const SignUpPage = () => {
       const payload = {
         tokenId,
         authProvider: 'google',
-        userType: 'college',
+        userType: iscollegeSignUp ? 'college' : 'student',
       };
 
       const res = await googleLogin(payload);
@@ -94,9 +98,13 @@ const SignUpPage = () => {
         if (token && auth) {
           setAuthSession(auth, token); 
           
-          toast.success('Google signup successful!');
+          toast.success(iscollegeSignUp ? 'Google college signup successful!' : 'Google signup successful!');
           
-          navigate('/college-portal/register', { replace: true });
+          if (iscollegeSignUp) {
+            navigate('/college-portal/register', { replace: true });
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
         } else {
           throw new Error("Missing token or user data from server");
         }
@@ -128,10 +136,10 @@ const SignUpPage = () => {
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">
-            College Registration
+            {iscollegeSignUp ? "College Registration" : "User Registration"}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Create your college account
+            {iscollegeSignUp ? "Create your college account" : "Create your account"}
           </p>
         </div>
 
@@ -139,7 +147,7 @@ const SignUpPage = () => {
           {/* college NAME */}
           <div>
             <label className="text-sm font-medium text-gray-700">
-              college Name
+              {iscollegeSignUp ? "College Name" : "Full Name"}
             </label>
             <input
               type="text"
@@ -147,7 +155,7 @@ const SignUpPage = () => {
               className={`w-full px-3 py-2 mt-1 border rounded-md ${
                 errors.name ? "border-red-500" : "border-gray-300"
               }`}
-              placeholder="Delhi Public college"
+              placeholder={iscollegeSignUp ? "Delhi Public College" : "John Doe"}
               disabled={isLoading}
             />
             {errors.name && (
@@ -168,7 +176,7 @@ const SignUpPage = () => {
               className={`w-full px-3 py-2 mt-1 border rounded-md ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
-              placeholder="college@example.com"
+              placeholder={iscollegeSignUp ? "college@example.com" : "user@example.com"}
               disabled={isLoading}
             />
             {errors.email && (
@@ -215,7 +223,7 @@ const SignUpPage = () => {
             disabled={isLoading}
             className="w-full px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {isLoading ? "Creating Account..." : "Register college"}
+            {isLoading ? "Creating Account..." : (iscollegeSignUp ? "Register College" : "Register")}
           </button>
         </form>
 
@@ -237,7 +245,7 @@ const SignUpPage = () => {
 
         {/* SIGN IN LINK */}
         <p className="text-sm text-center text-gray-600">
-          Already have a college account?{" "}
+          {iscollegeSignUp ? "Already have a college account?" : "Already have an account?"}{" "}
           <Link to="/login" className="text-blue-600 hover:underline">
             Sign In
           </Link>

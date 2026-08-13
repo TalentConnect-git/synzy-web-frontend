@@ -22,7 +22,7 @@ export default defineConfig({
     historyApiFallback: true,
     proxy: {
       '/api': {
-        target: 'https://api.synzy.in',
+        target: 'https://school-api.synzy.in',
         changeOrigin: true,
         secure: true,
         // keep '/api' prefix so routes match backend

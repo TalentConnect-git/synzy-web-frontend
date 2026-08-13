@@ -22,6 +22,7 @@ const CollegeCard = ({ college, onCardClick, onCompareToggle, isCompared, curren
               src={typeof college.logo === 'object' ? college.logo.url : college.logo} 
               alt={`${college.name} logo`} 
               className="h-16 w-16 object-contain rounded-lg"
+              loading="lazy"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
           </div>

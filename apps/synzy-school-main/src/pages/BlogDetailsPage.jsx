@@ -3,6 +3,7 @@ import { Heart, Calendar, User, ArrowLeft, ChevronDown, ChevronUp } from 'lucide
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getBlogById } from '../api/blogService';
 import { toast } from 'react-toastify';
+import SEO from '../components/SEO';
 
 const BlogDetailsPage = () => {
   const { id } = useParams();
@@ -58,8 +59,29 @@ const BlogDetailsPage = () => {
     );
   }
 
+  // Prepare structured data (JSON-LD) for the blog post
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": blog.title,
+    "description": blog.highlight || blog.description?.substring(0, 150),
+    "author": {
+      "@type": "Person",
+      "name": Array.isArray(blog.contributor) ? blog.contributor[0] : blog.contributor
+    },
+    "datePublished": blog.createdAt,
+    "url": `https://synzy.in/blog/${blog._id}`
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title={`${blog.title} | Education Blog | Synzy`}
+        description={blog.highlight || blog.description?.substring(0, 160)}
+        canonical={`https://synzy.in/blog/${blog._id}`}
+        type="article"
+        structuredData={structuredData}
+      />
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

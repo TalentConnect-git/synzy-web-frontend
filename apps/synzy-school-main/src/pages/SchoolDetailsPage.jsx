@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import ReviewSection_fixed from "../components/ReviewSection_fixed";
 import { getAlumniBySchool } from "../api/schoolService";
+import SEO from "../components/SEO";
 
 const InfoBox = ({ icon, label, value }) => (
   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -321,8 +322,32 @@ const SchoolDetailsPage = ({ shortlist, onShortlistToggle }) => {
 
   const isShortlisted = shortlist.some((item) => item._id === school._id);
 
+  // Prepare structured data (JSON-LD)
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": school.name,
+    "description": school.description,
+    "url": school.website || `https://synzy.in/school/${school._id}`,
+    "logo": typeof school.logo === "object" ? school.logo?.url : school.logo,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": school.city,
+      "addressRegion": school.state,
+      "streetAddress": school.area || school.location
+    },
+    "telephone": school.mobileNo
+  };
+
   return (
     <div className="bg-gray-100">
+      <SEO 
+        title={`${school.name} | Fees, Facilities & Admission | Synzy`}
+        description={`Explore ${school.name} in ${school.city || school.location}. View school information, facilities, amenities, admission details and other important information.`}
+        canonical={`https://synzy.in/school/${school._id}`}
+        image={typeof school.logo === "object" ? school.logo?.url : school.logo}
+        structuredData={structuredData}
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white shadow-lg rounded-lg p-6 mb-8 relative">
           <div className="mb-4">

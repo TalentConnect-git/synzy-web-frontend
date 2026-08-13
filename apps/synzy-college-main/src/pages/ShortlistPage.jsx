@@ -2,6 +2,7 @@ import React from 'react';
 import CollegeCard from '../components/CollegeCard';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BackButton from '../components/BackButton';
 
 const ShortlistPage = ({ shortlist, onShortlistToggle, comparisonList, onCompareToggle }) => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const ShortlistPage = ({ shortlist, onShortlistToggle, comparisonList, onCompare
 
   return (
     <div className="container mx-auto px-6 py-10">
+      <BackButton />
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Your Shortlisted colleges</h1>
       {validShortlist.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

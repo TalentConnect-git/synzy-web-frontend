@@ -46,14 +46,14 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
   const setAuthSession = useCallback((userData, token) => {
-  console.log('🔐 Setting auth session directly (signup / oauth)');
+    console.log('🔐 Setting auth session directly (signup / oauth)');
 
-  setUser(userData);
-  setToken(token);
+    setUser(userData);
+    setToken(token);
 
-  localStorage.setItem('userData', JSON.stringify(userData));
-  localStorage.setItem('authToken', token);
-}, []);
+    localStorage.setItem('userData', JSON.stringify(userData));
+    localStorage.setItem('authToken', token);
+  }, []);
 
 
   const login = async (credentials, userType = 'user') => {
@@ -69,20 +69,20 @@ export const AuthProvider = ({ children }) => {
         try {
           response = await apiLoginAdmin(credentials);
           console.log('Full admin response:', response);
-          
+
           // Handle different response structures
           let token, adminData;
-          
+
           // Check if response has nested data structure (response.data.data)
           if (response?.data?.data) {
             token = response.data.data.token;
             adminData = response.data.data.admin || response.data.data.user || response.data.data.auth;
-          } 
+          }
           // Check if response has flat structure (response.data)
           else if (response?.data) {
             token = response.data.token;
             adminData = response.data.admin || response.data.user || response.data.auth;
-            
+
             // If still no adminData, create minimal admin object
             if (!adminData) {
               console.log('Creating minimal admin data from response');
@@ -116,9 +116,9 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('userData', JSON.stringify(adminUser));
           // Keep lastCreatedSchoolId for admin/school users, but remove for other account types
           if (adminUser.userType !== 'school' && !adminUser.isAdmin) {
-            try { localStorage.removeItem('lastCreatedSchoolId'); } catch (_) {}
+            try { localStorage.removeItem('lastCreatedSchoolId'); } catch (_) { }
           }
-          
+
           toast.success('Admin login successful!');
           return;
         } catch (error) {
@@ -136,11 +136,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('authToken', token);
 
       const userId = basicAuthData?._id;
-      
+
       // Special handling for school accounts
       if (basicAuthData.userType === 'school') {
         console.log('🏫 School account login detected');
-        
+
         // For school accounts, we don't fetch the school profile here
         // because school accounts don't have permission to use admin endpoints
         // The RegistrationPage will handle finding the school profile
@@ -149,19 +149,19 @@ export const AuthProvider = ({ children }) => {
           userType: 'school',
           // authId is already in basicAuthData, which will be used to match the school
         };
-        
+
         setUser(schoolUserData);
         localStorage.setItem('userData', JSON.stringify(schoolUserData));
         toast.success('School login successful!');
         return;
       }
-      
+
       if (!userId) {
         setUser(basicAuthData);
         localStorage.setItem('userData', JSON.stringify(basicAuthData));
         // If this is not a school account, clear any last-created-school id to avoid leaking another user's school
         if (basicAuthData.userType !== 'school') {
-          try { localStorage.removeItem('lastCreatedSchoolId'); } catch (_) {}
+          try { localStorage.removeItem('lastCreatedSchoolId'); } catch (_) { }
         }
         toast.success('Login successful!');
         return;
@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }) => {
           console.log('Fetching preferences for studentId during login:', studentId);
           const prefResponse = await getUserPreferences(studentId);
           console.log('Preferences response during login:', prefResponse);
-          
+
           // Handle different response structures
           if (prefResponse?.data?.data) {
             preferences = prefResponse.data.data;
@@ -187,7 +187,7 @@ export const AuthProvider = ({ children }) => {
           } else if (prefResponse && !prefResponse.status) {
             preferences = prefResponse;
           }
-          
+
           console.log('Parsed preferences during login:', preferences);
         }
       } catch (error) {
@@ -206,7 +206,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('userData', JSON.stringify(fullUserData));
       // Clear lastCreatedSchoolId for non-school/non-admin users to prevent stale school visibility
       if (fullUserData.userType !== 'school' && !fullUserData.isAdmin) {
-        try { localStorage.removeItem('lastCreatedSchoolId'); } catch (_) {}
+        try { localStorage.removeItem('lastCreatedSchoolId'); } catch (_) { }
       }
       toast.success('Login successful!');
     } catch (error) {
@@ -282,7 +282,7 @@ export const AuthProvider = ({ children }) => {
     setAuthSession,
     isAuthenticated: !!token,
     loading
-  }), [user, token, loading, updateUserContext,setAuthSession]);
+  }), [user, token, loading, updateUserContext, setAuthSession]);
 
   if (loading) {
     return (

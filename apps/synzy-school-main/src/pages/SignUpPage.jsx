@@ -11,14 +11,14 @@ import { useAuth } from "../context/AuthContext";
 import { registerUser } from "../api/authService";
 
 const signUpSchema = z.object({
-  name: z.string().min(1, { message: "School name is required" }),
+  name: z.string().min(1, { message: "Name is required" }),
   email: z.string().email({ message: "Invalid email address" }),
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
-const SignUpPage = () => {
+const SignUpPage = ({ isSchoolSignUp = false }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { setAuthSession } = useAuth();
@@ -34,7 +34,7 @@ const SignUpPage = () => {
   });
 
   // =====================
-  // EMAIL SIGNUP (SCHOOL)
+  // EMAIL SIGNUP
   // =====================
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -43,7 +43,7 @@ const SignUpPage = () => {
         name: data.name,
         email: data.email,
         password: data.password,
-        userType: "school", 
+        userType: isSchoolSignUp ? "school" : "student", 
         authProvider: "email",
       };
 
@@ -54,9 +54,13 @@ const SignUpPage = () => {
 
         setAuthSession(user, token);
 
-        toast.success("School account created successfully!");
+        toast.success(isSchoolSignUp ? "School account created successfully!" : "Account created successfully!");
         
-        navigate("/school-portal/register", { replace: true });
+        if (isSchoolSignUp) {
+          navigate("/school-portal/register", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
       }
     } catch (error) {
       console.error("Signup error:", error);
@@ -69,7 +73,7 @@ const SignUpPage = () => {
   };
 
   // =====================
-  // GOOGLE SIGNUP (SCHOOL)
+  // GOOGLE SIGNUP
   // =====================
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
@@ -83,7 +87,7 @@ const SignUpPage = () => {
       const payload = {
         tokenId,
         authProvider: 'google',
-        userType: 'school',
+        userType: isSchoolSignUp ? 'school' : 'student',
       };
 
       const res = await googleLogin(payload);
@@ -94,9 +98,13 @@ const SignUpPage = () => {
         if (token && auth) {
           setAuthSession(auth, token); 
           
-          toast.success('Google signup successful!');
+          toast.success(isSchoolSignUp ? 'Google school signup successful!' : 'Google signup successful!');
           
-          navigate('/school-portal/register', { replace: true });
+          if (isSchoolSignUp) {
+            navigate('/school-portal/register', { replace: true });
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
         } else {
           throw new Error("Missing token or user data from server");
         }
@@ -128,18 +136,18 @@ const SignUpPage = () => {
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">
-            School Registration
+            {isSchoolSignUp ? "School Registration" : "User Registration"}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Create your school account
+            {isSchoolSignUp ? "Create your school account" : "Create your account"}
           </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* SCHOOL NAME */}
+          {/* NAME */}
           <div>
             <label className="text-sm font-medium text-gray-700">
-              School Name
+              {isSchoolSignUp ? "School Name" : "Full Name"}
             </label>
             <input
               type="text"
@@ -147,7 +155,7 @@ const SignUpPage = () => {
               className={`w-full px-3 py-2 mt-1 border rounded-md ${
                 errors.name ? "border-red-500" : "border-gray-300"
               }`}
-              placeholder="Delhi Public School"
+              placeholder={isSchoolSignUp ? "Delhi Public School" : "John Doe"}
               disabled={isLoading}
             />
             {errors.name && (
@@ -168,7 +176,7 @@ const SignUpPage = () => {
               className={`w-full px-3 py-2 mt-1 border rounded-md ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
-              placeholder="school@example.com"
+              placeholder={isSchoolSignUp ? "school@example.com" : "user@example.com"}
               disabled={isLoading}
             />
             {errors.email && (
@@ -215,7 +223,7 @@ const SignUpPage = () => {
             disabled={isLoading}
             className="w-full px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {isLoading ? "Creating Account..." : "Register School"}
+            {isLoading ? "Creating Account..." : (isSchoolSignUp ? "Register School" : "Register")}
           </button>
         </form>
 
@@ -237,9 +245,9 @@ const SignUpPage = () => {
 
         {/* SIGN IN LINK */}
         <p className="text-sm text-center text-gray-600">
-          Already have a school account?{" "}
+          {isSchoolSignUp ? "Already have a school account?" : "Already have an account?"}{" "}
           <Link to="/login" className="text-blue-600 hover:underline">
-            Sign In
+            {isSchoolSignUp ? "Sign In" : "User Sign In"}
           </Link>
         </p>
       </div>

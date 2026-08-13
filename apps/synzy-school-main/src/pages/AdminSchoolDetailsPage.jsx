@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { 
-  getSchoolById, 
+  getSchoolById1 as getSchoolById, 
   getAmenitiesById,
   getActivitiesById,
   getInfrastructureById,
@@ -39,6 +39,7 @@ import {
   Twitter,
   Linkedin,
   XCircle,
+  Image,
 } from "lucide-react";
 
 const InfoBox = ({ icon, label, value }) => (
@@ -48,7 +49,7 @@ const InfoBox = ({ icon, label, value }) => (
       <h3 className="text-sm font-medium ml-2">{label}</h3>
     </div>
     <p className="text-lg font-semibold text-gray-800">
-      {Array.isArray(value) ? value.join(", ") : value || "N/A"}
+      {Array.isArray(value) ? (value.length > 0 ? value.join(", ") : "Not Provided") : (value || "Not Provided")}
     </p>
   </div>
 );
@@ -651,34 +652,119 @@ const AdminSchoolDetailsPage = () => {
         <div className="bg-white shadow-lg rounded-lg p-6">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              Basic Information
+              Complete School Information
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <InfoBox
-                icon={<Award size={16} />}
-                label="Board"
-                value={school.board}
-              />
-              <InfoBox
-                icon={<Users size={16} />}
-                label="Gender Type"
-                value={school.genderType}
-              />
-              <InfoBox
-                icon={<Building size={16} />}
-                label="School Mode"
-                value={school.schoolMode}
-              />
-              <InfoBox
-                icon={<BookOpen size={16} />}
-                label="Classes Upto"
-                value={school.upto}
-              />
-              <InfoBox
-                icon={<Sun size={16} />}
-                label="Shifts"
-                value={school.shifts}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <InfoBox icon={<Building size={16} />} label="School Name" value={school.name} />
+              <InfoBox icon={<Mail size={16} />} label="School Email" value={school.email} />
+              <InfoBox icon={<Phone size={16} />} label="Phone Number" value={school.phoneNo || school.mobileNo} />
+              <InfoBox icon={<Globe size={16} />} label="Website" value={school.website} />
+              
+              <InfoBox icon={<MapPin size={16} />} label="Address" value={school.address} />
+              <InfoBox icon={<MapPin size={16} />} label="City" value={school.city} />
+              <InfoBox icon={<MapPin size={16} />} label="District (Area)" value={school.district || school.area} />
+              <InfoBox icon={<MapPin size={16} />} label="State" value={school.state} />
+              
+              <InfoBox icon={<MapPin size={16} />} label="Pincode" value={school.pincode || school.pinCode} />
+              <InfoBox icon={<Building size={16} />} label="School Type (Mode)" value={school.schoolType || school.schoolMode} />
+              <InfoBox icon={<Award size={16} />} label="Board / Affiliation" value={school.board} />
+              <InfoBox icon={<BookOpen size={16} />} label="Classes Upto" value={school.upto} />
+              
+              <InfoBox icon={<Users size={16} />} label="Teacher : Student Ratio" value={school.TeacherToStudentRatio} />
+              <InfoBox icon={<Users size={16} />} label="Gender Type" value={school.genderType} />
+              <InfoBox icon={<Sun size={16} />} label="Shift(s)" value={school.shifts} />
+              <InfoBox icon={<Award size={16} />} label="Fee Range" value={school.feeRange} />
+              
+              <InfoBox icon={<BookOpen size={16} />} label="Language Medium" value={school.languageMedium} />
+              <InfoBox icon={<Heart size={16} />} label="Transport Available" value={school.transportAvailable} />
+              <InfoBox icon={<Star size={16} />} label="Rank" value={school.rank} />
+              <InfoBox icon={<Award size={16} />} label="Specialist" value={school.specialist} />
+              
+              <InfoBox icon={<Star size={16} />} label="Tags" value={school.tags} />
+              <InfoBox icon={<MapPin size={16} />} label="Latitude" value={school.latitude} />
+              <InfoBox icon={<MapPin size={16} />} label="Longitude" value={school.longitude} />
+              <InfoBox icon={<BookOpen size={16} />} label="Description" value={school.description} />
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-800 mt-8 mb-4 border-b pb-2">
+              Social Media Links
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {school.instagramHandle ? (
+                 <a href={school.instagramHandle} target="_blank" rel="noreferrer" className="flex items-center p-3 bg-pink-50 text-pink-600 rounded-lg hover:bg-pink-100 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <Instagram size={20} className="mr-2 flex-shrink-0" /> <span className="truncate">{school.instagramHandle}</span>
+                 </a>
+              ) : <InfoBox icon={<Instagram size={16} />} label="Instagram" value="Not Provided" />}
+              {school.twitterHandle ? (
+                 <a href={school.twitterHandle} target="_blank" rel="noreferrer" className="flex items-center p-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <Twitter size={20} className="mr-2 flex-shrink-0" /> <span className="truncate">{school.twitterHandle}</span>
+                 </a>
+              ) : <InfoBox icon={<Twitter size={16} />} label="Twitter" value="Not Provided" />}
+              {school.linkedinHandle ? (
+                 <a href={school.linkedinHandle} target="_blank" rel="noreferrer" className="flex items-center p-3 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <Linkedin size={20} className="mr-2 flex-shrink-0" /> <span className="truncate">{school.linkedinHandle}</span>
+                 </a>
+              ) : <InfoBox icon={<Linkedin size={16} />} label="LinkedIn" value="Not Provided" />}
+            </div>
+            
+            <h3 className="text-xl font-bold text-gray-800 mt-8 mb-4 border-b pb-2">
+              Documents & Media
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center text-gray-500 mb-3">
+                  <Image size={16} />
+                  <h3 className="text-sm font-medium ml-2">School Logo</h3>
+                </div>
+                {school.logo ? (
+                  <div className="mt-2">
+                    <img 
+                      src={typeof school.logo === 'object' ? school.logo.url : school.logo} 
+                      alt="School Logo" 
+                      className="h-32 w-auto object-contain rounded-md border border-gray-200 bg-white p-1" 
+                    />
+                  </div>
+                ) : (
+                  <p className="text-lg font-semibold text-gray-800">Not Provided</p>
+                )}
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center text-gray-500 mb-3">
+                  <Image size={16} />
+                  <h3 className="text-sm font-medium ml-2">Photos</h3>
+                </div>
+                {school.photos && school.photos.length > 0 ? (
+                  <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
+                    {school.photos.map((photo, i) => (
+                      <img 
+                        key={i}
+                        src={typeof photo === 'object' ? photo.url : photo} 
+                        alt={`Photo ${i+1}`} 
+                        className="h-32 w-auto object-contain rounded-md border border-gray-200 bg-white p-1" 
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-lg font-semibold text-gray-800">Not Provided</p>
+                )}
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center text-gray-500 mb-3">
+                  <CheckCircle size={16} />
+                  <h3 className="text-sm font-medium ml-2">Video</h3>
+                </div>
+                {school.videos ? (
+                  <div className="mt-2">
+                    {typeof school.videos === 'object' && school.videos.url ? (
+                      <a href={school.videos.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">View Uploaded Video</a>
+                    ) : (
+                       <a href={school.videos} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">View Uploaded Video</a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-lg font-semibold text-gray-800">Not Provided</p>
+                )}
+              </div>
             </div>
           </div>
 

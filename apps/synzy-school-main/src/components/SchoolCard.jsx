@@ -22,6 +22,7 @@ const SchoolCard = ({ school, onCardClick, onCompareToggle, isCompared, currentU
               src={typeof school.logo === 'object' ? school.logo.url : school.logo} 
               alt={`${school.name} logo`} 
               className="h-16 w-16 object-contain rounded-lg"
+              loading="lazy"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
           </div>

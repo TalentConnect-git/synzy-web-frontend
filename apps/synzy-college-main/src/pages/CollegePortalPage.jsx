@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate, Navigate, useLocation } from "react-router-dom";
-import {  LogOut, FileText, Eye, Star, Check, X, Calendar, ArrowLeft } from "lucide-react";
+import { LogOut, FileText, Eye, Star, Check, X, Calendar, ArrowLeft } from "lucide-react";
 import {
   getcollegeById,
   getPendingcolleges,
@@ -16,6 +16,7 @@ import { useAuth } from "../context/AuthContext";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { toast } from "react-toastify";
 // import Logo from "../components/Logo";
+import BackButton from "../components/BackButton";
 import logo from "../assets/logo.png";
 
 // Custom Logo component with image only
@@ -28,9 +29,9 @@ const Logo = ({ to = "/", size = "default" }) => {
 
   return (
     <Link to={to} className="flex items-center">
-      <img 
-        src={logo} 
-        alt="Synzy Logo" 
+      <img
+        src={logo}
+        alt="Synzy Logo"
         className={`${sizeClasses[size] || sizeClasses.default} object-contain`}
       />
     </Link>
@@ -40,62 +41,54 @@ const Logo = ({ to = "/", size = "default" }) => {
 const CollegeHeader = ({ collegeName, onLogout, applicationsCount, hasProfile, currentUser }) => {
   const navigate = useNavigate();
   return (
-  <header className="bg-white shadow-md">
-    <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-      {/* Back Button - Extreme Left */}
-      <button 
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors absolute left-6"
-        title="Go back"
-      >
-        <ArrowLeft size={18} />
-        <span className="text-sm font-medium">Back</span>
-      </button>
+    <header className="bg-white shadow-md">
+      <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
 
-      {/* Logo - Moved left with ml-4 */}
-      <div className="flex-1 flex justify-center md:justify-start md:ml-4">
-        <Logo to="/college-portal" size="default" />
-      </div>
-      
-      {/* Right Section - Navigation and Actions */}
-      <div className="flex items-center space-x-6">
-        {currentUser?.userType === 'college' && (
-          <Link
-            to="/college-portal/register"
-            className="text-gray-600 hover:text-blue-600 flex items-center"
-          >
-            <FileText size={18} className="mr-2" /> {hasProfile ? 'College Profile' : 'College Registration'}
-          </Link>
-        )}
-        {/* Approval Status removed per request */}
-        {/* <Link
+
+        {/* Logo - Moved left with ml-4 */}
+        <div className="flex-1 flex justify-center md:justify-start md:ml-4">
+          <Logo to="/college-portal" size="default" />
+        </div>
+
+        {/* Right Section - Navigation and Actions */}
+        <div className="flex items-center space-x-6">
+          {currentUser?.userType === 'college' && (
+            <Link
+              to="/college-portal/register"
+              className="text-gray-600 hover:text-blue-600 flex items-center"
+            >
+              <FileText size={18} className="mr-2" /> {hasProfile ? 'College Profile' : 'College Registration'}
+            </Link>
+          )}
+          {/* Approval Status removed per request */}
+          {/* <Link
           to="/college-portal/shortlisted"
           className="text-gray-600 hover:text-blue-600 flex items-center"
         >
           <Star size={18} className="mr-2" /> Shortlisted Applications
         </Link> */}
-        <Link
-          to="/college-portal/applications"
-          className="text-gray-600 hover:text-blue-600 flex items-center relative"
-        >
-          <Eye size={18} className="mr-2" /> View Student Applications
-          {typeof applicationsCount === 'number' && (
-            <span className="ml-2 inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-semibold rounded-full bg-blue-600 text-white">
-              {applicationsCount}
-            </span>
-          )}
-        </Link>
-        <span className="text-gray-500">|</span>
-        <button
-          onClick={onLogout}
-          className="text-gray-600 hover:text-blue-600 flex items-center"
-        >
-          <LogOut size={16} className="mr-1" /> Logout
-        </button>
-      </div>
-    </nav>
-  </header>
-);
+          <Link
+            to="/college-portal/applications"
+            className="text-gray-600 hover:text-blue-600 flex items-center relative"
+          >
+            <Eye size={18} className="mr-2" /> View Student Applications
+            {typeof applicationsCount === 'number' && (
+              <span className="ml-2 inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-semibold rounded-full bg-blue-600 text-white">
+                {applicationsCount}
+              </span>
+            )}
+          </Link>
+          <span className="text-gray-500">|</span>
+          <button
+            onClick={onLogout}
+            className="text-gray-600 hover:text-blue-600 flex items-center"
+          >
+            <LogOut size={16} className="mr-1" /> Logout
+          </button>
+        </div>
+      </nav>
+    </header>
+  );
 }
 
 const StatusBadge = ({ status }) => {
@@ -140,377 +133,377 @@ const ViewStudentApplications = ({ }) => {
   const { user: currentUser } = useAuth();
 
   const fetchApplications = async (isRefresh = false) => {
-  try {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-
-    let collegeId = null;
-    let collegeIdentifier = null;
-
-    if (currentUser?._id) {
-      try {
-        const collegeProfileResponse = await getcollegeByAuthId(currentUser._id);
-        const collegeProfileData = collegeProfileResponse?.data?.data;
-
-        if (collegeProfileData?.college?._id) {
-          collegeId = collegeProfileData.college._id;
-          collegeIdentifier = collegeId;
-        } else {
-          console.warn(`❌ No collegeId inside response`);
-        }
-      } catch (profileError) {
-        console.warn(`⚠️ Error occured while fetching college using auth id:`, {
-          authId: currentUser?._id,
-          error: profileError.message,
-          status: profileError.response?.status,
-          responseData: profileError.response?.data
-        });
-      }
-    } else {
-      console.warn(`⚠️ [NO AUTH ID] No authId found in currentUser, using fallback`);
-    }
-
-    console.log(`🎯 [FINAL college ID] Using collegeId: ${collegeId}, identifier: ${collegeIdentifier}`, {
-      authId: currentUser?._id,
-      userEmail: currentUser?.email,
-      userType: currentUser?.userType,
-      originalUsercollegeId: currentUser?.collegeId,
-      detectedcollegeId: collegeId,
-      finalIdentifier: collegeIdentifier
-    });
-
-    let response;
-
     try {
-      if (!collegeIdentifier) {
-        console.warn("🚫 Prevented API call: collegeIdentifier is null");
-        setApplications([]);
-        return;
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      let collegeId = null;
+      let collegeIdentifier = null;
+
+      if (currentUser?._id) {
+        try {
+          const collegeProfileResponse = await getcollegeByAuthId(currentUser._id);
+          const collegeProfileData = collegeProfileResponse?.data?.data;
+
+          if (collegeProfileData?.college?._id) {
+            collegeId = collegeProfileData.college._id;
+            collegeIdentifier = collegeId;
+          } else {
+            console.warn(`❌ No collegeId inside response`);
+          }
+        } catch (profileError) {
+          console.warn(`⚠️ Error occured while fetching college using auth id:`, {
+            authId: currentUser?._id,
+            error: profileError.message,
+            status: profileError.response?.status,
+            responseData: profileError.response?.data
+          });
+        }
+      } else {
+        console.warn(`⚠️ [NO AUTH ID] No authId found in currentUser, using fallback`);
       }
 
-      response = await fetchStudentApplications(collegeIdentifier);
-    } catch (err) {
-      if (err.response?.status === 500) {
-        console.warn("No applications yet");
-        setApplications([]);
-        return;
+      console.log(`🎯 [FINAL college ID] Using collegeId: ${collegeId}, identifier: ${collegeIdentifier}`, {
+        authId: currentUser?._id,
+        userEmail: currentUser?.email,
+        userType: currentUser?.userType,
+        originalUsercollegeId: currentUser?.collegeId,
+        detectedcollegeId: collegeId,
+        finalIdentifier: collegeIdentifier
+      });
+
+      let response;
+
+      try {
+        if (!collegeIdentifier) {
+          console.warn("🚫 Prevented API call: collegeIdentifier is null");
+          setApplications([]);
+          return;
+        }
+
+        response = await fetchStudentApplications(collegeIdentifier);
+      } catch (err) {
+        if (err.response?.status === 500) {
+          console.warn("No applications yet");
+          setApplications([]);
+          return;
+        }
+        throw err;
       }
-      throw err;
-    }
 
-    console.log(`✅ [API RESPONSE] Forms fetched successfully:`, {
-      totalForms: response.data?.length || 0,
-      hasData: !!response.data,
-      responseKeys: Object.keys(response)
-    });
+      console.log(`✅ [API RESPONSE] Forms fetched successfully:`, {
+        totalForms: response.data?.length || 0,
+        hasData: !!response.data,
+        responseKeys: Object.keys(response)
+      });
 
-    let detectedcollegeId = collegeId;
+      let detectedcollegeId = collegeId;
 
-    if (!detectedcollegeId && response.data && response.data.length > 0) {
-      console.log(`🔍 [FORM FALLBACK] Detecting collegeId from forms since profile lookup failed...`);
+      if (!detectedcollegeId && response.data && response.data.length > 0) {
+        console.log(`🔍 [FORM FALLBACK] Detecting collegeId from forms since profile lookup failed...`);
 
-      for (const [index, app] of response.data.entries()) {
-        console.log(`📋 [FORM ${index}] Analyzing form:`, {
-          formId: app?._id || app?.id,
-          hascollegeId: !!app?.collegeId,
-          collegeId: app?.collegeId,
-          hasStudId: !!app?.studId,
-          studId: app?.studId,
-          status: app?.status,
-          studentName: app?.studentName
-        });
+        for (const [index, app] of response.data.entries()) {
+          console.log(`📋 [FORM ${index}] Analyzing form:`, {
+            formId: app?._id || app?.id,
+            hascollegeId: !!app?.collegeId,
+            collegeId: app?.collegeId,
+            hasStudId: !!app?.studId,
+            studId: app?.studId,
+            status: app?.status,
+            studentName: app?.studentName
+          });
 
-        if (app?.collegeId && !detectedcollegeId) {
-          detectedcollegeId =
-            typeof app.collegeId === "object"
-              ? app.collegeId._id || app.collegeId
-              : app.collegeId;
+          if (app?.collegeId && !detectedcollegeId) {
+            detectedcollegeId =
+              typeof app.collegeId === "object"
+                ? app.collegeId._id || app.collegeId
+                : app.collegeId;
 
-          console.log(`🎯 [college ID DETECTED FROM FORM] Found collegeId from form ${index}: ${detectedcollegeId}`);
-          break;
+            console.log(`🎯 [college ID DETECTED FROM FORM] Found collegeId from form ${index}: ${detectedcollegeId}`);
+            break;
+          }
         }
       }
-    }
 
-    setDetectedcollegeId(detectedcollegeId);
-    console.log(`🔄 [STATE UPDATE] Set detectedcollegeId to: ${detectedcollegeId}`);
+      setDetectedcollegeId(detectedcollegeId);
+      console.log(`🔄 [STATE UPDATE] Set detectedcollegeId to: ${detectedcollegeId}`);
 
-    if (response.data && response.data.length > 0) {
-      response.data.forEach((app, index) => {
-        console.log(`📄 [FORM ${index} DETAILS]`, {
-          id: app._id,
-          formId: app?._id,
-          studentId: app?.studId,
-          collegeId: app?.collegeId,
-          detectedcollegeId: detectedcollegeId,
-          status: app.status,
-          studentName: app.studentName,
-          standard: app.standard,
-          date: app.date,
-          applicationData: app.applicationData ? "present" : "missing",
-          pdfUrl: app.pdfUrl ? "present" : "missing",
-          _raw: app._raw ? "present" : "missing"
+      if (response.data && response.data.length > 0) {
+        response.data.forEach((app, index) => {
+          console.log(`📄 [FORM ${index} DETAILS]`, {
+            id: app._id,
+            formId: app?._id,
+            studentId: app?.studId,
+            collegeId: app?.collegeId,
+            detectedcollegeId: detectedcollegeId,
+            status: app.status,
+            studentName: app.studentName,
+            standard: app.standard,
+            date: app.date,
+            applicationData: app.applicationData ? "present" : "missing",
+            pdfUrl: app.pdfUrl ? "present" : "missing",
+            _raw: app._raw ? "present" : "missing"
+          });
         });
+      }
+
+      const allApplications = response.data || [];
+
+      if (allApplications.length === 0) {
+        setApplications([]);
+        return;
+      }
+
+      console.log(`📊 [FETCH RESULTS] Applications fetched:`, {
+        totalForms: allApplications.length,
+        collegeId: detectedcollegeId,
+        statuses: allApplications.map((a) => a.status)
       });
-    }
 
-    const allApplications = response.data || [];
+      setApplications(allApplications);
 
-    if (allApplications.length === 0) {
+    } catch (error) {
+      console.error('❌ [FETCH APPLICATIONS ERROR] Failed to fetch applications:', {
+        errorMessage: error.message,
+        errorStack: error.stack,
+        httpStatus: error.response?.status,
+        httpStatusText: error.response?.statusText,
+        responseData: error.response?.data,
+        requestUrl: error.config?.url,
+        requestMethod: error.config?.method,
+        requestData: error.config?.data,
+        attemptedcollegeIdentifier: currentUser?.collegeId || currentUser?._id || currentUser?.email,
+        detectedcollegeId: collegeId, // ✅ FIXED (no undefined crash)
+        currentUser: {
+          _id: currentUser?._id,
+          email: currentUser?.email,
+          userType: currentUser?.userType,
+          collegeId: currentUser?.collegeId
+        },
+        isNetworkError: !error.response,
+        is4xxError: error.response?.status >= 400 && error.response?.status < 500,
+        is5xxError: error.response?.status >= 500,
+        fullError: error
+      });
+
+      setError(error.message || "Failed to fetch applications");
       setApplications([]);
-      return;
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
+  //   const fetchApplications = async (isRefresh = false) => {
+  //     try {
+  //       if (isRefresh) {
+  //         setRefreshing(true);
+  //       } else {
+  //         setLoading(true);
+  //       }
+  //       setError(null);
+  //       let collegeId = null;
+  //       let collegeIdentifier = null;
+  //       if (currentUser?._id) {
+  //         try {
+  //           // Use authId to find the college in colleges collection where authId matches
 
-    console.log(`📊 [FETCH RESULTS] Applications fetched:`, {
-      totalForms: allApplications.length,
-      collegeId: detectedcollegeId,
-      statuses: allApplications.map((a) => a.status)
-    });
+  //           const collegeProfileResponse = await getcollegeByAuthId(currentUser._id);
+  //           const collegeProfileData = collegeProfileResponse?.data?.data;
 
-    setApplications(allApplications);
+  //           if (collegeProfileData?.college?._id) {
+  //             collegeId = collegeProfileData.college._id;
+  //             collegeIdentifier = collegeId;
+  //           } else {
+  //             console.warn(`❌ No collegeId inside response`);
+  //           }
+  //         } catch (profileError) {
+  //           console.warn(`⚠️ Error occured while fetching college using auth id:`, {
+  //             authId: currentUser?._id,
+  //             error: profileError.message,
+  //             status: profileError.response?.status,
+  //             responseData: profileError.response?.data
+  //           });
+  //         }
+  //       } else {
+  //         console.warn(`⚠️ [NO AUTH ID] No authId found in currentUser, using fallback`);
+  //       }
 
-  } catch (error) {
-    console.error('❌ [FETCH APPLICATIONS ERROR] Failed to fetch applications:', {
-      errorMessage: error.message,
-      errorStack: error.stack,
-      httpStatus: error.response?.status,
-      httpStatusText: error.response?.statusText,
-      responseData: error.response?.data,
-      requestUrl: error.config?.url,
-      requestMethod: error.config?.method,
-      requestData: error.config?.data,
-      attemptedcollegeIdentifier: currentUser?.collegeId || currentUser?._id || currentUser?.email,
-      detectedcollegeId: collegeId, // ✅ FIXED (no undefined crash)
-      currentUser: {
-        _id: currentUser?._id,
-        email: currentUser?.email,
-        userType: currentUser?.userType,
-        collegeId: currentUser?.collegeId
-      },
-      isNetworkError: !error.response,
-      is4xxError: error.response?.status >= 400 && error.response?.status < 500,
-      is5xxError: error.response?.status >= 500,
-      fullError: error
-    });
+  //       console.log(`🎯 [FINAL college ID] Using collegeId: ${collegeId}, identifier: ${collegeIdentifier}`, {
+  //         authId: currentUser?._id,  // This is the user ID from Auth collection
+  //         userEmail: currentUser?.email,
+  //         userType: currentUser?.userType,
+  //         originalUsercollegeId: currentUser?.collegeId,  // This might be wrong
+  //         detectedcollegeId: collegeId,  // This is the correct college ID from colleges collection
+  //         finalIdentifier: collegeIdentifier
+  //       });
 
-    setError(error.message || "Failed to fetch applications");
-    setApplications([]);
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
-  }
-};
-//   const fetchApplications = async (isRefresh = false) => {
-//     try {
-//       if (isRefresh) {
-//         setRefreshing(true);
-//       } else {
-//         setLoading(true);
-//       }
-//       setError(null);
-//       let collegeId = null;
-//       let collegeIdentifier = null;
-//       if (currentUser?._id) {
-//         try {
-//           // Use authId to find the college in colleges collection where authId matches
-          
-//           const collegeProfileResponse = await getcollegeByAuthId(currentUser._id);
-//           const collegeProfileData = collegeProfileResponse?.data?.data;
+  //       // Fetch applications using the correct college identifier
 
-//           if (collegeProfileData?.college?._id) {
-//             collegeId = collegeProfileData.college._id;
-//             collegeIdentifier = collegeId;
-//           } else {
-//             console.warn(`❌ No collegeId inside response`);
-//           }
-//         } catch (profileError) {
-//           console.warn(`⚠️ Error occured while fetching college using auth id:`, {
-//             authId: currentUser?._id,
-//             error: profileError.message,
-//             status: profileError.response?.status,
-//             responseData: profileError.response?.data
-//           });
-//         }
-//       } else {
-//         console.warn(`⚠️ [NO AUTH ID] No authId found in currentUser, using fallback`);
-//       }
+  //       let response;
 
-//       console.log(`🎯 [FINAL college ID] Using collegeId: ${collegeId}, identifier: ${collegeIdentifier}`, {
-//         authId: currentUser?._id,  // This is the user ID from Auth collection
-//         userEmail: currentUser?.email,
-//         userType: currentUser?.userType,
-//         originalUsercollegeId: currentUser?.collegeId,  // This might be wrong
-//         detectedcollegeId: collegeId,  // This is the correct college ID from colleges collection
-//         finalIdentifier: collegeIdentifier
-//       });
+  //     try {
+  //       if (!collegeIdentifier) {
+  //         console.warn("🚫 Prevented API call: collegeIdentifier is null");
+  //         setApplications([]);
+  //         return;
+  //       }
+  //       response = await fetchStudentApplications(collegeIdentifier);
+  //     } catch (err) {
+  //       // 🆕 New college → backend throws 500 when no applications exist
+  //       // if (err.response?.status === 500) {
+  //       //   console.warn('🆕 [NO APPLICATIONS] Redirecting new college to profile page');
+  //       //   navigate('/college-portal/register', { replace: true });
+  //       //   return;
+  //       // }
+  //         if (err.response?.status === 500) {
+  //           console.warn("No applications yet");
+  //           setApplications([]);
+  //           return;
+  //         }
+  //       throw err; // real error
+  //     }
+  //       console.log(`✅ [API RESPONSE] Forms fetched successfully:`, {
+  //         totalForms: response.data?.length || 0,
+  //         hasData: !!response.data,
+  //         responseKeys: Object.keys(response)
+  //       });
 
-//       // Fetch applications using the correct college identifier
-      
-//       let response;
+  //       // Use the collegeId we already detected from the profile
+  //       let detectedcollegeId = collegeId; // Use the collegeId from email lookup
 
-//     try {
-//       if (!collegeIdentifier) {
-//         console.warn("🚫 Prevented API call: collegeIdentifier is null");
-//         setApplications([]);
-//         return;
-//       }
-//       response = await fetchStudentApplications(collegeIdentifier);
-//     } catch (err) {
-//       // 🆕 New college → backend throws 500 when no applications exist
-//       // if (err.response?.status === 500) {
-//       //   console.warn('🆕 [NO APPLICATIONS] Redirecting new college to profile page');
-//       //   navigate('/college-portal/register', { replace: true });
-//       //   return;
-//       // }
-//         if (err.response?.status === 500) {
-//           console.warn("No applications yet");
-//           setApplications([]);
-//           return;
-//         }
-//       throw err; // real error
-//     }
-//       console.log(`✅ [API RESPONSE] Forms fetched successfully:`, {
-//         totalForms: response.data?.length || 0,
-//         hasData: !!response.data,
-//         responseKeys: Object.keys(response)
-//       });
+  //       // If we didn't get collegeId from profile, try to detect it from forms as fallback
+  //       if (!detectedcollegeId && response.data && response.data.length > 0) {
+  //         console.log(`🔍 [FORM FALLBACK] Detecting collegeId from forms since profile lookup failed...`);
 
-//       // Use the collegeId we already detected from the profile
-//       let detectedcollegeId = collegeId; // Use the collegeId from email lookup
+  //         // Extract collegeId from the first form that has it
+  //         for (const [index, app] of response.data.entries()) {
+  //           console.log(`📋 [FORM ${index}] Analyzing form:`, {
+  //             formId: app?._id || app?.id,
+  //             hascollegeId: !!app?.collegeId,
+  //             collegeId: app?.collegeId,
+  //             hasStudId: !!app?.studId,
+  //             studId: app?.studId,
+  //             status: app?.status,
+  //             studentName: app?.studentName
+  //           });
 
-//       // If we didn't get collegeId from profile, try to detect it from forms as fallback
-//       if (!detectedcollegeId && response.data && response.data.length > 0) {
-//         console.log(`🔍 [FORM FALLBACK] Detecting collegeId from forms since profile lookup failed...`);
+  //           if (app?.collegeId && !detectedcollegeId) {
+  //             detectedcollegeId = typeof app.collegeId === 'object' ? app.collegeId._id || app.collegeId : app.collegeId;
+  //             console.log(`🎯 [college ID DETECTED FROM FORM] Found collegeId from form ${index}: ${detectedcollegeId}`);
+  //             break;
+  //           }
+  //         }
+  //       }
 
-//         // Extract collegeId from the first form that has it
-//         for (const [index, app] of response.data.entries()) {
-//           console.log(`📋 [FORM ${index}] Analyzing form:`, {
-//             formId: app?._id || app?.id,
-//             hascollegeId: !!app?.collegeId,
-//             collegeId: app?.collegeId,
-//             hasStudId: !!app?.studId,
-//             studId: app?.studId,
-//             status: app?.status,
-//             studentName: app?.studentName
-//           });
+  //       // Store the detected collegeId
+  //       setDetectedcollegeId(detectedcollegeId);
+  //       console.log(`🔄 [STATE UPDATE] Set detectedcollegeId to: ${detectedcollegeId}`);
 
-//           if (app?.collegeId && !detectedcollegeId) {
-//             detectedcollegeId = typeof app.collegeId === 'object' ? app.collegeId._id || app.collegeId : app.collegeId;
-//             console.log(`🎯 [college ID DETECTED FROM FORM] Found collegeId from form ${index}: ${detectedcollegeId}`);
-//             break;
-//           }
-//         }
-//       }
+  //       // Log each application to see the structure after update
+  //       if (response.data && response.data.length > 0) {
+  //         response.data.forEach((app, index) => {
+  //           console.log(`📄 [FORM ${index} DETAILS]`, {
+  //             id: app._id,
+  //             formId: app?._id,
+  //             studentId: app?.studId,
+  //             collegeId: app?.collegeId,
+  //             detectedcollegeId: detectedcollegeId,
+  //             status: app.status,
+  //             studentName: app.studentName,
+  //             standard: app.standard,
+  //             date: app.date,
+  //             applicationData: app.applicationData ? 'present' : 'missing',
+  //             pdfUrl: app.pdfUrl ? 'present' : 'missing',
+  //             _raw: app._raw ? 'present' : 'missing'
+  //           });
+  //         });
+  //       }
 
-//       // Store the detected collegeId
-//       setDetectedcollegeId(detectedcollegeId);
-//       console.log(`🔄 [STATE UPDATE] Set detectedcollegeId to: ${detectedcollegeId}`);
+  //       // Filter to show only PENDING, REJECTED, and REVIEWED applications
+  //       // Accepted, Interview, Written Exam, and Shortlisted go to "Shortlisted Applications"
+  //       /*const pendingApplications = (response.data || []).filter((a) => {
+  //         const status = (a.status || '').toString().toLowerCase();
+  //         const keepInViewStudent = status === 'pending' ||
+  //           status === 'rejected' ||
+  //           status === 'reviewed' ||
+  //           status === '';
 
-//       // Log each application to see the structure after update
-//       if (response.data && response.data.length > 0) {
-//         response.data.forEach((app, index) => {
-//           console.log(`📄 [FORM ${index} DETAILS]`, {
-//             id: app._id,
-//             formId: app?._id,
-//             studentId: app?.studId,
-//             collegeId: app?.collegeId,
-//             detectedcollegeId: detectedcollegeId,
-//             status: app.status,
-//             studentName: app.studentName,
-//             standard: app.standard,
-//             date: app.date,
-//             applicationData: app.applicationData ? 'present' : 'missing',
-//             pdfUrl: app.pdfUrl ? 'present' : 'missing',
-//             _raw: app._raw ? 'present' : 'missing'
-//           });
-//         });
-//       }
+  //         console.log(`📋 [STATUS FILTER] Application status check:`, {
+  //           applicationId: a._id || a.id,
+  //           studentId: a?.studId,
+  //           collegeId: detectedcollegeId,
+  //           status: a.status,
+  //           normalizedStatus: status,
+  //           showInViewStudentApplications: keepInViewStudent
+  //         });
 
-//       // Filter to show only PENDING, REJECTED, and REVIEWED applications
-//       // Accepted, Interview, Written Exam, and Shortlisted go to "Shortlisted Applications"
-//       /*const pendingApplications = (response.data || []).filter((a) => {
-//         const status = (a.status || '').toString().toLowerCase();
-//         const keepInViewStudent = status === 'pending' ||
-//           status === 'rejected' ||
-//           status === 'reviewed' ||
-//           status === '';
+  //         return keepInViewStudent;
+  //       });
 
-//         console.log(`📋 [STATUS FILTER] Application status check:`, {
-//           applicationId: a._id || a.id,
-//           studentId: a?.studId,
-//           collegeId: detectedcollegeId,
-//           status: a.status,
-//           normalizedStatus: status,
-//           showInViewStudentApplications: keepInViewStudent
-//         });
+  //       console.log(`📊 [FILTER RESULTS] Filtered applications:`, {
+  //         totalForms: response.data?.length || 0,
+  //         pendingApplications: pendingApplications.length,
+  //         collegeId: detectedcollegeId,
+  //         studentIds: pendingApplications.map(a => a?.studId).filter(Boolean),
+  //         applicationIds: pendingApplications.map(a => a?._id || a?.id).filter(Boolean)
+  //       });*/
 
-//         return keepInViewStudent;
-//       });
+  //       // For now, show all applications in this view
+  //       const allApplications = response.data || [];
+  //     //   if (allApplications.length === 0) {
+  //     //   console.warn('🆕 [EMPTY APPLICATION LIST] Redirecting to profile');
+  //     //   navigate('/college-portal/register', { replace: true });
+  //     //   return;
+  //     // }
+  //       if (allApplications.length === 0) {
+  //         setApplications([]);
+  //         return;
+  //       }
 
-//       console.log(`📊 [FILTER RESULTS] Filtered applications:`, {
-//         totalForms: response.data?.length || 0,
-//         pendingApplications: pendingApplications.length,
-//         collegeId: detectedcollegeId,
-//         studentIds: pendingApplications.map(a => a?.studId).filter(Boolean),
-//         applicationIds: pendingApplications.map(a => a?._id || a?.id).filter(Boolean)
-//       });*/
+  // console.log(`📊 [FETCH RESULTS] Applications fetched:`, {
+  //   totalForms: allApplications.length,
+  //   collegeId: detectedcollegeId,
+  //   statuses: allApplications.map(a => a.status)
+  // });
 
-//       // For now, show all applications in this view
-//       const allApplications = response.data || [];
-//     //   if (allApplications.length === 0) {
-//     //   console.warn('🆕 [EMPTY APPLICATION LIST] Redirecting to profile');
-//     //   navigate('/college-portal/register', { replace: true });
-//     //   return;
-//     // }
-//       if (allApplications.length === 0) {
-//         setApplications([]);
-//         return;
-//       }
+  // setApplications(allApplications);
 
-// console.log(`📊 [FETCH RESULTS] Applications fetched:`, {
-//   totalForms: allApplications.length,
-//   collegeId: detectedcollegeId,
-//   statuses: allApplications.map(a => a.status)
-// });
-
-// setApplications(allApplications);
-
-//     } catch (error) {
-//       console.error('❌ [FETCH APPLICATIONS ERROR] Failed to fetch applications:', {
-//         errorMessage: error.message,
-//         errorStack: error.stack,
-//         httpStatus: error.response?.status,
-//         httpStatusText: error.response?.statusText,
-//         responseData: error.response?.data,
-//         requestUrl: error.config?.url,
-//         requestMethod: error.config?.method,
-//         requestData: error.config?.data,
-//         // ID context
-//         attemptedcollegeIdentifier: currentUser?.collegeId || currentUser?._id || currentUser?.email,
-//         detectedcollegeId: detectedcollegeId,
-//         currentUser: {
-//           _id: currentUser?._id,
-//           email: currentUser?.email,
-//           userType: currentUser?.userType,
-//           collegeId: currentUser?.collegeId
-//         },
-//         // Error classification
-//         isNetworkError: !error.response,
-//         is4xxError: error.response?.status >= 400 && error.response?.status < 500,
-//         is5xxError: error.response?.status >= 500,
-//         fullError: error
-//       });
-//       setError(error.message || "Failed to fetch applications");
-//       setApplications([]);
-//     } finally {
-//       setLoading(false);
-//       setRefreshing(false);
-//     }
-//   };
+  //     } catch (error) {
+  //       console.error('❌ [FETCH APPLICATIONS ERROR] Failed to fetch applications:', {
+  //         errorMessage: error.message,
+  //         errorStack: error.stack,
+  //         httpStatus: error.response?.status,
+  //         httpStatusText: error.response?.statusText,
+  //         responseData: error.response?.data,
+  //         requestUrl: error.config?.url,
+  //         requestMethod: error.config?.method,
+  //         requestData: error.config?.data,
+  //         // ID context
+  //         attemptedcollegeIdentifier: currentUser?.collegeId || currentUser?._id || currentUser?.email,
+  //         detectedcollegeId: detectedcollegeId,
+  //         currentUser: {
+  //           _id: currentUser?._id,
+  //           email: currentUser?.email,
+  //           userType: currentUser?.userType,
+  //           collegeId: currentUser?.collegeId
+  //         },
+  //         // Error classification
+  //         isNetworkError: !error.response,
+  //         is4xxError: error.response?.status >= 400 && error.response?.status < 500,
+  //         is5xxError: error.response?.status >= 500,
+  //         fullError: error
+  //       });
+  //       setError(error.message || "Failed to fetch applications");
+  //       setApplications([]);
+  //     } finally {
+  //       setLoading(false);
+  //       setRefreshing(false);
+  //     }
+  //   };
 
   useEffect(() => {
     if (currentUser?._id) {
@@ -855,32 +848,32 @@ const ViewStudentApplications = ({ }) => {
     } else if (app?._id) {
       // Case 5: fallback to application _id
       studId = app._id;
-    }let applicationId = null;
+    } let applicationId = null;
 
-// ✅ PRIORITY 1: correct application id from backend
-if (typeof app?._raw?.applicationId?._id === 'string') {
-  applicationId = app._raw.applicationId._id;
-}
-// Case 2: normalized app (if you already override _id)
-else if (typeof app?._id === 'string') {
-  applicationId = app._id;
-}
-// Case 3: applicationId as string
-else if (typeof app?.applicationId === 'string') {
-  applicationId = app.applicationId;
-}
-// Case 4: applicationId populated object
-else if (typeof app?.applicationId === 'object' && app?.applicationId?._id) {
-  applicationId = app.applicationId._id;
-}
-// Case 5: formId fallback
-else if (typeof app?.formId === 'string') {
-  applicationId = app.formId;
-}
-// Case 6: formId populated
-else if (typeof app?.formId === 'object' && app?.formId?._id) {
-  applicationId = app.formId._id;
-}
+    // ✅ PRIORITY 1: correct application id from backend
+    if (typeof app?._raw?.applicationId?._id === 'string') {
+      applicationId = app._raw.applicationId._id;
+    }
+    // Case 2: normalized app (if you already override _id)
+    else if (typeof app?._id === 'string') {
+      applicationId = app._id;
+    }
+    // Case 3: applicationId as string
+    else if (typeof app?.applicationId === 'string') {
+      applicationId = app.applicationId;
+    }
+    // Case 4: applicationId populated object
+    else if (typeof app?.applicationId === 'object' && app?.applicationId?._id) {
+      applicationId = app.applicationId._id;
+    }
+    // Case 5: formId fallback
+    else if (typeof app?.formId === 'string') {
+      applicationId = app.formId;
+    }
+    // Case 6: formId populated
+    else if (typeof app?.formId === 'object' && app?.formId?._id) {
+      applicationId = app.formId._id;
+    }
 
 
 
@@ -934,7 +927,7 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
 
   const statusToLower = (s) => (s || '').toString().toLowerCase();
 
-  
+
 
   const statusOptions = ['All', 'Pending', 'Reviewed', 'Interview', 'WrittenExam', 'Accepted', 'Rejected'];
 
@@ -945,9 +938,9 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
     selectedStatus === "All"
       ? applications
       : applications.filter((app) => {
-          const status = (app.status || "").toString().toLowerCase();
-          return status === selectedStatus.toLowerCase();
-        });
+        const status = (app.status || "").toString().toLowerCase();
+        return status === selectedStatus.toLowerCase();
+      });
   const rows = filteredApplications;
   return (
     <div className="p-8">
@@ -983,8 +976,8 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
             key={status}
             onClick={() => handleStatusFilter(status)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedStatus === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
               }`}
           >
             {status}
@@ -1029,7 +1022,7 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
                       <button
                         onClick={() => handleStatusChange(app, "Reviewed")}
                         className="p-2 text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200"
-                        title="Mark as Reviewed"
+                        title="View Details"
                       >
                         <Eye size={16} />
                       </button>
@@ -1050,14 +1043,14 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
                       <button
                         onClick={() => handleStatusChange(app, "Accepted")}
                         className="p-2 text-green-600 bg-green-100 rounded-full hover:bg-green-200"
-                        title="Accept"
+                        title="Accept Application"
                       >
                         <Check size={16} />
                       </button>
                       <button
                         onClick={() => handleStatusChange(app, "Rejected")}
                         className="p-2 text-red-600 bg-red-100 rounded-full hover:bg-red-200"
-                        title="Reject"
+                        title="Reject Application"
                       >
                         <X size={16} />
                       </button>
@@ -1446,9 +1439,9 @@ const ViewShortlistedApplications = ({ }) => {
 
   if (loading) return <div className="p-8 text-center">Loading shortlisted applications...</div>;
   const filteredApplications =
-  selectedStatus === "All"
-    ? applications
-    : applications.filter((app) => {
+    selectedStatus === "All"
+      ? applications
+      : applications.filter((app) => {
         const status = (app.status || "").toLowerCase();
         return status === selectedStatus.toLowerCase();
       });
@@ -1680,6 +1673,9 @@ const CollegePortalPage = ({ currentUser, onLogout, onRegister }) => {
   return (
     <div>
       <CollegeHeader collegeName={currentUser?.name} onLogout={onLogout} applicationsCount={applicationsCount} hasProfile={hasProfile} currentUser={currentUser} />
+      <div className="container mx-auto px-6 py-4">
+        <BackButton />
+      </div>
       <Routes>
         <Route
           path="shortlisted"

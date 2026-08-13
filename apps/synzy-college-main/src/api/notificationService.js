@@ -15,16 +15,16 @@ export const getStudentNotifications = async (studId) => {
     // Get all forms for the student to check for status changes
     const response = await apiClient.get(`/form/student/${studId}`);
     const forms = response.data?.data || response.data || [];
-    
+
     // Generate notifications based on form status changes
     const notifications = forms.map(form => {
       const status = form.status || 'Pending';
       const collegeName = form.collegeId?.name || form.collegeName || 'Unknown college';
       const createdAt = form.createdAt || form.updatedAt || new Date();
-      
+
       let message = '';
       let type = 'info';
-      
+
       switch (status.toLowerCase()) {
         case 'reviewed':
           message = `Your application to ${collegeName} has been reviewed`;
@@ -46,7 +46,7 @@ export const getStudentNotifications = async (studId) => {
           message = `Application to ${collegeName} is ${status}`;
           type = 'info';
       }
-      
+
       return {
         id: form._id || form.id,
         message,
@@ -59,10 +59,10 @@ export const getStudentNotifications = async (studId) => {
         collegeId: form.collegeId?._id || form.collegeId
       };
     });
-    
+
     // Sort by creation date (newest first)
     notifications.sort((a, b) => b.createdAt - a.createdAt);
-    
+
     return { data: notifications };
   } catch (error) {
     console.error('Error fetching student notifications:', error.response?.data || error.message);

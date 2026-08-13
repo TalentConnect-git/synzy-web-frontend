@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { checkSchoolProfileExists } from "../api/adminService";
 
 import UserDashboard from "../components/UserDashboard.jsx"; 
+import BackButton from "../components/BackButton"; 
 
 const SchoolRedirect = () => {
   const navigate = useNavigate();
@@ -72,6 +73,7 @@ const DashboardPage = ({
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-6 py-8">
+        <BackButton />
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
           Welcome, {currentUser.name || currentUser.email}!
         </h1>

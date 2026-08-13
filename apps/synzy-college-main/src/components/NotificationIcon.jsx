@@ -34,13 +34,13 @@ const NotificationIcon = () => {
 
   const fetchNotifications = async () => {
     if (!currentUser?.studentId && !currentUser?._id) return;
-    
+
     setLoading(true);
     try {
       const studentId = currentUser.studentId || currentUser._id;
       const response = await getStudentNotifications(studentId);
       const fetchedNotifications = response.data || [];
-      
+
       setNotifications(fetchedNotifications);
       setUnreadCount(fetchedNotifications.filter(n => !n.isRead).length);
     } catch (error) {
@@ -55,10 +55,10 @@ const NotificationIcon = () => {
   const handleNotificationClick = async (notification) => {
     try {
       await markNotificationAsRead(notification.id);
-      
+
       // Update local state
-      setNotifications(prev => 
-        prev.map(n => 
+      setNotifications(prev =>
+        prev.map(n =>
           n.id === notification.id ? { ...n, isRead: true } : n
         )
       );
@@ -70,13 +70,13 @@ const NotificationIcon = () => {
 
   const handleMarkAllAsRead = async () => {
     if (!currentUser?.studentId && !currentUser?._id) return;
-    
+
     try {
       const studentId = currentUser.studentId || currentUser._id;
       await markAllNotificationsAsRead(studentId);
-      
+
       // Update local state
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => ({ ...n, isRead: true }))
       );
       setUnreadCount(0);
@@ -185,9 +185,8 @@ const NotificationIcon = () => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    !notification.isRead ? 'bg-blue-50' : ''
-                  }`}
+                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.isRead ? 'bg-blue-50' : ''
+                    }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">

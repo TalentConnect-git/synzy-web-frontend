@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getFormsByStudent, generateStudentPdf } from '../api/userService';
 import { getcollegeById } from '../api/adminService';
+import BackButton from '../components/BackButton';
 
 const ApplicationStatusPage = () => {
   const navigate = useNavigate();
@@ -14,20 +15,20 @@ const ApplicationStatusPage = () => {
   const [collegeNameById, setcollegeNameById] = useState({});
   const [cachedAppliedcolleges, setCachedAppliedcolleges] = useState([]);
 
- const handleViewPdf = async (studId, applicationId) => {
-  if (!studId || !applicationId) return;
+  const handleViewPdf = async (studId, applicationId) => {
+    if (!studId || !applicationId) return;
 
-  try {
-    await generateStudentPdf(studId, applicationId);
-  } catch {}
+    try {
+      await generateStudentPdf(studId, applicationId);
+    } catch { }
 
-  // 🔥 FORCE absolute URL
-  const pdfUrl = `https://api.synzy.in/api/users/pdf/view/${studId}/${applicationId}`;
+    // 🔥 FORCE absolute URL
+    const pdfUrl = `https://api.synzy.in/api/users/pdf/view/${studId}/${applicationId}`;
 
-  console.log("OPENING (FORCED):", pdfUrl);
+    console.log("OPENING (FORCED):", pdfUrl);
 
-  window.open(pdfUrl, "_blank", "noopener,noreferrer");
-};
+    window.open(pdfUrl, "_blank", "noopener,noreferrer");
+  };
 
 
 
@@ -71,12 +72,12 @@ const ApplicationStatusPage = () => {
               if (parsed && (parsed.collegeId || parsed.collegeName)) {
                 cached.push(parsed);
               }
-            } catch (_) {}
+            } catch (_) { }
           }
         }
         setCachedAppliedcolleges(cached);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const fetchNames = async () => {
       const ids = forms
@@ -129,7 +130,7 @@ const ApplicationStatusPage = () => {
               if (parsed && (parsed.collegeId || parsed.collegeName)) {
                 cached.push(parsed);
               }
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       }
@@ -170,7 +171,8 @@ const ApplicationStatusPage = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-5xl mx-auto px-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Applied Forms</h1>
+          <BackButton />
+          <h1 className="text-2xl font-semibold text-gray-900 mt-4">Applied Forms</h1>
           <p className="text-gray-600 text-sm mt-1">All colleges you have applied to and their current status.</p>
         </div>
 
@@ -222,7 +224,7 @@ const ApplicationStatusPage = () => {
                       fallbackName = cachedAppliedcolleges[0]?.collegeName || null;
                     }
                   }
-                } catch (_) {}
+                } catch (_) { }
                 collegeName = fallbackName || 'Unknown college';
               }
 
@@ -244,7 +246,7 @@ const ApplicationStatusPage = () => {
                   <div className="flex items-start justify-between">
                     <div className="min-w-0">
                       {idStr ? (
-                        <button 
+                        <button
                           onClick={() => navigate(`/college/${idStr}`)}
                           className="font-semibold text-gray-900 hover:text-blue-600 hover:underline truncate text-left block w-full"
                         >
@@ -257,17 +259,17 @@ const ApplicationStatusPage = () => {
                       <div className="text-xs text-gray-400 mt-1">Submitted: {submitted}</div>
                     </div>
                     <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                     <button
-  onClick={() =>
-    handleViewPdf(
-      f.studId?._id || f.studId,
-      f.applicationId?._id || f.applicationId
-    )
-  }
-  className="px-2 py-1 text-sm rounded border border-gray-300 hover:bg-gray-50"
->
-  View PDF
-</button>
+                      <button
+                        onClick={() =>
+                          handleViewPdf(
+                            f.studId?._id || f.studId,
+                            f.applicationId?._id || f.applicationId
+                          )
+                        }
+                        className="px-2 py-1 text-sm rounded border border-gray-300 hover:bg-gray-50"
+                      >
+                        View PDF
+                      </button>
 
                       <button onClick={() => navigate('/my-applications')} className="px-2 py-1 text-sm rounded bg-gray-900 text-white hover:bg-gray-800">Open</button>
                     </div>
@@ -283,5 +285,6 @@ const ApplicationStatusPage = () => {
 };
 
 export default ApplicationStatusPage;
+
 
 

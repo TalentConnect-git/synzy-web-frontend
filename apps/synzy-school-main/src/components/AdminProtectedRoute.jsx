@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEO from './SEO';
 
 const AdminProtectedRoute = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -27,7 +28,12 @@ const AdminProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return (
+    <>
+      <SEO title="Admin Portal | Synzy" noindex={true} />
+      {children}
+    </>
+  );
 };
 
 export default AdminProtectedRoute;

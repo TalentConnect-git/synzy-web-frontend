@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import UserProfileForm from '../components/UserProfileForm';
 import { useAuth } from '../context/AuthContext';
 import { createStudentProfile, saveUserPreferences, updateUserProfile } from '../api/userService';
+import BackButton from '../components/BackButton';
 
 const CreateProfilePage = () => {
     const { user, updateUserContext } = useAuth();
@@ -113,6 +114,7 @@ const CreateProfilePage = () => {
 
     return (
         <div className="container mx-auto px-6 py-8 min-h-screen bg-gray-100">
+            <BackButton />
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome!</h1>
             <p className="text-gray-600 mb-8">Please complete your profile to continue.</p>
             <UserProfileForm 

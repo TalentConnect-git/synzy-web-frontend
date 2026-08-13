@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEO from './SEO';
 
 const ProtectedRoute = () => {
   const { user, isAuthenticated} = useAuth();
@@ -34,7 +35,12 @@ const ProtectedRoute = () => {
   }
 
   // If the user is authenticated and their profile is complete, let them pass.
-  return <Outlet />;
+  return (
+    <>
+      <SEO title="User Portal | Synzy" noindex={true} />
+      <Outlet />
+    </>
+  );
 };
 
 export default ProtectedRoute;

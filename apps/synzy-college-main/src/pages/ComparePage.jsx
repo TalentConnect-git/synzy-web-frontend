@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { XCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
+import BackButton from '../components/BackButton';
 
 const ComparePage = ({ comparisonList, onCompareToggle, shortlist, onShortlistToggle }) => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const ComparePage = ({ comparisonList, onCompareToggle, shortlist, onShortlistTo
   if (!comparisonList || comparisonList.length === 0) {
     return (
       <div className="container mx-auto px-6 py-20 text-center">
+        <div className="flex justify-start mb-4"><BackButton /></div>
         <h1 className="text-3xl font-bold text-gray-800 mb-4">Compare colleges</h1>
         <p className="text-gray-600 mb-8">You haven't selected any colleges to compare yet.</p>
         <Link 
@@ -77,6 +79,7 @@ const ComparePage = ({ comparisonList, onCompareToggle, shortlist, onShortlistTo
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <BackButton />
       <h1 className="text-4xl font-extrabold text-gray-900 mb-8 text-center">college Comparison</h1>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 shadow-lg rounded-lg">

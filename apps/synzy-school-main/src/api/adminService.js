@@ -49,7 +49,7 @@ export const updateApplication = (studId, data) => apiClient.put(`/applications/
 export const deleteApplication = (studId) => apiClient.delete(`/applications/${studId}`);
 
 // Submit form to school
-export const submitFormToSchool = (schoolId, studId, formId) => 
+export const submitFormToSchool = (schoolId, studId, formId) =>
   apiClient.post(`/form/${schoolId}/${studId}/${formId}`);
 
 // Get forms by student
@@ -62,7 +62,7 @@ export const getFormsBySchool = (schoolId) => apiClient.get(`/form/school/${scho
 export const trackForm = (formId) => apiClient.get(`/form/track/${formId}`);
 
 // Update form status
-export const updateFormStatus = (formId, status) => 
+export const updateFormStatus = (formId, status) =>
   apiClient.put(`/form/${formId}?status=${status}`);
 
 /**
@@ -94,7 +94,7 @@ export const updateExistingApplication = (studId, updateData) => {
 // ✅ FIXED: Updated to match router.post('/schools/by-auth/:authId')
 export const addSchool = (data) => {
   const { authId, ...bodyData } = data;
-  
+
   if (!authId) {
     console.error("❌ addSchool called without authId in payload", data);
     throw new Error("authId is required to create a school");

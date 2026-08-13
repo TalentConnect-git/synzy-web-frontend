@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import CollegeCard from '../components/CollegeCard';
 import { searchcolleges as searchcollegesApi } from '../api/searchService';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 
 const AdvancedSearchPage = () => {
   const navigate = useNavigate();
@@ -150,7 +151,8 @@ const AdvancedSearchPage = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Your Perfect college</h1>
+          <BackButton />
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 mt-4">Find Your Perfect college</h1>
           <p className="text-gray-600">Search and filter colleges based on your preferences</p>
         </div>
 

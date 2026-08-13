@@ -32,15 +32,7 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
   return (
   <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
     <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-  {/* Back Button - Extreme Left */}
-  <button 
-    onClick={() => navigate(-1)}
-    className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors absolute left-6"
-    title="Go back"
-  >
-    <ArrowLeft size={18} />
-    <span className="text-sm font-medium">Back</span>
-  </button>
+
 
   {/* Logo - Moved left with ml-4 */}
   <div className="flex-1 flex justify-center md:justify-start md:ml-4">
@@ -87,7 +79,7 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
         <>
             <div className="flex items-center gap-2">
               <School size={16} className="text-blue-600" />
-              <Link to="/signup-school" className="text-blue-600 hover:text-blue-700 font-medium">School Login</Link>
+              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">User Login</Link>
             </div>
         </>
     )}
@@ -136,13 +128,9 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
             </>
           ) : (
             <>
-              <Link to="/login" className="flex items-center justify-center gap-2 w-full text-center text-gray-600 hover:text-blue-600 mb-3 py-2 border-b border-gray-200" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/login" className="flex items-center justify-center gap-2 w-full text-center text-blue-600 hover:text-blue-700 py-2" onClick={() => setMobileMenuOpen(false)}>
                 <User size={16} />
-                <span className="font-medium">User/Parent Login</span>
-              </Link>
-              <Link to="/signup-school" className="flex items-center justify-center gap-2 w-full text-center text-blue-600 hover:text-blue-700 py-2" onClick={() => setMobileMenuOpen(false)}>
-                <School size={16} />
-                <span className="font-medium">School Login</span>
+                <span className="font-medium">User Login</span>
               </Link>
             </>
           )}

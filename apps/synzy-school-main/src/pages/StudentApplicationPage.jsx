@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { submitApplication, generateStudentPdf, getUserProfile, createStudentProfile } from '../api/userService';
-import { createApplication, checkApplicationExists, updateExistingApplication, submitFormToSchool,getApplicationById } from '../api/applicationService';
+import { createApplication, checkApplicationExists, updateExistingApplication, submitFormToSchool, getApplicationById } from '../api/applicationService';
 import { getSchoolById } from '../api/adminService';
 import { FileText, User, Users, Home, BookOpen, PlusCircle, Trash2, Shield } from 'lucide-react';
 const initialFormState = {
@@ -13,7 +13,7 @@ const initialFormState = {
     placeOfBirth: '', speciallyAbled: false, speciallyAbledType: '',
     nationality: '', religion: '', caste: '', subcaste: '', aadharNo: '',
     bloodGroup: '', allergicTo: '', interest: '',
-    standard: '', 
+    standard: '',
     lastSchoolName: '', classCompleted: '', lastAcademicYear: '',
     reasonForLeaving: '', board: '',
     fatherName: '', fatherAge: '', fatherQualification: '', fatherProfession: '',
@@ -81,6 +81,82 @@ const FormField = ({ label, name, type = 'text', value, onChange, required = fal
             />
         </div>
     );
+};
+
+const CLASS_OPTIONS = [
+    'Nursery',
+    'LKG',
+    'UKG',
+    '1st Class',
+    '2nd Class',
+    '3rd Class',
+    '4th Class',
+    '5th Class',
+    '6th Class',
+    '7th Class',
+    '8th Class',
+    '9th Class',
+    '10th Class',
+    '11th Class',
+    '12th Class'
+];
+
+const normalizeStandardForBackend = (val) => {
+    if (!val) return val;
+    const s = String(val).trim().toLowerCase();
+
+    if (s.includes('nursery')) return 'nursery';
+    if (s.includes('lkg')) return 'lkg';
+    if (s.includes('ukg')) return 'ukg';
+    if (s.includes('kg')) return 'kg';
+
+    if (s.includes('1st') || s === '1' || s === 'class 1') return '1';
+    if (s.includes('2nd') || s === '2' || s === 'class 2') return '2';
+    if (s.includes('3rd') || s === '3' || s === 'class 3') return '3';
+    if (s.includes('4th') || s === '4' || s === 'class 4') return '4';
+    if (s.includes('5th') || s === '5' || s === 'class 5') return '5';
+    if (s.includes('6th') || s === '6' || s === 'class 6') return '6';
+    if (s.includes('7th') || s === '7' || s === 'class 7') return '7';
+    if (s.includes('8th') || s === '8' || s === 'class 8') return '8';
+    if (s.includes('9th') || s === '9' || s === 'class 9') return '9';
+    if (s.includes('10th') || s === '10' || s === 'class 10') return '10';
+    if (s.includes('11th') || s === '11' || s === 'class 11') return '11';
+    if (s.includes('12th') || s === '12' || s === 'class 12') return '12';
+
+    if (s === 'grade 1 - 5' || s === 'grade 1-5' || s === '1-5') return '1';
+    if (s === 'grade 6 - 10' || s === 'grade 6-10' || s === '6-10') return '6';
+    if (s === 'grade 11 - 12' || s === 'grade 11-12' || s === '11-12') return '11';
+
+    return val;
+};
+
+const mapStandardForUI = (val) => {
+    if (!val) return '';
+    const s = String(val).trim().toLowerCase();
+
+    if (s === 'nursery') return 'Nursery';
+    if (s === 'lkg') return 'LKG';
+    if (s === 'ukg') return 'UKG';
+    if (s === 'kg' || s === 'kgs') return 'LKG';
+
+    if (s === '1' || s === '1st') return '1st Class';
+    if (s === '2' || s === '2nd') return '2nd Class';
+    if (s === '3' || s === '3rd') return '3rd Class';
+    if (s === '4' || s === '4th') return '4th Class';
+    if (s === '5' || s === '5th') return '5th Class';
+    if (s === '6' || s === '6th') return '6th Class';
+    if (s === '7' || s === '7th') return '7th Class';
+    if (s === '8' || s === '8th') return '8th Class';
+    if (s === '9' || s === '9th') return '9th Class';
+    if (s === '10' || s === '10th') return '10th Class';
+    if (s === '11' || s === '11th') return '11th Class';
+    if (s === '12' || s === '12th') return '12th Class';
+
+    if (s === 'grade 1 - 5' || s === 'grade 1-5' || s === '1-5') return '1st Class';
+    if (s === 'grade 6 - 10' || s === 'grade 6-10' || s === '6-10') return '6th Class';
+    if (s === 'grade 11 - 12' || s === 'grade 11-12' || s === '11-12') return '11th Class';
+
+    return val;
 };
 
 const StudentApplicationPage = () => {
@@ -166,7 +242,7 @@ const StudentApplicationPage = () => {
     };
 
     const handleSubmit = async (e) => {
-       // debugger;
+        // debugger;
         e.preventDefault();
         // Validate only the most essential required fields
         const requiredFields = [
@@ -197,7 +273,7 @@ const StudentApplicationPage = () => {
 
         console.log('Starting submission process...');
         setIsSubmitting(true);
-        
+
         try {
             debugger
             // Ensure student profile exists
@@ -210,14 +286,20 @@ const StudentApplicationPage = () => {
             //debugger
             const studentId = profileExists._id;
 
+            const normalizedStandard = normalizeStandardForBackend(formData.standard);
+
             const payload = {
                 ...formData,
+                standard: normalizedStandard,
                 siblings,
                 studId: studentId,
                 schoolId,
                 schoolName: school.name,
                 schoolEmail: school.email,
             };
+
+            console.log('📋 StudentApplication payload before submission:', payload);
+            console.log('🎓 Submitted standard value:', payload.standard);
 
             // ---------------------------------------------------
             // 1️⃣ SUBMIT STUDENT APPLICATION (CREATE OR UPDATE)
@@ -392,7 +474,7 @@ const StudentApplicationPage = () => {
     }, [schoolId, navigate]);
 
     // Check for update mode and load existing application
-useEffect(() => {
+    useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const appId = urlParams.get('appId');
 
@@ -403,31 +485,35 @@ useEffect(() => {
         } else {
             // NEW MODE: Reset everything for a fresh start
             setIsUpdate(false);
-            setExistingApplication(null); 
+            setExistingApplication(null);
             setFormData(initialFormState); // <--- No error now!
-            setSiblings([]); 
+            setSiblings([]);
         }
-    }, [window.location.search]); 
-  const loadSpecificApplication = async (appId) => {
-    try {
-      // Import this from api/applicationService.js
-      const appData = await getApplicationById(appId); 
-      setExistingApplication(appData);
-      setFormData(prev => ({ ...prev, ...appData }));
-      // ... handle siblings logic
-    } catch (error) {
-      toast.error('Failed to load application details');
-    }
-  };
+    }, [window.location.search]);
+    const loadSpecificApplication = async (appId) => {
+        try {
+            // Import this from api/applicationService.js
+            const appData = await getApplicationById(appId);
+            setExistingApplication(appData);
+            setFormData(prev => ({
+                ...prev,
+                ...appData,
+                standard: mapStandardForUI(appData?.standard) || prev.standard
+            }));
+            // ... handle siblings logic
+        } catch (error) {
+            toast.error('Failed to load application details');
+        }
+    };
 
     const loadExistingApplication = async () => {
         try {
             const response = await checkApplicationExists(currentUser._id);
             if (response && response.data) {
-                setExistingApplication(response.data);
                 const appData = response.data;
+                setExistingApplication(appData);
 
-                // Pre-populate form with existing data, ensuring all fields are properly mapped
+                // Populate form with existing data
                 setFormData(prevData => ({
                     ...prevData,
                     ...appData,
@@ -438,7 +524,7 @@ useEffect(() => {
                     age: appData.age || prevData.age,
                     gender: appData.gender || prevData.gender,
                     motherTongue: appData.motherTongue || prevData.motherTongue,
-                    standard: appData.standard || prevData.standard
+                    standard: mapStandardForUI(appData.standard) || prevData.standard
                 }));
 
                 // Handle siblings separately as it's an array
@@ -561,7 +647,7 @@ useEffect(() => {
                                 <BookOpen className="mr-2" />Academic Details
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Class/Grade Applying For" name="standard" type="select" options={['KGs', 'Grade 1 - 5', 'Grade 6-10']} value={formData.standard} onChange={handleInputChange} required />
+                                <FormField label="Class/Grade Applying For" name="standard" type="select" options={CLASS_OPTIONS} value={formData.standard} onChange={handleInputChange} required />
                                 <FormField label="Last School Name" name="lastSchoolName" value={formData.lastSchoolName} onChange={handleInputChange} />
                                 <FormField label="Class Completed" name="classCompleted" value={formData.classCompleted} onChange={handleInputChange} />
                                 <FormField label="Last Academic Year" name="lastAcademicYear" value={formData.lastAcademicYear} onChange={handleInputChange} />

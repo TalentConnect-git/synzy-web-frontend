@@ -5,13 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import { PlusCircle, Trash2, Info, Building2, Users2, ShieldCheck, HeartHandshake, Heart, Globe2, Sparkles, Image, Award, DollarSign, Cpu, GraduationCap, CalendarDays, Upload, ToggleRight } from "lucide-react";
 import { toast } from "react-toastify";
 import apiClient from "../api/axios";
-import { 
-  addSchool, 
-  addAmenities, 
+import {
+  addSchool,
+  addAmenities,
   addActivities,
-  addAlumni,  
-  addInfrastructure, 
-  addOtherDetails, 
+  addAlumni,
+  addInfrastructure,
+  addOtherDetails,
   addFeesAndScholarships,
   addFaculty,
   addAdmissionTimeline,
@@ -46,9 +46,9 @@ import {
   updateAcademics
   , getSchoolByAuthId
 } from "../api/adminService";
-import { 
+import {
   getAlumniBySchool,
-  updateAlumniBySchool, 
+  updateAlumniBySchool,
 } from "../api/schoolService";
 
 
@@ -132,7 +132,7 @@ const DynamicListField = ({ label, fields, value, onChange, type = "famous" }) =
     if (type === "top" || type === "other") return { name: "", percentage: "" };
     return { name: "", profession: "" };
   };
-  
+
   const handleAddItem = () => onChange([...list, getDefaultItem()]);
   const handleRemoveItem = (index) =>
     onChange(list.filter((_, i) => i !== index));
@@ -191,7 +191,7 @@ const DynamicListField = ({ label, fields, value, onChange, type = "famous" }) =
 
 const DynamicActivitiesField = ({ label, value, onChange }) => {
   const activities = value || [];
-  
+
   const handleAddActivity = () => onChange([...activities, ""]);
   const handleRemoveActivity = (index) =>
     onChange(activities.filter((_, i) => i !== index));
@@ -240,7 +240,7 @@ const DynamicActivitiesField = ({ label, value, onChange }) => {
 
 const DynamicAmenitiesField = ({ label, value, onChange }) => {
   const amenities = value || [];
-  
+
   const handleAddAmenity = () => onChange([...amenities, ""]);
   const handleRemoveAmenity = (index) =>
     onChange(amenities.filter((_, i) => i !== index));
@@ -292,7 +292,7 @@ const DynamicElearningField = ({ label, value, onChange }) => {
 
   const handleAdd = () => onChange([...
     platforms,
-    { platform: '', usagePercentage: '', frequency: '' }
+  { platform: '', usagePercentage: '', frequency: '' }
   ]);
 
   const handleRemove = (index) => onChange(platforms.filter((_, i) => i !== index));
@@ -387,15 +387,15 @@ const RegistrationPage = () => {
     rank: "", // Added: matches backend field
     specialist: [], // Added: matches backend field
     tags: [], // Added: matches backend field
-    
+
     // Amenities Fields (matching backend Amenities model)
     predefinedAmenities: [], // Matches backend enum
     customAmenities: [], // Added: matches backend field
-    
+
     // Activities Fields (matching backend Activities model)
     activities: [], // Matches backend enum
     customActivities: [], // Added: matches backend field
-    
+
     // Infrastructure Fields (matching backend Infrastructure model)
     labs: [], // Updated: matches backend enum ['Physics', 'Chemistry', 'Biology', 'Computer', 'Robotics', 'Language']
     sportsGrounds: [], // Updated: matches backend enum ['Football', 'Cricket', 'Basketball', 'Tennis', 'Athletics', 'Badminton']
@@ -406,7 +406,7 @@ const RegistrationPage = () => {
     infraSportsTypes: [], // Form field for sports grounds
     infraLibraryBooks: "", // Form field for library books
     infraSmartClassrooms: "", // Form field for smart classrooms
-    
+
     // Safety & Security Fields (matching backend SafetyAndSecurity model)
     cctvCoveragePercentage: 0, // default numeric to avoid uncontrolled->controlled warnings
     medicalFacility: {
@@ -420,20 +420,20 @@ const RegistrationPage = () => {
     },
     fireSafetyMeasures: [], // Updated: matches backend enum ['Extinguishers', 'Alarms', 'Sprinklers', 'Evacuation Drills']
     visitorManagementSystem: false, // Added: matches backend field
-    
+
     // Fees & Scholarships Fields (matching backend FeesAndScholarships model)
     feesTransparency: "", // Updated: matches backend field
     classFees: [], // Updated: matches backend ClassFeeSchema structure
     scholarships: [], // Updated: matches backend ScholarshipSchema structure
-    
+
     // Technology Adoption Fields (matching backend TechnologyAdoption model)
     smartClassroomsPercentage: "", // Matches backend field
     eLearningPlatforms: [], // Updated: matches backend field
-    
+
     // International Exposure Fields (matching backend InternationalExposure model)
     exchangePrograms: [], // Updated: matches backend ExchangeProgramSchema structure
     globalTieUps: [], // Updated: matches backend GlobalTieUpSchema structure
-    
+
     // Other Details Fields (matching backend OtherDetails model)
     genderRatio: {
       male: "", // Matches backend field
@@ -449,7 +449,7 @@ const RegistrationPage = () => {
       studentsSupportedPercentage: "", // Matches backend field
       facilitiesAvailable: [] // Matches backend enum ['Ramps', 'Wheelchair access', 'Special educators', 'Learning support', 'Resource room', 'Assistive devices']
     },
-    
+
     // Academics Fields (matching backend Academics model)
     averageClass10Result: "",
     averageClass12Result: "",
@@ -470,10 +470,10 @@ const RegistrationPage = () => {
   const [logoPreview, setLogoPreview] = useState("");
   // UI-only additions: social links (not sent to backend)
   const [socialLinks, setSocialLinks] = useState({
-   // Prepared for when you add it to schema
-  instagramHandle: "",
-  twitterHandle: "",
-  linkedinHandle: "",
+    // Prepared for when you add it to schema
+    instagramHandle: "",
+    twitterHandle: "",
+    linkedinHandle: "",
   });
   const [facultyQuality, setFacultyQuality] = useState([
     { name: '', qualification: '', awards: '', experience: '' }
@@ -511,81 +511,81 @@ const RegistrationPage = () => {
     setFormData((prev) => ({ ...prev, [name]: safeValue }));
   };
 
-const handleUseCurrentLocation = () => {
-  if (!navigator.geolocation) {
-    toast.error("Geolocation is not supported by your browser.");
-    return;
-  }
-  setIsFetchingLocation(true);
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      try {
-        const { latitude, longitude } = pos.coords;
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+    setIsFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
 
-        // 1️⃣ BigDataCloud (city/state)
-        const res1 = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-        );
-        const data1 = await res1.json();
+          // 1️⃣ BigDataCloud (city/state)
+          const res1 = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          const data1 = await res1.json();
 
-        let city = data1.city || data1.locality || '';
-        let state = data1.principalSubdivision || '';
-        let pincode = '';
+          let city = data1.city || data1.locality || '';
+          let state = data1.principalSubdivision || '';
+          let pincode = '';
 
-        // 2️⃣ OpenStreetMap (CORRECT WAY)
-        const res2 = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-          {
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'https://smart-school-finder-beta.vercel.app/' // REQUIRED
+          // 2️⃣ OpenStreetMap (CORRECT WAY)
+          const res2 = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'https://smart-school-finder-beta.vercel.app/' // REQUIRED
+              }
             }
+          );
+
+          const data2 = await res2.json();
+
+          // 🔥 STRONG PINCODE EXTRACTION
+          if (data2?.address) {
+            pincode =
+              data2.address.postcode ||
+              data2.address.postal_code ||
+              data2.address.zip ||
+              '';
           }
-        );
 
-        const data2 = await res2.json();
+          setFormData((prev) => ({
+            ...prev,
+            latitude: latitude.toFixed(6),
+            longitude: longitude.toFixed(6),
+            city,
+            state,
+            pincode
+          }));
 
-        // 🔥 STRONG PINCODE EXTRACTION
-        if (data2?.address) {
-          pincode =
-            data2.address.postcode ||
-            data2.address.postal_code ||
-            data2.address.zip ||
-            '';
+          if (!pincode) {
+            toast.warning("Pincode not found . Please enter manually.");
+          } else {
+            toast.success("Location fetched successfully.");
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to fetch location details.");
+        } finally {
+          setIsFetchingLocation(false);
         }
+      },
+      (err) => {
+        if (err.code === 1) toast.error("Permission denied for location.");
+        else if (err.code === 2) toast.error("Position unavailable.");
+        else if (err.code === 3) toast.error("Location request timed out.");
+        else toast.error("Could not get current location.");
 
-        setFormData((prev) => ({
-          ...prev,
-          latitude: latitude.toFixed(6),
-          longitude: longitude.toFixed(6),
-          city,
-          state,
-          pincode
-        }));
-
-        if (!pincode) {
-          toast.warning("Pincode not found . Please enter manually.");
-        } else {
-          toast.success("Location fetched successfully.");
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to fetch location details.");
-      } finally {
         setIsFetchingLocation(false);
-      }
-    },
-    (err) => {
-      if (err.code === 1) toast.error("Permission denied for location.");
-      else if (err.code === 2) toast.error("Position unavailable.");
-      else if (err.code === 3) toast.error("Location request timed out.");
-      else toast.error("Could not get current location.");
-
-      setIsFetchingLocation(false);
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
-};
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
 
 
@@ -635,7 +635,7 @@ const handleUseCurrentLocation = () => {
     try {
       const url = URL.createObjectURL(file);
       setLogoPreview(url);
-    } catch {}
+    } catch { }
   };
 
   // Safety transport routes helpers
@@ -720,12 +720,12 @@ const handleUseCurrentLocation = () => {
 
       // Client-side validation to prevent backend 500s
       const requiredErrors = [];
-      const allowedShifts = ['morning','afternoon','night school'];
+      const allowedShifts = ['morning', 'afternoon', 'night school'];
       const allowedBoards = [
-        'CBSE','ICSE','CISCE','NIOS','SSC','IGCSE','IB','KVS','JNV','DBSE','MSBSHSE','UPMSP','KSEEB','WBBSE','GSEB','RBSE','BSEB','PSEB','BSE','SEBA','MPBSE','STATE','OTHER'
+        'CBSE', 'ICSE', 'CISCE', 'NIOS', 'SSC', 'IGCSE', 'IB', 'KVS', 'JNV', 'DBSE', 'MSBSHSE', 'UPMSP', 'KSEEB', 'WBBSE', 'GSEB', 'RBSE', 'BSEB', 'PSEB', 'BSE', 'SEBA', 'MPBSE', 'STATE', 'OTHER'
       ];
       const allowedFeeRanges = [
-        "1000 - 10000","10000 - 25000","25000 - 50000","50000 - 75000","75000 - 100000","1 Lakh - 2 Lakh","2 Lakh - 3 Lakh","3 Lakh - 4 Lakh","4 Lakh - 5 Lakh","More than 5 Lakh"
+        "1000 - 10000", "10000 - 25000", "25000 - 50000", "50000 - 75000", "75000 - 100000", "1 Lakh - 2 Lakh", "2 Lakh - 3 Lakh", "3 Lakh - 4 Lakh", "4 Lakh - 5 Lakh", "More than 5 Lakh"
       ];
 
       if (!formData.name?.trim()) requiredErrors.push('School Name');
@@ -734,7 +734,7 @@ const handleUseCurrentLocation = () => {
       if (!formData.city?.trim()) requiredErrors.push('City');
       if (!allowedBoards.includes(formData.board)) requiredErrors.push('Board');
       if (!allowedSchoolModes.includes(normalizedSchoolMode)) requiredErrors.push('School Mode');
-      if (!['boy','girl','co-ed'].includes(normalizedGender)) requiredErrors.push('Gender Type');
+      if (!['boy', 'girl', 'co-ed'].includes(normalizedGender)) requiredErrors.push('Gender Type');
       if (!Array.isArray(formData.shifts) || formData.shifts.length === 0 || formData.shifts.some(s => !allowedShifts.includes(String(s).toLowerCase()))) {
         requiredErrors.push('Shifts');
       }
@@ -743,11 +743,11 @@ const handleUseCurrentLocation = () => {
       if (!formData.email?.trim()) requiredErrors.push('Email');
       if (!formData.phoneNo?.trim()) requiredErrors.push('Phone Number');
       if (!Array.isArray(formData.languageMedium) || formData.languageMedium.length === 0) requiredErrors.push('Language Medium');
-      
+
       // GPS Location validation (mandatory for distance calculation)
       if (!formData.latitude || isNaN(Number(formData.latitude))) requiredErrors.push('Latitude (GPS)');
       if (!formData.longitude || isNaN(Number(formData.longitude))) requiredErrors.push('Longitude (GPS)');
-      
+
       // Validate latitude and longitude ranges
       if (formData.latitude && (Number(formData.latitude) < -90 || Number(formData.latitude) > 90)) {
         toast.error('Latitude must be between -90 and 90 degrees');
@@ -794,11 +794,11 @@ const handleUseCurrentLocation = () => {
         rank: formData.rank,
         specialist: Array.isArray(formData.specialist) ? formData.specialist : [],
         tags: Array.isArray(formData.tags) ? formData.tags : [],
-       
-         
- instagramHandle: socialLinks.instagramHandle,
-  twitterHandle: socialLinks.twitterHandle,
-  linkedinHandle: socialLinks.linkedinHandle,
+
+
+        instagramHandle: socialLinks.instagramHandle,
+        twitterHandle: socialLinks.twitterHandle,
+        linkedinHandle: socialLinks.linkedinHandle,
 
       };
 
@@ -836,20 +836,20 @@ const handleUseCurrentLocation = () => {
               console.log('✅ No existing school found, creating new one');
               const schoolResponse = await addSchool(payload);
               schoolId = schoolResponse.data.data._id;
-              try { localStorage.setItem('lastCreatedSchoolId', String(schoolId)); } catch (_) {}
+              try { localStorage.setItem('lastCreatedSchoolId', String(schoolId)); } catch (_) { }
             }
           } catch (err) {
             console.error('Safety check failed, proceeding with creation:', err);
             const schoolResponse = await addSchool(payload);
             schoolId = schoolResponse.data.data._id;
-            try { localStorage.setItem('lastCreatedSchoolId', String(schoolId)); } catch (_) {}
+            try { localStorage.setItem('lastCreatedSchoolId', String(schoolId)); } catch (_) { }
           }
         } else {
           // For school accounts, directly create or update
           console.log('🏫 School account - skipping duplicate check, proceeding with registration');
           const schoolResponse = await addSchool(payload);
           schoolId = schoolResponse.data.data._id;
-          try { localStorage.setItem('lastCreatedSchoolId', String(schoolId)); } catch (_) {}
+          try { localStorage.setItem('lastCreatedSchoolId', String(schoolId)); } catch (_) { }
         }
       }
 
@@ -878,24 +878,24 @@ const handleUseCurrentLocation = () => {
 
       // Add alumni if any (skip for now as there's no alumni UI)
       // TODO: Uncomment when alumni UI is added
-      
+
       if (famousAlumnies.length > 0 || topAlumnies.length > 0 || otherAlumnies.length > 0) {
-        
+
         const alumniPayload = {
           schoolId,
-          famousAlumnies: famousAlumnies, 
+          famousAlumnies: famousAlumnies,
           // ⚠️ KEY FIX: Map frontend 'topAlumnies' -> backend 'topAlumnis'
-          topAlumnis: topAlumnies,        
+          topAlumnis: topAlumnies,
           // ⚠️ KEY FIX: Map frontend 'otherAlumnies' -> backend 'alumnis'
-          alumnis: otherAlumnies          
+          alumnis: otherAlumnies
         };
 
         // Use updateOrAdd to Handle PUT (Update) or POST (Create)
         promises.push(
-           updateOrAdd(updateAlumniBySchool, addAlumni, schoolId, alumniPayload)
+          updateOrAdd(updateAlumniBySchool, addAlumni, schoolId, alumniPayload)
         );
       }
-      
+
 
       // Add/Update infrastructure
       if (formData.infraLabTypes?.length > 0 || formData.infraSportsTypes?.length > 0 || formData.infraLibraryBooks || formData.infraSmartClassrooms) {
@@ -919,7 +919,7 @@ const handleUseCurrentLocation = () => {
       // Add fees and scholarships if any (matching backend FeesAndScholarships model)
       if (formData.classFees?.length > 0 || formData.scholarships?.length > 0 || (formData.feesTransparency !== '' && formData.feesTransparency != null)) {
         // Validate and clean classFees
-        const validClassFees = (formData.classFees || []).filter(fee => 
+        const validClassFees = (formData.classFees || []).filter(fee =>
           fee.className && fee.tuition !== undefined && fee.tuition >= 0
         ).map(fee => ({
           className: fee.className,
@@ -931,7 +931,7 @@ const handleUseCurrentLocation = () => {
         }));
 
         // Validate and clean scholarships
-        const validScholarships = (formData.scholarships || []).filter(sch => 
+        const validScholarships = (formData.scholarships || []).filter(sch =>
           sch.name && sch.amount !== undefined && sch.amount >= 0 && sch.type
         ).map(sch => {
           const scholarship = {
@@ -940,8 +940,8 @@ const handleUseCurrentLocation = () => {
             type: sch.type
           };
           // Only include documentsRequired if it has valid values (non-empty strings)
-          const docs = Array.isArray(sch.documentsRequired) 
-            ? sch.documentsRequired.filter(d => d && d.trim()) 
+          const docs = Array.isArray(sch.documentsRequired)
+            ? sch.documentsRequired.filter(d => d && d.trim())
             : [];
           if (docs.length > 0) {
             scholarship.documentsRequired = docs;
@@ -959,7 +959,7 @@ const handleUseCurrentLocation = () => {
             // If it's already a number, use it
             transparencyValue = Number(formData.feesTransparency);
           }
-          
+
           const payloadFees = {
             schoolId,
             feesTransparency: transparencyValue,
@@ -982,7 +982,7 @@ const handleUseCurrentLocation = () => {
             experience: f.experience ? Number(f.experience) : undefined
           }))
           .filter(f => f.name && f.qualification && f.experience !== undefined);
-        
+
         if (cleanFaculty.length > 0) {
           const payloadFaculty = { schoolId, facultyMembers: cleanFaculty };
           promises.push(updateOrAdd(updateFaculty, addFaculty, schoolId, payloadFaculty));
@@ -997,15 +997,15 @@ const handleUseCurrentLocation = () => {
             admissionStartDate: new Date(timeline.admissionStartDate),
             admissionEndDate: new Date(timeline.admissionEndDate),
             status: timeline.status,
-            applicationFee: timeline.applicationFee ?? 0,
+            applicationFee: timeline.applicationFee ?? 0,
             documentsRequired: (timeline.documentsRequired || []).filter(doc => doc.trim()),
-              eligibility: {
+            eligibility: {
               admissionLevel: timeline.admissionLevel,
               ageCriteria: timeline.ageCriteria || '',
               otherInfo: timeline.otherInfo || ''
             }
           }));
-        
+
         if (cleanTimelines.length > 0) {
           const payloadTimeline = { schoolId, timelines: cleanTimelines };
           promises.push(updateOrAdd(updateAdmissionTimeline, addAdmissionTimeline, schoolId, payloadTimeline));
@@ -1023,10 +1023,10 @@ const handleUseCurrentLocation = () => {
       }
 
       // Add/Update Safety & Security
-      if ((formData.cctvCoveragePercentage !== '' && formData.cctvCoveragePercentage != null) || formData.medicalFacility?.doctorAvailability || 
-          formData.medicalFacility?.medkitAvailable || formData.medicalFacility?.ambulanceAvailable ||
-          formData.transportSafety?.gpsTrackerAvailable || formData.transportSafety?.driversVerified ||
-          formData.fireSafetyMeasures?.length > 0 || formData.visitorManagementSystem) {
+      if ((formData.cctvCoveragePercentage !== '' && formData.cctvCoveragePercentage != null) || formData.medicalFacility?.doctorAvailability ||
+        formData.medicalFacility?.medkitAvailable || formData.medicalFacility?.ambulanceAvailable ||
+        formData.transportSafety?.gpsTrackerAvailable || formData.transportSafety?.driversVerified ||
+        formData.fireSafetyMeasures?.length > 0 || formData.visitorManagementSystem) {
         const payloadSafety = {
           schoolId,
           cctvCoveragePercentage: (formData.cctvCoveragePercentage === '' || formData.cctvCoveragePercentage == null) ? undefined : Number(formData.cctvCoveragePercentage),
@@ -1050,12 +1050,12 @@ const handleUseCurrentLocation = () => {
         exchangePrograms: formData.exchangePrograms,
         globalTieUps: formData.globalTieUps
       });
-      
+
       // Validate and clean exchange programs
       const validProgramTypes = ['Student Exchange', 'Faculty Exchange', 'Summer Program', 'Joint Research', 'Cultural Exchange'];
       const validDurations = ['2 Weeks', '1 Month', '3 Months', '6 Months', '1 Year'];
-      
-      const validExchangePrograms = (formData.exchangePrograms || []).filter(program => 
+
+      const validExchangePrograms = (formData.exchangePrograms || []).filter(program =>
         program.partnerSchool && program.partnerSchool.trim()
       ).map(program => {
         // Validate and set programType
@@ -1065,13 +1065,13 @@ const handleUseCurrentLocation = () => {
         } else if (program.programType && validProgramTypes.includes(program.programType)) {
           programType = program.programType;
         }
-        
+
         // Validate and set duration
         let duration = '1 Month'; // Default
         if (program.duration && validDurations.includes(program.duration)) {
           duration = program.duration;
         }
-        
+
         return {
           partnerSchool: program.partnerSchool.trim(),
           programType: programType,
@@ -1083,8 +1083,8 @@ const handleUseCurrentLocation = () => {
 
       // Validate and clean global tie-ups
       const validTieUpTypes = ['Memorandum of Understanding (MoU)', 'Research Collaboration', 'Curriculum Development', 'Faculty Training'];
-      
-      const validGlobalTieUps = (formData.globalTieUps || []).filter(tieup => 
+
+      const validGlobalTieUps = (formData.globalTieUps || []).filter(tieup =>
         tieup.partnerName && tieup.partnerName.trim()
       ).map(tieup => {
         // Validate and set natureOfTieUp
@@ -1094,7 +1094,7 @@ const handleUseCurrentLocation = () => {
         } else if (tieup.natureOfTieUp && validTieUpTypes.includes(tieup.natureOfTieUp)) {
           natureOfTieUp = tieup.natureOfTieUp;
         }
-        
+
         return {
           partnerName: tieup.partnerName.trim(),
           natureOfTieUp: natureOfTieUp,
@@ -1110,7 +1110,7 @@ const handleUseCurrentLocation = () => {
           exchangePrograms: validExchangePrograms,
           globalTieUps: validGlobalTieUps
         });
-        
+
         const payloadIntl = { schoolId, exchangePrograms: validExchangePrograms, globalTieUps: validGlobalTieUps };
         promises.push(updateOrAdd(updateInternationalExposure, addInternationalExposure, schoolId, payloadIntl));
       } else {
@@ -1118,8 +1118,8 @@ const handleUseCurrentLocation = () => {
       }
 
       // Add/Update Academics (simplified - only summary fields)
-      if ((formData.averageClass10Result !== '' && formData.averageClass10Result != null) || (formData.averageClass12Result !== '' && formData.averageClass12Result != null) || (formData.averageSchoolMarks !== '' && formData.averageSchoolMarks != null) || 
-          formData.specialExamsTraining?.length > 0 || formData.extraCurricularActivities?.length > 0) {
+      if ((formData.averageClass10Result !== '' && formData.averageClass10Result != null) || (formData.averageClass12Result !== '' && formData.averageClass12Result != null) || (formData.averageSchoolMarks !== '' && formData.averageSchoolMarks != null) ||
+        formData.specialExamsTraining?.length > 0 || formData.extraCurricularActivities?.length > 0) {
         const payloadAcademics = {
           schoolId,
           averageClass10Result: (formData.averageClass10Result === '' || formData.averageClass10Result == null) ? undefined : Number(formData.averageClass10Result),
@@ -1134,15 +1134,15 @@ const handleUseCurrentLocation = () => {
 
       // Add/Update other details (matching backend OtherDetails model)
       if ((formData.genderRatioMale !== '' && formData.genderRatioMale != null) || (formData.genderRatioFemale !== '' && formData.genderRatioFemale != null) || (formData.genderRatioOthers !== '' && formData.genderRatioOthers != null) ||
-          formData.scholarshipDiversityTypes?.length > 0 || (formData.scholarshipDiversityCoverage !== '' && formData.scholarshipDiversityCoverage != null) ||
-          formData.specialNeedsStaff || (formData.specialNeedsSupportPercentage !== '' && formData.specialNeedsSupportPercentage != null) ||
-          formData.specialNeedsFacilities?.length > 0) {
-        
+        formData.scholarshipDiversityTypes?.length > 0 || (formData.scholarshipDiversityCoverage !== '' && formData.scholarshipDiversityCoverage != null) ||
+        formData.specialNeedsStaff || (formData.specialNeedsSupportPercentage !== '' && formData.specialNeedsSupportPercentage != null) ||
+        formData.specialNeedsFacilities?.length > 0) {
+
         // Ensure non-negative values for gender ratios
         const maleRatio = formData.genderRatioMale ? Math.max(0, Number(formData.genderRatioMale)) : 0;
         const femaleRatio = formData.genderRatioFemale ? Math.max(0, Number(formData.genderRatioFemale)) : 0;
         const othersRatio = formData.genderRatioOthers ? Math.max(0, Number(formData.genderRatioOthers)) : 0;
-        
+
         const payloadOther = {
           schoolId,
           genderRatio: {
@@ -1194,7 +1194,7 @@ const handleUseCurrentLocation = () => {
       }
 
       toast.success(
-        isEditMode 
+        isEditMode
           ? "School profile updated successfully!"
           : "School Registration Successful! Your profile is pending approval."
       );
@@ -1229,10 +1229,10 @@ const handleUseCurrentLocation = () => {
       console.error('Submission error:', error);
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
-      
+
       const errorMessage = error.response?.data?.message || error.message || (isEditMode ? "Update failed." : "Registration failed.");
       toast.error(errorMessage);
-      
+
       // Show detailed error in console for debugging
       if (error.response?.data) {
         console.error('Backend validation errors:', error.response.data);
@@ -1383,7 +1383,7 @@ const handleUseCurrentLocation = () => {
         if (draft.logoPreview) {
           setLogoPreview(draft.logoPreview);
         }
-        
+
         if (draft.admissionSteps) {
           setAdmissionSteps(draft.admissionSteps);
         }
@@ -1435,7 +1435,7 @@ const handleUseCurrentLocation = () => {
         email: currentUser.email,
         availableFields: Object.keys(currentUser)
       });
-      
+
       setFormData(prev => ({
         ...prev,
         email: currentUser.email || prev.email
@@ -1447,7 +1447,7 @@ const handleUseCurrentLocation = () => {
 
   const checkForExistingSchool = async () => {
     console.log('🔍 Starting checkForExistingSchool...');
-    
+
     // 1. Security Check
     if (!currentUser?._id) {
       console.log('❌ No current user, treating as new school');
@@ -1457,11 +1457,11 @@ const handleUseCurrentLocation = () => {
       loadDraft();
       return;
     }
-    
+
     try {
       setIsLoadingExistingData(true);
       let school = null;
-      
+
       // 2. Try LocalStorage (Fastest check)
       const cachedSchoolId = typeof localStorage !== 'undefined' && localStorage.getItem('lastCreatedSchoolId');
       if (cachedSchoolId) {
@@ -1470,39 +1470,39 @@ const handleUseCurrentLocation = () => {
           const found = res?.data?.data || res?.data;
           // Verify ownership
           if (found && found.authId === currentUser._id) {
-             school = found;
-             console.log('✅ Found existing school from localStorage');
+            school = found;
+            console.log('✅ Found existing school from localStorage');
           }
         } catch (e) {
           localStorage.removeItem('lastCreatedSchoolId');
         }
       }
-      
+
       // 3. Try Direct Database Lookup via Auth ID (The Fix for Logout/Login)
       if (!school) {
         try {
           console.log('🔍 Fetching directly via Auth ID:', currentUser._id);
           // This calls the API: GET /schools/auth/:authId
           const res = await getSchoolById(currentUser._id);
-          
+
           const foundData = res?.data?.data || res?.data;
-          
+
           // Handle if backend returns an Array [school] or Object {school}
           if (Array.isArray(foundData) && foundData.length > 0) {
             school = foundData[0];
           } else if (foundData && foundData._id) {
-             school = foundData;
+            school = foundData;
           }
 
           if (school) {
-             console.log('✅ Found school via Database Lookup');
-             localStorage.setItem('lastCreatedSchoolId', school._id);
+            console.log('✅ Found school via Database Lookup');
+            localStorage.setItem('lastCreatedSchoolId', school._id);
           }
         } catch (e) {
           console.log('❌ No school found for this user in DB.');
         }
       }
-      
+
       // 4. Final Decision: Load Data or Start Fresh
       if (school && school._id) {
         console.log('🎉 School found! Loading data...');
@@ -1514,13 +1514,13 @@ const handleUseCurrentLocation = () => {
         console.log('❌ No existing school found. Starting fresh.');
         setHasExistingSchool(false);
         setIsEditMode(false);
-        
+
         // Auto-fill email for new users
         setFormData(prev => ({
           ...prev,
           email: currentUser.email || prev.email
         }));
-        
+
         // Only load draft if no real school exists
         loadDraft();
       }
@@ -1540,14 +1540,14 @@ const handleUseCurrentLocation = () => {
       email: school.email,
       city: school.city
     });
-    
+
     // Clear any existing draft since we're loading real school data
     try {
       localStorage.removeItem("schoolRegDraft");
     } catch (error) {
       console.error("Could not clear draft:", error);
     }
-    
+
     // Load existing logo if available
     if (school.logo) {
       // Backend returns logo as object with url property
@@ -1583,15 +1583,15 @@ const handleUseCurrentLocation = () => {
       rank: school.rank || "",
       specialist: Array.isArray(school.specialist) ? school.specialist : [],
       tags: Array.isArray(school.tags) ? school.tags : [],
-      
-      
+
+
     }));
     setSocialLinks({
-  
-  instagramHandle: school.instagramHandle || "",
-  twitterHandle: school.twitterHandle || "",
-  linkedinHandle: school.linkedinHandle || ""
-});
+
+      instagramHandle: school.instagramHandle || "",
+      twitterHandle: school.twitterHandle || "",
+      linkedinHandle: school.linkedinHandle || ""
+    });
     // Load sub-resources in parallel and prefill form controls
     try {
       const [
@@ -1634,9 +1634,9 @@ const handleUseCurrentLocation = () => {
       const intl = val(intlRes) || {};
       const faculty = val(facultyRes) || {};
       const timeline = val(timelineRes) || {};
-      const alumniData = (alumniRes.status === 'fulfilled' && alumniRes.value?.data?.data) 
-      ? alumniRes.value.data.data 
-      : {};
+      const alumniData = (alumniRes.status === 'fulfilled' && alumniRes.value?.data?.data)
+        ? alumniRes.value.data.data
+        : {};
       // Prefill arrays/booleans safely (preserve 0/false values)
       setFormData(prev => ({
         ...prev,
@@ -1700,9 +1700,9 @@ const handleUseCurrentLocation = () => {
         // Fees & Scholarships
         feesTransparency: fees.feesTransparency != null ? (
           fees.feesTransparency === 100 || fees.feesTransparency === 'full' ? 'full' :
-          fees.feesTransparency === 50 || fees.feesTransparency === 'partial' ? 'partial' :
-          fees.feesTransparency === 0 || fees.feesTransparency === 'low' ? 'low' :
-          String(fees.feesTransparency)
+            fees.feesTransparency === 50 || fees.feesTransparency === 'partial' ? 'partial' :
+              fees.feesTransparency === 0 || fees.feesTransparency === 'low' ? 'low' :
+                String(fees.feesTransparency)
         ) : prev.feesTransparency,
         classFees: Array.isArray(fees.classFees) ? fees.classFees : prev.classFees,
         scholarships: Array.isArray(fees.scholarships) ? fees.scholarships : prev.scholarships,
@@ -1741,7 +1741,7 @@ const handleUseCurrentLocation = () => {
           status: t.status || '',
           documentsRequired: Array.isArray(t.documentsRequired) ? t.documentsRequired : [],
           admissionLevel: t.eligibility?.admissionLevel || '',
-          applicationFee: t.applicationFee ?? 0,
+          applicationFee: t.applicationFee ?? 0,
           ageCriteria: t.eligibility?.ageCriteria || '',
           otherInfo: t.eligibility?.otherInfo || ''
         })));
@@ -1843,8 +1843,8 @@ const handleUseCurrentLocation = () => {
     // Smooth scroll to the section
     const el = document.getElementById(id);
     if (el) {
-      el.scrollIntoView({ 
-        behavior: "smooth", 
+      el.scrollIntoView({
+        behavior: "smooth",
         block: "start",
         inline: "nearest"
       });
@@ -1862,9 +1862,9 @@ const handleUseCurrentLocation = () => {
     }
     try {
       setIsSubmitting(true);
-      
+
       let school;
-      
+
       // Method 1: Try localStorage (works if same session)
       const cachedSchoolId = typeof localStorage !== 'undefined' && localStorage.getItem('lastCreatedSchoolId');
       if (cachedSchoolId) {
@@ -1876,7 +1876,7 @@ const handleUseCurrentLocation = () => {
           console.log('❌ localStorage schoolId not valid, trying other methods...');
         }
       }
-      
+
       // Method 2: Try currentUser.schoolId (works if backend returns it)
       if (!school && currentUser?.schoolId) {
         try {
@@ -1887,16 +1887,16 @@ const handleUseCurrentLocation = () => {
           console.log('❌ currentUser.schoolId not valid, trying other methods...');
         }
       }
-      
+
       // Method 3: Fetch schools and filter by authId (frontend-only solution)
       if (!school) {
         try {
           console.log('🔍 Fetching schools to find match by authId...');
-          
+
           // Try multiple status endpoints since 'all' doesn't work
           let schools = [];
           const statuses = ['accepted', 'pending', 'rejected'];
-          
+
           for (const status of statuses) {
             try {
               const res = await getSchoolsByStatus(status);
@@ -1906,22 +1906,22 @@ const handleUseCurrentLocation = () => {
               console.log(`Could not fetch ${status} schools:`, statusErr.message);
             }
           }
-          
+
           console.log(`Found ${schools.length} total schools across all statuses`);
-          
+
           // Find school where authId matches current user's _id
           school = schools.find(s => s.authId === currentUser._id);
-          
+
           if (school) {
             console.log('✅ Found school by authId match');
             localStorage.setItem('lastCreatedSchoolId', school._id);
           } else {
             console.log('⚠️ No school found with authId, trying email match...');
-            
+
             // Fallback: Try to match by email (for schools created before authId was added)
             if (currentUser.email) {
               school = schools.find(s => s.email && s.email.toLowerCase() === currentUser.email.toLowerCase());
-              
+
               if (school) {
                 console.log('✅ Found school by email match');
                 localStorage.setItem('lastCreatedSchoolId', school._id);
@@ -1937,19 +1937,19 @@ const handleUseCurrentLocation = () => {
           console.log('❌ Could not fetch schools:', e.message);
         }
       }
-      
+
       if (!school) {
         toast.error("No linked school profile found for this account. Please create a school profile first.");
         return;
       }
-      
+
       // Clear any existing draft since we're loading real school data
       try {
         localStorage.removeItem("schoolRegDraft");
       } catch (error) {
         console.error("Could not clear draft:", error);
       }
-      
+
       setEditingSchoolId(school._id);
       setIsEditMode(true);
       setHasExistingSchool(true);
@@ -1981,15 +1981,15 @@ const handleUseCurrentLocation = () => {
         specialist: Array.isArray(school.specialist) ? school.specialist : [],
         tags: Array.isArray(school.tags) ? school.tags : []
       }));
-      
-     setSocialLinks({
-   // Note: Ensure this exists in your backend schema
-  instagramHandle: school.instagramHandle || "", 
-  twitterHandle: school.twitterHandle || "", 
-  linkedinHandle: school.linkedinHandle || ""
-});
 
-      
+      setSocialLinks({
+        // Note: Ensure this exists in your backend schema
+        instagramHandle: school.instagramHandle || "",
+        twitterHandle: school.twitterHandle || "",
+        linkedinHandle: school.linkedinHandle || ""
+      });
+
+
       // Load sub-resources in parallel and prefill form controls
       const [
         amenitiesRes,
@@ -2044,9 +2044,9 @@ const handleUseCurrentLocation = () => {
         eLearningPlatforms: Array.isArray(tech.eLearningPlatforms) ? tech.eLearningPlatforms : prev.eLearningPlatforms,
         feesTransparency: fees.feesTransparency != null ? (
           fees.feesTransparency === 100 || fees.feesTransparency === 'full' ? 'full' :
-          fees.feesTransparency === 50 || fees.feesTransparency === 'partial' ? 'partial' :
-          fees.feesTransparency === 0 || fees.feesTransparency === 'low' ? 'low' :
-          String(fees.feesTransparency)
+            fees.feesTransparency === 50 || fees.feesTransparency === 'partial' ? 'partial' :
+              fees.feesTransparency === 0 || fees.feesTransparency === 'low' ? 'low' :
+                String(fees.feesTransparency)
         ) : prev.feesTransparency,
         classFees: Array.isArray(fees.classFees) ? fees.classFees : prev.classFees,
         scholarships: Array.isArray(fees.scholarships) ? fees.scholarships : prev.scholarships,
@@ -2120,12 +2120,12 @@ const handleUseCurrentLocation = () => {
         experience: m.experience ?? ''
       })) : facultyQuality);
       setAdmissionSteps(Array.isArray(timeline.timelines) ? timeline.timelines : Array.isArray(timeline) ? timeline : []);
-      
+
       // Load academic performance trends and exam qualifiers
       console.log('📚 Loading Academics from Backend:', {
         fullAcademics: academics
       });
-      
+
       // academicResults and examQualifiers removed - not in backend schema
 
       toast.success("Loaded your existing school details. You can update and save.");
@@ -2138,13 +2138,13 @@ const handleUseCurrentLocation = () => {
 
   return (
     <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen py-8 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-400/20 to-orange-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        </div>
-      
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-400/20 to-orange-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
+
       <div className="container mx-auto max-w-7xl px-6 relative z-10">
         <form
           onSubmit={handleSubmit}
@@ -2162,7 +2162,7 @@ const handleUseCurrentLocation = () => {
               </h1>
               <div className="flex items-center justify-center gap-3 mb-6">
                 <p className="text-center text-gray-600 animate-fade-in-delay">
-                  {hasExistingSchool 
+                  {hasExistingSchool
                     ? 'Update your school profile information'
                     : 'Complete your school profile with our interactive presentation'
                   }
@@ -2177,7 +2177,7 @@ const handleUseCurrentLocation = () => {
               )}*/}
             </>
           )}
-          
+
           {/* Slide Indicators */}
           <div className="flex justify-center gap-2 mb-6">
             {sections.map((section, index) => (
@@ -2187,11 +2187,10 @@ const handleUseCurrentLocation = () => {
                   console.log('Slide indicator clicked:', section.id); // Debug log
                   scrollToSection(section.id);
                 }}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  activeSection === section.id
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeSection === section.id
                     ? 'bg-gradient-to-r from-indigo-500 to-purple-500 scale-125'
                     : 'bg-gray-300'
-                }`}
+                  }`}
                 title={`Go to ${section.label}`}
               />
             ))}
@@ -2202,7 +2201,7 @@ const handleUseCurrentLocation = () => {
               <span>{progressPercent}%</span>
             </div>
             <div className="mt-1 h-3 w-full bg-gray-200 rounded-full overflow-hidden shadow-inner">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-1000 ease-out rounded-full relative"
                 style={{ width: `${progressPercent}%` }}
               >
@@ -2222,25 +2221,22 @@ const handleUseCurrentLocation = () => {
                     console.log('Navigation clicked:', id); // Debug log
                     scrollToSection(id);
                   }}
-                  className={`flex items-center gap-3 whitespace-nowrap rounded-2xl px-6 py-4 text-sm font-medium border-2 ${
-                    activeSection === id
+                  className={`flex items-center gap-3 whitespace-nowrap rounded-2xl px-6 py-4 text-sm font-medium border-2 ${activeSection === id
                       ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
                       : "bg-white/80 text-gray-700 border-gray-200 shadow-md"
-                  }`}
+                    }`}
                 >
-                  <div className={`p-2 rounded-xl transition-all duration-300 ${
-                    activeSection === id 
-                      ? "bg-white/20" 
+                  <div className={`p-2 rounded-xl transition-all duration-300 ${activeSection === id
+                      ? "bg-white/20"
                       : "bg-gray-100"
-                  }`}>
+                    }`}>
                     {Icon ? <Icon size={20} className={activeSection === id ? "text-white" : "text-gray-600"} /> : null}
                   </div>
                   <span className="font-semibold">{label}</span>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                    activeSection === id 
-                      ? "bg-white/20 text-white" 
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${activeSection === id
+                      ? "bg-white/20 text-white"
                       : "bg-gray-200 text-gray-600"
-                  }`}>
+                    }`}>
                     {index + 1}
                   </div>
                 </button>
@@ -2263,1672 +2259,1670 @@ const handleUseCurrentLocation = () => {
                 </div>
               </div>
 
-             {/* School Identity */}
-             <div className="mb-6 bg-white border rounded-lg p-4">
-               <div className="flex items-start gap-4">
-                 <div>
-                   <div className="text-sm font-medium text-gray-800 mb-1">School Identity</div>
-                   <div className="text-xs text-gray-500">Upload your school logo (PNG, JPG, JPEG). Max 5MB.</div>
-                 </div>
-               </div>
-               <div className="mt-4 flex items-center gap-4">
-                 <div className="w-24 h-24 border-2 border-dashed rounded-md flex items-center justify-center bg-gray-50 overflow-hidden">
-                   {logoPreview ? (
-                     <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
-                   ) : (
-                     <span className="text-xs text-gray-400">Logo</span>
-                   )}
-                 </div>
-                 <div>
-                   <input id="logo-input" type="file" accept="image/png,image/jpeg" className="hidden" onChange={handleLogoChange} />
-                   <button type="button" onClick={() => document.getElementById("logo-input").click()} className="px-3 py-2 text-sm rounded-md border border-gray-300 bg-white">Upload Logo</button>
-                   {logoFile && <div className="text-xs text-gray-500 mt-1">{logoFile.name}</div>}
-                 </div>
-               </div>
-             </div>
+              {/* School Identity */}
+              <div className="mb-6 bg-white border rounded-lg p-4">
+                <div className="flex items-start gap-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-800 mb-1">School Identity</div>
+                    <div className="text-xs text-gray-500">Upload your school logo (PNG, JPG, JPEG). Max 5MB.</div>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-4">
+                  <div className="w-24 h-24 border-2 border-dashed rounded-md flex items-center justify-center bg-gray-50 overflow-hidden">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-xs text-gray-400">Logo</span>
+                    )}
+                  </div>
+                  <div>
+                    <input id="logo-input" type="file" accept="image/png,image/jpeg" className="hidden" onChange={handleLogoChange} />
+                    <button type="button" onClick={() => document.getElementById("logo-input").click()} className="px-3 py-2 text-sm rounded-md border border-gray-300 bg-white">Upload Logo</button>
+                    {logoFile && <div className="text-xs text-gray-500 mt-1">{logoFile.name}</div>}
+                  </div>
+                </div>
+              </div>
 
-             {/* Social Media Links */}
-             <div className="mb-6 bg-white border rounded-lg p-4">
-               <div className="text-sm font-medium text-gray-800 mb-2">Social Media Links</div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                 <input
-                   type="url"
-                   placeholder="https://instagram.com/yourschool"
-                   value={socialLinks.instagramHandle}
-                   onChange={(e) => setSocialLinks((p) => ({ ...p, instagramHandle: e.target.value }))}
-                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                 />
-                 <input
-                   type="url"
-                   placeholder="https://twitter.com/yourschool"
-                   value={socialLinks.twitterHandle}
-                   onChange={(e) => setSocialLinks((p) => ({ ...p, twitterHandle: e.target.value }))}
-                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                 />
-                 <input
-                   type="url"
-                   placeholder="https://linkedin.com/company/yourschool"
-                   value={socialLinks.linkedinHandle}
-                   onChange={(e) => setSocialLinks((p) => ({ ...p, linkedinHandle: e.target.value }))}
-                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                 />
-               </div>
-             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                label="School Name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Phone Number"
-                name="phoneNo"
-                value={formData.phoneNo}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Website"
-                name="website"
-                value={formData.website}
-                onChange={handleInputChange}
-              />
-              <FormField
-                label="Address"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Teacher:Student Ratio (e.g., 1:20)"
-                name="TeacherToStudentRatio"
-                type="text"
-                value={formData.TeacherToStudentRatio}
-                onChange={handleInputChange}
-              />
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              {/* Social Media Links */}
+              <div className="mb-6 bg-white border rounded-lg p-4">
+                <div className="text-sm font-medium text-gray-800 mb-2">Social Media Links</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <input
+                    type="url"
+                    placeholder="https://instagram.com/yourschool"
+                    value={socialLinks.instagramHandle}
+                    onChange={(e) => setSocialLinks((p) => ({ ...p, instagramHandle: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <input
+                    type="url"
+                    placeholder="https://twitter.com/yourschool"
+                    value={socialLinks.twitterHandle}
+                    onChange={(e) => setSocialLinks((p) => ({ ...p, twitterHandle: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <input
+                    type="url"
+                    placeholder="https://linkedin.com/company/yourschool"
+                    value={socialLinks.linkedinHandle}
+                    onChange={(e) => setSocialLinks((p) => ({ ...p, linkedinHandle: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
-                  label="Latitude (GPS)"
-                  name="latitude"
-                  value={formData.latitude}
+                  label="School Name"
+                  name="name"
+                  value={formData.name}
                   onChange={handleInputChange}
                   required
                 />
                 <FormField
-                  label="Longitude (GPS)"
-                  name="longitude"
-                  value={formData.longitude}
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
                   onChange={handleInputChange}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={handleUseCurrentLocation}
-                  disabled={isFetchingLocation}
-                  className={`h-10 mt-7 rounded-md px-4 flex items-center justify-center gap-2 
+                <FormField
+                  label="Phone Number"
+                  name="phoneNo"
+                  value={formData.phoneNo}
+                  onChange={handleInputChange}
+                  required
+                />
+                <FormField
+                  label="Website"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleInputChange}
+                />
+                <FormField
+                  label="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  required
+                />
+                <FormField
+                  label="Teacher:Student Ratio (e.g., 1:20)"
+                  name="TeacherToStudentRatio"
+                  type="text"
+                  value={formData.TeacherToStudentRatio}
+                  onChange={handleInputChange}
+                />
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <FormField
+                    label="Latitude (GPS)"
+                    name="latitude"
+                    value={formData.latitude}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <FormField
+                    label="Longitude (GPS)"
+                    name="longitude"
+                    value={formData.longitude}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={handleUseCurrentLocation}
+                    disabled={isFetchingLocation}
+                    className={`h-10 mt-7 rounded-md px-4 flex items-center justify-center gap-2 
                     ${isFetchingLocation ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white"}
                   `}
-                >
-                  {isFetchingLocation ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      Fetching...
-                    </>
-                  ) : (
-                    "Use Current Location"
-                  )}
-                </button>
-              </div>
-              <div className="md:col-span-2 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-md">
-                <div className="flex items-start">
-                  <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <p className="text-sm text-blue-800">
-                    <strong>GPS Location Required:</strong> Latitude and Longitude are mandatory for accurate distance calculation. 
-                    This helps parents find schools near their location. Click "Use Current Location" to automatically fill these fields.
-                  </p>
+                  >
+                    {isFetchingLocation ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Fetching...
+                      </>
+                    ) : (
+                      "Use Current Location"
+                    )}
+                  </button>
                 </div>
-              </div>
-              <FormField
-                label="City"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="State"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Pincode"
-                name="pincode"
-                value={formData.pincode}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Board"
-                name="board"
-                type="select"
-               options={[
-  "CBSE",
-  "ICSE",
-  "CISCE",
-  "NIOS",
-  "SSC",
-  "IGCSE",
-  "IB",
-  "KVS",
-  "JNV",
-  "DBSE",
-  "MSBSHSE",
-  "UPMSP",
-  "KSEEB",
-  "WBBSE",
-  "GSEB",
-  "RBSE",
-  "BSEB",
-  "PSEB",
-  "BSE",
-  "SEBA",
-  "MPBSE",
-  "STATE",
-  "OTHER"
-]}
-
-                value={formData.board}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Classes Upto"
-                name="upto"
-                value={formData.upto}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Gender Type"
-                name="genderType"
-                type="select"
-                options={["co-ed", "boys", "girls"]}
-                value={formData.genderType}
-                onChange={handleInputChange}
-                required
-              />
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  School Shifts <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {["morning", "afternoon", "night school"].map((shift) => (
-                    <label key={shift} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.shifts.includes(shift)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData(prev => ({
-                              ...prev,
-                              shifts: [...prev.shifts, shift]
-                            }));
-                          } else {
-                            setFormData(prev => ({
-                              ...prev,
-                              shifts: prev.shifts.filter(s => s !== shift)
-                            }));
-                          }
-                        }}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span className="text-sm text-gray-700 capitalize">
-                        {shift === "night school" ? "Night School" : shift}
-                      </span>
-                    </label>
-                  ))}
+                <div className="md:col-span-2 bg-blue-50 border-l-4 border-blue-500 p-3 rounded-md">
+                  <div className="flex items-start">
+                    <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                    <p className="text-sm text-blue-800">
+                      <strong>GPS Location Required:</strong> Latitude and Longitude are mandatory for accurate distance calculation.
+                      This helps parents find schools near their location. Click "Use Current Location" to automatically fill these fields.
+                    </p>
+                  </div>
                 </div>
-                {formData.shifts.length === 0 && (
-                  <p className="text-red-500 text-xs mt-1">Please select at least one shift</p>
-                )}
-              </div>
-              <FormField
-                label="School Mode"
-                name="schoolMode"
-                type="select"
-                options={["convent", "private", "government"]}
-                value={formData.schoolMode}
-                onChange={handleInputChange}
-                required
-              />
-              <FormField
-                label="Fee Range"
-                name="feeRange"
-                type="select"
-                options={feeRangeOptions}
-                value={formData.feeRange}
-                onChange={handleInputChange}
-                required
-              />
-              <div className="md:col-span-2">
                 <FormField
-                  label="Description"
-                  name="description"
-                  type="textarea"
-                  value={formData.description}
+                  label="City"
+                  name="city"
+                  value={formData.city}
                   onChange={handleInputChange}
                   required
                 />
-              </div>
-            </div>
-
-            <div className="block" id="amenities">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl shadow-lg">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                    ✨ Amenities & Activities
-                  </h2>
-                  <p className="text-gray-600 mt-1">Facilities and programs offered</p>
-                </div>
-              </div>
-            <div className="grid grid-cols-1 gap-6">
-              <div>
                 <FormField
-                  label="Amenities"
-                  name="predefinedAmenities"
-                  type="checkboxGroup"
-                  options={amenitiesOptions}
-                  value={formData.predefinedAmenities}
-                  onChange={handleCheckboxChange}
-                />
-              </div>
-              <div>
-                <DynamicAmenitiesField
-                  label="Other Amenities"
-                  value={customAmenities}
-                  onChange={setCustomAmenities}
-                />
-              </div>
-              <div>
-                <FormField
-                  label="Activities"
-                  name="activities"
-                  type="checkboxGroup"
-                  options={activitiesOptions}
-                  value={formData.activities}
-                  onChange={handleCheckboxChange}
-                />
-              </div>
-              <div>
-                <DynamicActivitiesField
-                  label="Other Activities"
-                  value={customActivities}
-                  onChange={setCustomActivities}
-                />
-              </div>
-            </div>
-
-            <div className="block" id="alumni">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-lg">
-                  <Award className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                    🏆 Alumni Information
-                  </h2>
-                  <p className="text-gray-600 mt-1">Notable graduates and achievements</p>
-                </div>
-              </div>
-            <div className="space-y-8">
-              <DynamicListField
-                label="Famous Alumni (Name & Profession)"
-                value={famousAlumnies}
-                onChange={setFamousAlumnies}
-                type="famous"
-              />
-              <DynamicListField
-                label="Top Alumni (Name & Percentage)"
-                value={topAlumnies}
-                onChange={setTopAlumnies}
-                type="top"
-              />
-              <DynamicListField
-                label="Other Alumni (Name & Percentage)"
-                value={otherAlumnies}
-                onChange={setOtherAlumnies}
-                type="other"
-              />
-            </div>
-
-            <div className="block" id="faculty">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-                  <Users2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                    👥 Faculty Quality
-                  </h2>
-                  <p className="text-gray-600 mt-1">Teaching staff qualifications and experience</p>
-                </div>
-              </div>
-          {/* Simplified Faculty Quality inputs handled per-entry below */}
-
-          <div className="mt-6">
-            {facultyQuality.map((fq, index) => (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end bg-gray-50 p-4 rounded-md my-2">
-                <FormField
-                  label="Faculty Name"
-                  name={`fq-name-${index}`}
-                  value={fq.name || ''}
-                  onChange={(e) => {
-                    const list = facultyQuality.slice();
-                    list[index] = { ...list[index], name: e.target.value };
-                    setFacultyQuality(list);
-                  }}
+                  label="State"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
                 />
                 <FormField
-                  label="Qualification"
-                  name={`fq-qualification-${index}`}
-                  value={fq.qualification || ''}
-                  onChange={(e) => {
-                    const list = facultyQuality.slice();
-                    list[index] = { ...list[index], qualification: e.target.value };
-                    setFacultyQuality(list);
-                  }}
+                  label="Pincode"
+                  name="pincode"
+                  value={formData.pincode}
+                  onChange={handleInputChange}
+                  required
                 />
                 <FormField
-                  label="Awards"
-                  name={`fq-awards-${index}`}
-                  value={fq.awards || ''}
-                  onChange={(e) => {
-                    const list = facultyQuality.slice();
-                    list[index] = { ...list[index], awards: e.target.value };
-                    setFacultyQuality(list);
-                  }}
+                  label="Board"
+                  name="board"
+                  type="select"
+                  options={[
+                    "CBSE",
+                    "ICSE",
+                    "CISCE",
+                    "NIOS",
+                    "SSC",
+                    "IGCSE",
+                    "IB",
+                    "KVS",
+                    "JNV",
+                    "DBSE",
+                    "MSBSHSE",
+                    "UPMSP",
+                    "KSEEB",
+                    "WBBSE",
+                    "GSEB",
+                    "RBSE",
+                    "BSEB",
+                    "PSEB",
+                    "BSE",
+                    "SEBA",
+                    "MPBSE",
+                    "STATE",
+                    "OTHER"
+                  ]}
+
+                  value={formData.board}
+                  onChange={handleInputChange}
+                  required
                 />
                 <FormField
-                  label="Teaching experience (yrs)"
-                  name={`fq-exp-${index}`}
-                  type="number"
-                  min="0"
-                  value={fq.experience || ''}
-                  onChange={(e) => {
-                    const value = Math.max(0, Number(e.target.value));
-                    const list = facultyQuality.slice();
-                    list[index] = { ...list[index], experience: value };
-                    setFacultyQuality(list);
-                  }}
+                  label="Classes Upto"
+                  name="upto"
+                  value={formData.upto}
+                  onChange={handleInputChange}
+                  required
                 />
-                <button
-                  type="button"
-                  onClick={() => setFacultyQuality(facultyQuality.filter((_, i) => i !== index))}
-                  className="text-red-500 mb-2"
-                  aria-label={`Remove faculty row ${index + 1}`}
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => setFacultyQuality([...facultyQuality, { name: '', qualification: '', awards: '', experience: '' }])}
-              className="mt-2 flex items-center text-sm text-indigo-600"
-            >
-              <PlusCircle size={16} className="mr-1" /> Add Faculty
-            </button>
-          </div>
-            </div>
-
-            <div className="block" id="infrastructure">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg">
-                  <Building2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                    🏢 Infrastructure
-                  </h2>
-                  <p className="text-gray-600 mt-1">Facilities, labs, and physical resources</p>
-                </div>
-              </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Labs - Type</label>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                {['Physics','Chemistry','Biology','Computer','Robotics','Language'].map(opt => (
-                  <label key={opt} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="infraLabTypes"
-                      value={opt}
-                      checked={(formData.infraLabTypes || []).includes(opt)}
-                      onChange={(e) => {
-                        const { checked, value } = e.target;
-                        const current = formData.infraLabTypes || [];
-                        const next = checked ? [...current, value] : current.filter(v => v !== value);
-                        setFormData(prev => ({ ...prev, infraLabTypes: next }));
-                      }}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-gray-700">{opt}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <FormField
-              label="Library - number of books"
-              name="infraLibraryBooks"
-              type="number"
-              min="0"
-              value={formData.infraLibraryBooks}
-              onChange={handleInputChange}
-            />
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Sports Grounds - Type</label>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                {['Football','Cricket','Basketball','Tennis','Athletics','Badminton'].map(opt => (
-                  <label key={opt} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="infraSportsTypes"
-                      value={opt}
-                      checked={(formData.infraSportsTypes || []).includes(opt)}
-                      onChange={(e) => {
-                        const { checked, value } = e.target;
-                        const current = formData.infraSportsTypes || [];
-                        const next = checked ? [...current, value] : current.filter(v => v !== value);
-                        setFormData(prev => ({ ...prev, infraSportsTypes: next }));
-                      }}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-gray-700">{opt}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <FormField
-              label="Smart Classrooms - number"
-              name="infraSmartClassrooms"
-              type="number"
-              min="0"
-              value={formData.infraSmartClassrooms}
-              onChange={handleInputChange}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <div className="bg-white border rounded-lg p-4 text-center">
-              <div className="text-gray-500 text-sm">Labs</div>
-              <div className="text-lg font-semibold text-gray-900">{(formData.infraLabTypes || []).join(', ') || '—'}</div>
-            </div>
-            <div className="bg-white border rounded-lg p-4 text-center">
-              <div className="text-gray-500 text-sm">Books</div>
-              <div className="text-lg font-semibold text-gray-900">{formData.infraLibraryBooks || '—'}</div>
-            </div>
-            <div className="bg-white border rounded-lg p-4 text-center">
-              <div className="text-gray-500 text-sm">Sports</div>
-              <div className="text-lg font-semibold text-gray-900">{(formData.infraSportsTypes || []).join(', ') || '—'}</div>
-            </div>
-            <div className="bg-white border rounded-lg p-4 text-center">
-              <div className="text-gray-500 text-sm">Smart Rooms</div>
-              <div className="text-lg font-semibold text-gray-900">{formData.infraSmartClassrooms || '—'}</div>
-            </div>
-          </div>
-            </div>
-
-            <div className="block" id="safety">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl border border-red-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl shadow-lg">
-                  <ShieldCheck className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
-                    🛡️ Safety & Security
-                  </h2>
-                  <p className="text-gray-600 mt-1">Security measures and safety protocols</p>
-                </div>
-              </div>
-          
-          <div className="space-y-8">
-            {/* CCTV Coverage */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">CCTV Coverage</h3>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CCTV Coverage Percentage
-                </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                  value={formData.cctvCoveragePercentage || 0}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cctvCoveragePercentage: e.target.value }))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                <FormField
+                  label="Gender Type"
+                  name="genderType"
+                  type="select"
+                  options={["co-ed", "boys", "girls"]}
+                  value={formData.genderType}
+                  onChange={handleInputChange}
+                  required
                 />
-                <div className="flex justify-between text-sm text-gray-600 mt-1">
-                  <span>0%</span>
-                  <span className="font-semibold text-indigo-600">{formData.cctvCoveragePercentage || 0}%</span>
-                  <span>100%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Medical Facility */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Medical Facility</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Doctor Availability
+                    School Shifts <span className="text-red-500">*</span>
                   </label>
-              <select
-                    value={formData.medicalFacility?.doctorAvailability || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      medicalFacility: {
-                        ...prev.medicalFacility,
-                        doctorAvailability: e.target.value
-                      }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">Select Availability</option>
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="On-call">On-call</option>
-                    <option value="Not Available">Not Available</option>
-              </select>
-            </div>
-
-                <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                      checked={formData.medicalFacility?.medkitAvailable || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        medicalFacility: {
-                          ...prev.medicalFacility,
-                          medkitAvailable: e.target.checked
-                        }
-                      }))}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700">Medkit Available</span>
-                </label>
-                </div>
-
-                <div className="flex items-center">
-                  <label className="flex items-center">
-                <input
-                      type="checkbox"
-                      checked={formData.medicalFacility?.ambulanceAvailable || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        medicalFacility: {
-                          ...prev.medicalFacility,
-                          ambulanceAvailable: e.target.checked
-                        }
-                      }))}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700">Ambulance Available</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Transport Safety */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Transport Safety</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.transportSafety?.gpsTrackerAvailable || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        transportSafety: {
-                          ...prev.transportSafety,
-                          gpsTrackerAvailable: e.target.checked
-                        }
-                      }))}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700">GPS Tracker Available</span>
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.transportSafety?.driversVerified || false}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        transportSafety: {
-                          ...prev.transportSafety,
-                          driversVerified: e.target.checked
-                        }
-                      }))}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700">Drivers Verified</span>
-                  </label>
-                </div>
-                  </div>
-            </div>
-
-            {/* Fire Safety Measures */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Fire Safety Measures</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {['Extinguishers', 'Alarms', 'Sprinklers', 'Evacuation Drills'].map((measure) => (
-                  <label key={measure} className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer">
-                          <input
-                            type="checkbox"
-                      checked={(formData.fireSafetyMeasures || []).includes(measure)}
-                      onChange={(e) => {
-                        const current = formData.fireSafetyMeasures || [];
-                        if (e.target.checked) {
-                          setFormData(prev => ({ ...prev, fireSafetyMeasures: [...current, measure] }));
-                        } else {
-                          setFormData(prev => ({ ...prev, fireSafetyMeasures: current.filter(m => m !== measure) }));
-                        }
-                      }}
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700">{measure}</span>
-                        </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {["morning", "afternoon", "night school"].map((shift) => (
+                      <label key={shift} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.shifts.includes(shift)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                shifts: [...prev.shifts, shift]
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                shifts: prev.shifts.filter(s => s !== shift)
+                              }));
+                            }
+                          }}
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700 capitalize">
+                          {shift === "night school" ? "Night School" : shift}
+                        </span>
+                      </label>
                     ))}
-            </div>
-          </div>
-
-            {/* Visitor Management System */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Visitor Management</h3>
-              <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.visitorManagementSystem || false}
-                    onChange={(e) => setFormData(prev => ({ ...prev, visitorManagementSystem: e.target.checked }))}
-                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  </div>
+                  {formData.shifts.length === 0 && (
+                    <p className="text-red-500 text-xs mt-1">Please select at least one shift</p>
+                  )}
+                </div>
+                <FormField
+                  label="School Mode"
+                  name="schoolMode"
+                  type="select"
+                  options={["convent", "private", "government"]}
+                  value={formData.schoolMode}
+                  onChange={handleInputChange}
+                  required
+                />
+                <FormField
+                  label="Fee Range"
+                  name="feeRange"
+                  type="select"
+                  options={feeRangeOptions}
+                  value={formData.feeRange}
+                  onChange={handleInputChange}
+                  required
+                />
+                <div className="md:col-span-2">
+                  <FormField
+                    label="Description"
+                    name="description"
+                    type="textarea"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
                   />
-                  <span className="ml-2 text-sm font-medium text-gray-700">Visitor Management System Available</span>
-                </label>
-              </div>
-            </div>
-          </div>
-            </div>
-
-            <div className="block" id="fees">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-xl shadow-lg">
-                  <DollarSign className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
-                    💰 Fees & Affordability
-                  </h2>
-                  <p className="text-gray-600 mt-1">Pricing structure and scholarship options</p>
                 </div>
               </div>
-          
-          {/* Fee Transparency Indicator */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Fee Transparency Indicator</label>
-            <div className="flex items-center gap-4">
-              <select
-                name="feesTransparency"
-                value={formData.feesTransparency}
-                onChange={handleInputChange}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="full">🟢 Fully Transparent</option>
-                <option value="partial">🟡 Partial Transparency</option>
-                <option value="low">🔴 Low Transparency</option>
-              </select>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Status:</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  formData.feesTransparency === 'full' ? 'bg-green-100 text-green-800' :
-                  formData.feesTransparency === 'partial' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {formData.feesTransparency === 'full' ? 'Fully Transparent' :
-                   formData.feesTransparency === 'partial' ? 'Partial' : 'Low Transparency'}
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* Class-wise Fees Table */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-700">Class-wise Fees Table</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  const newFees = [...(formData.classFees || []), { className: '', tuition: '', activity: '', transport: '', hostel: '', misc: '' }];
-                  setFormData(prev => ({ ...prev, classFees: newFees }));
-                }}
-                className="flex items-center text-sm text-indigo-600"
-              >
-                <PlusCircle size={16} className="mr-1" /> Add Class
-              </button>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">💰 Tuition</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🎭 Activity</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🚌 Transport</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🏫 Hostel</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🏷️ Misc</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {(formData.classFees || []).map((fee, index) => (
-                    <tr key={index} className="">
-                      <td className="px-4 py-3">
-                        <input
-                          type="text"
-                          value={fee.className || ''}
-                          onChange={(e) => {
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], className: e.target.value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
-                          }}
-                          placeholder="e.g., Nursery, LKG, UKG, 1st"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min="0"
-                          value={fee.tuition || ''}
-                          onChange={(e) => {
-                            const value = Math.max(0, Number(e.target.value));
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], tuition: value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
-                          }}
-                          placeholder="0"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min="0"
-                          value={fee.activity || ''}
-                          onChange={(e) => {
-                            const value = Math.max(0, Number(e.target.value));
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], activity: value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
-                          }}
-                          placeholder="0"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min="0"
-                          value={fee.transport || ''}
-                          onChange={(e) => {
-                            const value = Math.max(0, Number(e.target.value));
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], transport: value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
-                          }}
-                          placeholder="0"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min="0"
-                          value={fee.hostel || ''}
-                          onChange={(e) => {
-                            const value = Math.max(0, Number(e.target.value));
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], hostel: value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
-                          }}
-                          placeholder="0"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min="0"
-                          value={fee.misc || ''}
-                          onChange={(e) => {
-                            const value = Math.max(0, Number(e.target.value));
-                            const newFees = [...(formData.classFees || [])];
-                            newFees[index] = { ...newFees[index], misc: value };
-                            setFormData(prev => ({ ...prev, classFees: newFees }));
-                          }}
-                          placeholder="0"
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {(() => {
-                          const tuition = Number(fee.tuition || 0);
-                          const activity = Number(fee.activity || 0);
-                          const transport = Number(fee.transport || 0);
-                          const hostel = Number(fee.hostel || 0);
-                          const misc = Number(fee.misc || 0);
-                          return tuition + activity + transport + hostel + misc;
-                        })()}
-                      </td>
-                      <td className="px-4 py-3">
+              <div className="block" id="amenities">
+                <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200/50 shadow-lg">
+                  <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl shadow-lg">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                      ✨ Amenities & Activities
+                    </h2>
+                    <p className="text-gray-600 mt-1">Facilities and programs offered</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <FormField
+                      label="Amenities"
+                      name="predefinedAmenities"
+                      type="checkboxGroup"
+                      options={amenitiesOptions}
+                      value={formData.predefinedAmenities}
+                      onChange={handleCheckboxChange}
+                    />
+                  </div>
+                  <div>
+                    <DynamicAmenitiesField
+                      label="Other Amenities"
+                      value={customAmenities}
+                      onChange={setCustomAmenities}
+                    />
+                  </div>
+                  <div>
+                    <FormField
+                      label="Activities"
+                      name="activities"
+                      type="checkboxGroup"
+                      options={activitiesOptions}
+                      value={formData.activities}
+                      onChange={handleCheckboxChange}
+                    />
+                  </div>
+                  <div>
+                    <DynamicActivitiesField
+                      label="Other Activities"
+                      value={customActivities}
+                      onChange={setCustomActivities}
+                    />
+                  </div>
+                </div>
+
+                <div className="block" id="alumni">
+                  <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200/50 shadow-lg">
+                    <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                      <Award className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                        🏆 Alumni Information
+                      </h2>
+                      <p className="text-gray-600 mt-1">Notable graduates and achievements</p>
+                    </div>
+                  </div>
+                  <div className="space-y-8">
+                    <DynamicListField
+                      label="Famous Alumni (Name & Profession)"
+                      value={famousAlumnies}
+                      onChange={setFamousAlumnies}
+                      type="famous"
+                    />
+                    <DynamicListField
+                      label="Top Alumni (Name & Percentage)"
+                      value={topAlumnies}
+                      onChange={setTopAlumnies}
+                      type="top"
+                    />
+                    <DynamicListField
+                      label="Other Alumni (Name & Percentage)"
+                      value={otherAlumnies}
+                      onChange={setOtherAlumnies}
+                      type="other"
+                    />
+                  </div>
+
+                  <div className="block" id="faculty">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+                        <Users2 className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                          👥 Faculty Quality
+                        </h2>
+                        <p className="text-gray-600 mt-1">Teaching staff qualifications and experience</p>
+                      </div>
+                    </div>
+                    {/* Simplified Faculty Quality inputs handled per-entry below */}
+
+                    <div className="mt-6">
+                      {facultyQuality.map((fq, index) => (
+                        <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end bg-gray-50 p-4 rounded-md my-2">
+                          <FormField
+                            label="Faculty Name"
+                            name={`fq-name-${index}`}
+                            value={fq.name || ''}
+                            onChange={(e) => {
+                              const list = facultyQuality.slice();
+                              list[index] = { ...list[index], name: e.target.value };
+                              setFacultyQuality(list);
+                            }}
+                          />
+                          <FormField
+                            label="Qualification"
+                            name={`fq-qualification-${index}`}
+                            value={fq.qualification || ''}
+                            onChange={(e) => {
+                              const list = facultyQuality.slice();
+                              list[index] = { ...list[index], qualification: e.target.value };
+                              setFacultyQuality(list);
+                            }}
+                          />
+                          <FormField
+                            label="Awards"
+                            name={`fq-awards-${index}`}
+                            value={fq.awards || ''}
+                            onChange={(e) => {
+                              const list = facultyQuality.slice();
+                              list[index] = { ...list[index], awards: e.target.value };
+                              setFacultyQuality(list);
+                            }}
+                          />
+                          <FormField
+                            label="Teaching experience (yrs)"
+                            name={`fq-exp-${index}`}
+                            type="number"
+                            min="0"
+                            value={fq.experience || ''}
+                            onChange={(e) => {
+                              const value = Math.max(0, Number(e.target.value));
+                              const list = facultyQuality.slice();
+                              list[index] = { ...list[index], experience: value };
+                              setFacultyQuality(list);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFacultyQuality(facultyQuality.filter((_, i) => i !== index))}
+                            className="text-red-500 mb-2"
+                            aria-label={`Remove faculty row ${index + 1}`}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setFacultyQuality([...facultyQuality, { name: '', qualification: '', awards: '', experience: '' }])}
+                        className="mt-2 flex items-center text-sm text-indigo-600"
+                      >
+                        <PlusCircle size={16} className="mr-1" /> Add Faculty
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="block" id="infrastructure">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg">
+                        <Building2 className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                          🏢 Infrastructure
+                        </h2>
+                        <p className="text-gray-600 mt-1">Facilities, labs, and physical resources</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Labs - Type</label>
+                        <div className="mt-2 grid grid-cols-2 gap-3">
+                          {['Physics', 'Chemistry', 'Biology', 'Computer', 'Robotics', 'Language'].map(opt => (
+                            <label key={opt} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                name="infraLabTypes"
+                                value={opt}
+                                checked={(formData.infraLabTypes || []).includes(opt)}
+                                onChange={(e) => {
+                                  const { checked, value } = e.target;
+                                  const current = formData.infraLabTypes || [];
+                                  const next = checked ? [...current, value] : current.filter(v => v !== value);
+                                  setFormData(prev => ({ ...prev, infraLabTypes: next }));
+                                }}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                              />
+                              <span className="ml-2 text-gray-700">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <FormField
+                        label="Library - number of books"
+                        name="infraLibraryBooks"
+                        type="number"
+                        min="0"
+                        value={formData.infraLibraryBooks}
+                        onChange={handleInputChange}
+                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Sports Grounds - Type</label>
+                        <div className="mt-2 grid grid-cols-2 gap-3">
+                          {['Football', 'Cricket', 'Basketball', 'Tennis', 'Athletics', 'Badminton'].map(opt => (
+                            <label key={opt} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                name="infraSportsTypes"
+                                value={opt}
+                                checked={(formData.infraSportsTypes || []).includes(opt)}
+                                onChange={(e) => {
+                                  const { checked, value } = e.target;
+                                  const current = formData.infraSportsTypes || [];
+                                  const next = checked ? [...current, value] : current.filter(v => v !== value);
+                                  setFormData(prev => ({ ...prev, infraSportsTypes: next }));
+                                }}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                              />
+                              <span className="ml-2 text-gray-700">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <FormField
+                        label="Smart Classrooms - number"
+                        name="infraSmartClassrooms"
+                        type="number"
+                        min="0"
+                        value={formData.infraSmartClassrooms}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                      <div className="bg-white border rounded-lg p-4 text-center">
+                        <div className="text-gray-500 text-sm">Labs</div>
+                        <div className="text-lg font-semibold text-gray-900">{(formData.infraLabTypes || []).join(', ') || '—'}</div>
+                      </div>
+                      <div className="bg-white border rounded-lg p-4 text-center">
+                        <div className="text-gray-500 text-sm">Books</div>
+                        <div className="text-lg font-semibold text-gray-900">{formData.infraLibraryBooks || '—'}</div>
+                      </div>
+                      <div className="bg-white border rounded-lg p-4 text-center">
+                        <div className="text-gray-500 text-sm">Sports</div>
+                        <div className="text-lg font-semibold text-gray-900">{(formData.infraSportsTypes || []).join(', ') || '—'}</div>
+                      </div>
+                      <div className="bg-white border rounded-lg p-4 text-center">
+                        <div className="text-gray-500 text-sm">Smart Rooms</div>
+                        <div className="text-lg font-semibold text-gray-900">{formData.infraSmartClassrooms || '—'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="block" id="safety">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl border border-red-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl shadow-lg">
+                        <ShieldCheck className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+                          🛡️ Safety & Security
+                        </h2>
+                        <p className="text-gray-600 mt-1">Security measures and safety protocols</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-8">
+                      {/* CCTV Coverage */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">CCTV Coverage</h3>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            CCTV Coverage Percentage
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={formData.cctvCoveragePercentage || 0}
+                            onChange={(e) => setFormData(prev => ({ ...prev, cctvCoveragePercentage: e.target.value }))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                          <div className="flex justify-between text-sm text-gray-600 mt-1">
+                            <span>0%</span>
+                            <span className="font-semibold text-indigo-600">{formData.cctvCoveragePercentage || 0}%</span>
+                            <span>100%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Medical Facility */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Medical Facility</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Doctor Availability
+                            </label>
+                            <select
+                              value={formData.medicalFacility?.doctorAvailability || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                medicalFacility: {
+                                  ...prev.medicalFacility,
+                                  doctorAvailability: e.target.value
+                                }
+                              }))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                              <option value="">Select Availability</option>
+                              <option value="Full-time">Full-time</option>
+                              <option value="Part-time">Part-time</option>
+                              <option value="On-call">On-call</option>
+                              <option value="Not Available">Not Available</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-center">
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={formData.medicalFacility?.medkitAvailable || false}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  medicalFacility: {
+                                    ...prev.medicalFacility,
+                                    medkitAvailable: e.target.checked
+                                  }
+                                }))}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-2 text-sm font-medium text-gray-700">Medkit Available</span>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center">
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={formData.medicalFacility?.ambulanceAvailable || false}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  medicalFacility: {
+                                    ...prev.medicalFacility,
+                                    ambulanceAvailable: e.target.checked
+                                  }
+                                }))}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-2 text-sm font-medium text-gray-700">Ambulance Available</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Transport Safety */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Transport Safety</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="flex items-center">
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={formData.transportSafety?.gpsTrackerAvailable || false}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  transportSafety: {
+                                    ...prev.transportSafety,
+                                    gpsTrackerAvailable: e.target.checked
+                                  }
+                                }))}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-2 text-sm font-medium text-gray-700">GPS Tracker Available</span>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center">
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={formData.transportSafety?.driversVerified || false}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  transportSafety: {
+                                    ...prev.transportSafety,
+                                    driversVerified: e.target.checked
+                                  }
+                                }))}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-2 text-sm font-medium text-gray-700">Drivers Verified</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Fire Safety Measures */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Fire Safety Measures</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {['Extinguishers', 'Alarms', 'Sprinklers', 'Evacuation Drills'].map((measure) => (
+                            <label key={measure} className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={(formData.fireSafetyMeasures || []).includes(measure)}
+                                onChange={(e) => {
+                                  const current = formData.fireSafetyMeasures || [];
+                                  if (e.target.checked) {
+                                    setFormData(prev => ({ ...prev, fireSafetyMeasures: [...current, measure] }));
+                                  } else {
+                                    setFormData(prev => ({ ...prev, fireSafetyMeasures: current.filter(m => m !== measure) }));
+                                  }
+                                }}
+                                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className="ml-2 text-sm font-medium text-gray-700">{measure}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Visitor Management System */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Visitor Management</h3>
+                        <div className="flex items-center">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.visitorManagementSystem || false}
+                              onChange={(e) => setFormData(prev => ({ ...prev, visitorManagementSystem: e.target.checked }))}
+                              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <span className="ml-2 text-sm font-medium text-gray-700">Visitor Management System Available</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="block" id="fees">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-xl shadow-lg">
+                        <DollarSign className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+                          💰 Fees & Affordability
+                        </h2>
+                        <p className="text-gray-600 mt-1">Pricing structure and scholarship options</p>
+                      </div>
+                    </div>
+
+                    {/* Fee Transparency Indicator */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Fee Transparency Indicator</label>
+                      <div className="flex items-center gap-4">
+                        <select
+                          name="feesTransparency"
+                          value={formData.feesTransparency}
+                          onChange={handleInputChange}
+                          className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="full">🟢 Fully Transparent</option>
+                          <option value="partial">🟡 Partial Transparency</option>
+                          <option value="low">🔴 Low Transparency</option>
+                        </select>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Status:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${formData.feesTransparency === 'full' ? 'bg-green-100 text-green-800' :
+                              formData.feesTransparency === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }`}>
+                            {formData.feesTransparency === 'full' ? 'Fully Transparent' :
+                              formData.feesTransparency === 'partial' ? 'Partial' : 'Low Transparency'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Class-wise Fees Table */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-700">Class-wise Fees Table</h3>
                         <button
                           type="button"
                           onClick={() => {
-                            const newFees = (formData.classFees || []).filter((_, i) => i !== index);
+                            const newFees = [...(formData.classFees || []), { className: '', tuition: '', activity: '', transport: '', hostel: '', misc: '' }];
                             setFormData(prev => ({ ...prev, classFees: newFees }));
                           }}
-                          className="text-red-500"
+                          className="flex items-center text-sm text-indigo-600"
                         >
-                          <Trash2 size={16} />
+                          <PlusCircle size={16} className="mr-1" /> Add Class
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      </div>
 
-          {/* Scholarships / Concessions */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-700">Scholarships / Concessions</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  const newScholarships = [...(formData.scholarships || []), { name: '', type: '', amount: '', documentsRequired: [] }];
-                  setFormData(prev => ({ ...prev, scholarships: newScholarships }));
-                }}
-                className="flex items-center text-sm text-indigo-600"
-              >
-                <PlusCircle size={16} className="mr-1" /> Add Scholarship
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {(formData.scholarships || []).map((scholarship, index) => (
-                <div key={index} className="bg-gray-50 p-4 rounded-lg border">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Scholarship Name *</label>
-                      <input
-                        type="text"
-                        value={scholarship.name || ''}
-                        onChange={(e) => {
-                          const newScholarships = [...(formData.scholarships || [])];
-                          newScholarships[index] = { ...newScholarships[index], name: e.target.value };
-                          setFormData(prev => ({ ...prev, scholarships: newScholarships }));
-                        }}
-                        placeholder="e.g., Merit Scholarship, Sports Excellence Award"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                      />
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                          <thead className="bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">💰 Tuition</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🎭 Activity</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🚌 Transport</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🏫 Hostel</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">🏷️ Misc</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {(formData.classFees || []).map((fee, index) => (
+                              <tr key={index} className="">
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="text"
+                                    value={fee.className || ''}
+                                    onChange={(e) => {
+                                      const newFees = [...(formData.classFees || [])];
+                                      newFees[index] = { ...newFees[index], className: e.target.value };
+                                      setFormData(prev => ({ ...prev, classFees: newFees }));
+                                    }}
+                                    placeholder="e.g., Nursery, LKG, UKG, 1st"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={fee.tuition || ''}
+                                    onChange={(e) => {
+                                      const value = Math.max(0, Number(e.target.value));
+                                      const newFees = [...(formData.classFees || [])];
+                                      newFees[index] = { ...newFees[index], tuition: value };
+                                      setFormData(prev => ({ ...prev, classFees: newFees }));
+                                    }}
+                                    placeholder="0"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={fee.activity || ''}
+                                    onChange={(e) => {
+                                      const value = Math.max(0, Number(e.target.value));
+                                      const newFees = [...(formData.classFees || [])];
+                                      newFees[index] = { ...newFees[index], activity: value };
+                                      setFormData(prev => ({ ...prev, classFees: newFees }));
+                                    }}
+                                    placeholder="0"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={fee.transport || ''}
+                                    onChange={(e) => {
+                                      const value = Math.max(0, Number(e.target.value));
+                                      const newFees = [...(formData.classFees || [])];
+                                      newFees[index] = { ...newFees[index], transport: value };
+                                      setFormData(prev => ({ ...prev, classFees: newFees }));
+                                    }}
+                                    placeholder="0"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={fee.hostel || ''}
+                                    onChange={(e) => {
+                                      const value = Math.max(0, Number(e.target.value));
+                                      const newFees = [...(formData.classFees || [])];
+                                      newFees[index] = { ...newFees[index], hostel: value };
+                                      setFormData(prev => ({ ...prev, classFees: newFees }));
+                                    }}
+                                    placeholder="0"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={fee.misc || ''}
+                                    onChange={(e) => {
+                                      const value = Math.max(0, Number(e.target.value));
+                                      const newFees = [...(formData.classFees || [])];
+                                      newFees[index] = { ...newFees[index], misc: value };
+                                      setFormData(prev => ({ ...prev, classFees: newFees }));
+                                    }}
+                                    placeholder="0"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                  />
+                                </td>
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                  {(() => {
+                                    const tuition = Number(fee.tuition || 0);
+                                    const activity = Number(fee.activity || 0);
+                                    const transport = Number(fee.transport || 0);
+                                    const hostel = Number(fee.hostel || 0);
+                                    const misc = Number(fee.misc || 0);
+                                    return tuition + activity + transport + hostel + misc;
+                                  })()}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newFees = (formData.classFees || []).filter((_, i) => i !== index);
+                                      setFormData(prev => ({ ...prev, classFees: newFees }));
+                                    }}
+                                    className="text-red-500"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
-                      <select
-                        value={scholarship.type || ''}
-                        onChange={(e) => {
-                          const newScholarships = [...(formData.scholarships || [])];
-                          newScholarships[index] = { ...newScholarships[index], type: e.target.value };
-                          setFormData(prev => ({ ...prev, scholarships: newScholarships }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                      >
-                        <option value="">Select type</option>
-                        <option value="Merit">Merit</option>
-                        <option value="Need-based">Need-based</option>
-                        <option value="Sports">Sports</option>
-                        <option value="Sibling">Sibling</option>
-                        <option value="Staff">Staff</option>
-                        <option value="Other">Other</option>
-                      </select>
+
+                    {/* Scholarships / Concessions */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-700">Scholarships / Concessions</h3>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newScholarships = [...(formData.scholarships || []), { name: '', type: '', amount: '', documentsRequired: [] }];
+                            setFormData(prev => ({ ...prev, scholarships: newScholarships }));
+                          }}
+                          className="flex items-center text-sm text-indigo-600"
+                        >
+                          <PlusCircle size={16} className="mr-1" /> Add Scholarship
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {(formData.scholarships || []).map((scholarship, index) => (
+                          <div key={index} className="bg-gray-50 p-4 rounded-lg border">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Scholarship Name *</label>
+                                <input
+                                  type="text"
+                                  value={scholarship.name || ''}
+                                  onChange={(e) => {
+                                    const newScholarships = [...(formData.scholarships || [])];
+                                    newScholarships[index] = { ...newScholarships[index], name: e.target.value };
+                                    setFormData(prev => ({ ...prev, scholarships: newScholarships }));
+                                  }}
+                                  placeholder="e.g., Merit Scholarship, Sports Excellence Award"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                                <select
+                                  value={scholarship.type || ''}
+                                  onChange={(e) => {
+                                    const newScholarships = [...(formData.scholarships || [])];
+                                    newScholarships[index] = { ...newScholarships[index], type: e.target.value };
+                                    setFormData(prev => ({ ...prev, scholarships: newScholarships }));
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                  <option value="">Select type</option>
+                                  <option value="Merit">Merit</option>
+                                  <option value="Need-based">Need-based</option>
+                                  <option value="Sports">Sports</option>
+                                  <option value="Sibling">Sibling</option>
+                                  <option value="Staff">Staff</option>
+                                  <option value="Other">Other</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={scholarship.amount || ''}
+                                  onChange={(e) => {
+                                    const value = Math.max(0, Number(e.target.value));
+                                    const newScholarships = [...(formData.scholarships || [])];
+                                    newScholarships[index] = { ...newScholarships[index], amount: value };
+                                    setFormData(prev => ({ ...prev, scholarships: newScholarships }));
+                                  }}
+                                  placeholder="e.g., 5000, 10000"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Documents Required (Optional)
+                                </label>
+
+                                <select
+                                  value={scholarship.documentsRequired?.[0] || ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+
+                                    const newScholarships = [...(formData.scholarships || [])];
+                                    newScholarships[index] = {
+                                      ...newScholarships[index],
+                                      documentsRequired: value ? [value] : []
+                                    };
+
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      scholarships: newScholarships
+                                    }));
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm
+               focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                  <option value="">Select Document</option>
+                                  <option value="Income Certificate">Income Certificate</option>
+                                  <option value="Caste Certificate">Caste Certificate</option>
+                                  <option value="Aadhar Card">Aadhar Card</option>
+                                  <option value="Previous Marksheet">Previous Marksheet</option>
+                                  <option value="Bonafide Certificate">Bonafide Certificate</option>
+                                  <option value="Sports Achievement Certificate">
+                                    Sports Achievement Certificate
+                                  </option>
+                                </select>
+                              </div>
+
+                            </div>
+                            <div className="flex justify-end mt-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newScholarships = (formData.scholarships || []).filter((_, i) => i !== index);
+                                  setFormData(prev => ({ ...prev, scholarships: newScholarships }));
+                                }}
+                                className="text-red-500 text-sm"
+                              >
+                                <Trash2 size={16} className="inline mr-1" /> Remove
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
-                      <input
+
+                    {/* Fees Visualization */}
+                    <div className="mt-6">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">Visualization: Fee Overview</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white border rounded-lg p-4 text-center">
+                          <div className="text-gray-500 text-sm">Transparency</div>
+                          <div className={`text-lg font-semibold ${formData.feesTransparency === 'full' ? 'text-green-600' :
+                              formData.feesTransparency === 'partial' ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                            {formData.feesTransparency === 'full' ? '🟢 Full' :
+                              formData.feesTransparency === 'partial' ? '🟡 Partial' : '🔴 Low'}
+                          </div>
+                        </div>
+                        <div className="bg-white border rounded-lg p-4 text-center">
+                          <div className="text-gray-500 text-sm">Classes</div>
+                          <div className="text-lg font-semibold text-gray-900">{(formData.classFees || []).length}</div>
+                        </div>
+                        <div className="bg-white border rounded-lg p-4 text-center">
+                          <div className="text-gray-500 text-sm">Scholarships</div>
+                          <div className="text-lg font-semibold text-gray-900">{(formData.scholarships || []).length}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="block" id="technology">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl shadow-lg">
+                        <Cpu className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                          💻 Technology Adoption
+                        </h2>
+                        <p className="text-gray-600 mt-1">Smart classrooms and digital infrastructure</p>
+                      </div>
+                    </div>
+                    <div className="space-y-8">
+                      {/* Smart Classrooms Percentage */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Smart Classrooms</h3>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Smart Classrooms Percentage
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={formData.smartClassroomsPercentage || 0}
+                            onChange={(e) => setFormData(prev => ({ ...prev, smartClassroomsPercentage: e.target.value }))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                          <div className="flex justify-between text-sm text-gray-600 mt-1">
+                            <span>0%</span>
+                            <span className="font-semibold text-indigo-600">{formData.smartClassroomsPercentage || 0}%</span>
+                            <span>100%</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Percentage of classrooms equipped with smart technology (interactive boards, projectors, etc.)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* E-Learning Platforms */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">E-Learning Platforms</h3>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Available E-Learning Platforms
+                          </label>
+                          <div className="space-y-3">
+                            {(formData.eLearningPlatforms || []).map((platform, index) => (
+                              <div key={index} className="flex items-center gap-3">
+                                <input
+                                  type="text"
+                                  value={platform}
+                                  onChange={(e) => {
+                                    const next = [...(formData.eLearningPlatforms || [])];
+                                    next[index] = e.target.value;
+                                    setFormData(prev => ({ ...prev, eLearningPlatforms: next }));
+                                  }}
+                                  placeholder="Platform name (e.g., Google Classroom, Zoom, Microsoft Teams)"
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = [...(formData.eLearningPlatforms || [])];
+                                    next.splice(index, 1);
+                                    setFormData(prev => ({ ...prev, eLearningPlatforms: next }));
+                                  }}
+                                  className="text-red-500 hover:text-red-700 p-1"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = [...(formData.eLearningPlatforms || []), ''];
+                                setFormData(prev => ({ ...prev, eLearningPlatforms: next }));
+                              }}
+                              className="flex items-center text-sm text-indigo-600"
+                            >
+                              <PlusCircle size={16} className="mr-1" /> Add Platform
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            List all e-learning platforms used by the school (LMS, video conferencing, etc.)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Technology Summary Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6 text-center">
+                          <div className="text-indigo-600 text-sm font-medium mb-2">Smart Classrooms</div>
+                          <div className="text-3xl font-bold text-indigo-700">{formData.smartClassroomsPercentage || 0}%</div>
+                          <div className="text-xs text-indigo-600 mt-1">of classrooms are smart-enabled</div>
+                        </div>
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 text-center">
+                          <div className="text-green-600 text-sm font-medium mb-2">E-Learning Platforms</div>
+                          <div className="text-3xl font-bold text-green-700">{formData.eLearningPlatforms?.length || 0}</div>
+                          <div className="text-xs text-green-600 mt-1">platforms in use</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="block" id="academics">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-slate-50 to-gray-50 rounded-2xl border border-slate-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-slate-500 to-gray-500 rounded-xl shadow-lg">
+                        <GraduationCap className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-600 to-gray-600 bg-clip-text text-transparent">
+                          🎓 Academics
+                        </h2>
+                        <p className="text-gray-600 mt-1">Academic performance and exam results</p>
+                      </div>
+                    </div>
+
+                    {/* Academics - Backend aligned inputs */}
+                    <div className="mb-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          label="Average Class 10 Result (%)"
+                          name="averageClass10Result"
+                          type="number"
+                          min="0"
+                          value={formData.averageClass10Result}
+                          onChange={handleInputChange}
+                        />
+                        <FormField
+                          label="Average Class 12 Result (%)"
+                          name="averageClass12Result"
+                          type="number"
+                          min="0"
+                          value={formData.averageClass12Result}
+                          onChange={handleInputChange}
+                        />
+                        <FormField
+                          label="Average School Marks (%)"
+                          name="averageSchoolMarks"
+                          type="number"
+                          min="0"
+                          value={formData.averageSchoolMarks}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="mt-6">
+                        <FormField
+                          label="Special Exams Training"
+                          name="specialExamsTraining"
+                          type="checkboxGroup"
+                          options={[
+                            'NEET', 'IIT-JEE', 'Olympiads', 'UPSC', 'CLAT', 'SAT/ACT', 'NTSE', 'KVPY'
+                          ]}
+                          value={formData.specialExamsTraining}
+                          onChange={handleCheckboxChange}
+                        />
+                      </div>
+
+                      <div className="mt-6">
+                        <FormField
+                          label="Extra Curricular Activities"
+                          name="extraCurricularActivities"
+                          type="checkboxGroup"
+                          options={[
+                            'Sports', 'Music', 'Dance', 'Drama', 'Art', 'Debate', 'NCC', 'NSS', 'Coding', 'Robotics'
+                          ]}
+                          value={formData.extraCurricularActivities}
+                          onChange={handleCheckboxChange}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Board Results and Exam Qualifiers removed - not in backend schema */}
+                  </div>
+
+                  <div className="block" id="international">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl border border-cyan-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl shadow-lg">
+                        <Globe2 className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                          🌍 International Exposure
+                        </h2>
+                        <p className="text-gray-600 mt-1">Global programs and partnerships</p>
+                      </div>
+                    </div>
+
+                    {/* Exchange Programs */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-700">Exchange Programs</h3>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            exchangePrograms: [...(prev.exchangePrograms || []), { partnerSchool: '', type: '', duration: '', studentsParticipated: '', activeSince: '' }]
+                          }))}
+                          className="flex items-center text-sm text-indigo-600"
+                        >
+                          <PlusCircle size={16} className="mr-1" /> Add Program
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {(formData.exchangePrograms || []).map((prog, index) => (
+                          <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 bg-gray-50 p-4 rounded-md">
+                            <FormField
+                              label="Partner School"
+                              name={`ex-partner-${index}`}
+                              value={prog.partnerSchool}
+                              onChange={(e) => {
+                                const list = [...(formData.exchangePrograms || [])];
+                                list[index] = { ...list[index], partnerSchool: e.target.value };
+                                setFormData(prev => ({ ...prev, exchangePrograms: list }));
+                              }}
+                            />
+                            <FormField
+                              label="Type"
+                              name={`ex-type-${index}`}
+                              type="select"
+                              options={['Student Exchange', 'Faculty Exchange', 'Summer Program', 'Joint Research', 'Cultural Exchange']}
+                              value={prog.type}
+                              onChange={(e) => {
+                                const list = [...(formData.exchangePrograms || [])];
+                                list[index] = { ...list[index], type: e.target.value };
+                                setFormData(prev => ({ ...prev, exchangePrograms: list }));
+                              }}
+                            />
+                            <FormField
+                              label="Duration"
+                              name={`ex-duration-${index}`}
+                              type="select"
+                              options={['2 Weeks', '1 Month', '3 Months', '6 Months', '1 Year']}
+                              value={prog.duration}
+                              onChange={(e) => {
+                                const list = [...(formData.exchangePrograms || [])];
+                                list[index] = { ...list[index], duration: e.target.value };
+                                setFormData(prev => ({ ...prev, exchangePrograms: list }));
+                              }}
+                            />
+                            <FormField
+                              label="Students"
+                              name={`ex-students-${index}`}
+                              type="number"
+                              min="0"
+                              value={prog.studentsParticipated}
+                              onChange={(e) => {
+                                const value = Math.max(0, Number(e.target.value));
+                                const list = [...(formData.exchangePrograms || [])];
+                                list[index] = { ...list[index], studentsParticipated: value };
+                                setFormData(prev => ({ ...prev, exchangePrograms: list }));
+                              }}
+                            />
+                            <div className="flex items-end gap-2">
+                              <FormField
+                                label="Active Since"
+                                name={`ex-active-${index}`}
+                                value={prog.activeSince}
+                                onChange={(e) => {
+                                  const list = [...(formData.exchangePrograms || [])];
+                                  list[index] = { ...list[index], activeSince: e.target.value };
+                                  setFormData(prev => ({ ...prev, exchangePrograms: list }));
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, exchangePrograms: (prev.exchangePrograms || []).filter((_, i) => i !== index) }))}
+                                className="text-red-500 mb-2"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Global Tie-ups */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-700">Global Tie-ups</h3>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            globalTieUps: [...(prev.globalTieUps || []), { partnerName: '', nature: '', activeSince: '', description: '' }]
+                          }))}
+                          className="flex items-center text-sm text-indigo-600"
+                        >
+                          <PlusCircle size={16} className="mr-1" /> Add Tie-up
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {(formData.globalTieUps || []).map((tie, index) => (
+                          <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-gray-50 p-4 rounded-md">
+                            <FormField
+                              label="Partner Name"
+                              name={`gt-name-${index}`}
+                              value={tie.partnerName}
+                              onChange={(e) => {
+                                const list = [...(formData.globalTieUps || [])];
+                                list[index] = { ...list[index], partnerName: e.target.value };
+                                setFormData(prev => ({ ...prev, globalTieUps: list }));
+                              }}
+                            />
+                            <FormField
+                              label="Nature"
+                              name={`gt-nature-${index}`}
+                              type="select"
+                              options={['Memorandum of Understanding (MoU)', 'Research Collaboration', 'Curriculum Development', 'Faculty Training']}
+                              value={tie.nature}
+                              onChange={(e) => {
+                                const list = [...(formData.globalTieUps || [])];
+                                list[index] = { ...list[index], nature: e.target.value };
+                                setFormData(prev => ({ ...prev, globalTieUps: list }));
+                              }}
+                            />
+                            <FormField
+                              label="Active Since"
+                              name={`gt-active-${index}`}
+                              value={tie.activeSince}
+                              onChange={(e) => {
+                                const list = [...(formData.globalTieUps || [])];
+                                list[index] = { ...list[index], activeSince: e.target.value };
+                                setFormData(prev => ({ ...prev, globalTieUps: list }));
+                              }}
+                            />
+                            <div className="md:col-span-2 grid grid-cols-1 items-end gap-2">
+                              <FormField
+                                label="Description"
+                                name={`gt-desc-${index}`}
+                                value={tie.description}
+                                onChange={(e) => {
+                                  const list = [...(formData.globalTieUps || [])];
+                                  list[index] = { ...list[index], description: e.target.value };
+                                  setFormData(prev => ({ ...prev, globalTieUps: list }));
+                                }}
+                              />
+                              <div>
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, globalTieUps: (prev.globalTieUps || []).filter((_, i) => i !== index) }))}
+                                  className="text-red-500"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="block" id="diversity">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-rose-500 to-pink-500 rounded-xl shadow-lg">
+                        <Heart className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                          ♡ Diversity & Inclusivity
+                        </h2>
+                        <p className="text-gray-600 mt-1">Inclusive policies and support systems</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <FormField
+                        label="Gender Ratio - Male (%)"
+                        name="genderRatioMale"
                         type="number"
                         min="0"
-                        value={scholarship.amount || ''}
-                        onChange={(e) => {
-                          const value = Math.max(0, Number(e.target.value));
-                          const newScholarships = [...(formData.scholarships || [])];
-                          newScholarships[index] = { ...newScholarships[index], amount: value };
-                          setFormData(prev => ({ ...prev, scholarships: newScholarships }));
-                        }}
-                        placeholder="e.g., 5000, 10000"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        value={formData.genderRatioMale}
+                        onChange={handleInputChange}
+                      />
+                      <FormField
+                        label="Gender Ratio - Female (%)"
+                        name="genderRatioFemale"
+                        type="number"
+                        min="0"
+                        value={formData.genderRatioFemale}
+                        onChange={handleInputChange}
+                      />
+                      <FormField
+                        label="Gender Ratio - Others (%)"
+                        name="genderRatioOthers"
+                        type="number"
+                        min="0"
+                        value={formData.genderRatioOthers}
+                        onChange={handleInputChange}
                       />
                     </div>
-                   <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Documents Required (Optional)
-  </label>
 
-  <select
-    value={scholarship.documentsRequired?.[0] || ''}
-    onChange={(e) => {
-      const value = e.target.value;
-
-      const newScholarships = [...(formData.scholarships || [])];
-      newScholarships[index] = {
-        ...newScholarships[index],
-        documentsRequired: value ? [value] : []
-      };
-
-      setFormData(prev => ({
-        ...prev,
-        scholarships: newScholarships
-      }));
-    }}
-    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm
-               focus:ring-indigo-500 focus:border-indigo-500"
-  >
-    <option value="">Select Document</option>
-    <option value="Income Certificate">Income Certificate</option>
-    <option value="Caste Certificate">Caste Certificate</option>
-    <option value="Aadhar Card">Aadhar Card</option>
-    <option value="Previous Marksheet">Previous Marksheet</option>
-    <option value="Bonafide Certificate">Bonafide Certificate</option>
-    <option value="Sports Achievement Certificate">
-      Sports Achievement Certificate
-    </option>
-  </select>
-</div>
-
-                  </div>
-                  <div className="flex justify-end mt-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newScholarships = (formData.scholarships || []).filter((_, i) => i !== index);
-                        setFormData(prev => ({ ...prev, scholarships: newScholarships }));
-                      }}
-                      className="text-red-500 text-sm"
-                    >
-                      <Trash2 size={16} className="inline mr-1" /> Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Fees Visualization */}
-          <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Visualization: Fee Overview</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white border rounded-lg p-4 text-center">
-                <div className="text-gray-500 text-sm">Transparency</div>
-                <div className={`text-lg font-semibold ${
-                  formData.feesTransparency === 'full' ? 'text-green-600' :
-                  formData.feesTransparency === 'partial' ? 'text-yellow-600' : 'text-red-600'
-                }`}>
-                  {formData.feesTransparency === 'full' ? '🟢 Full' :
-                   formData.feesTransparency === 'partial' ? '🟡 Partial' : '🔴 Low'}
-                </div>
-              </div>
-              <div className="bg-white border rounded-lg p-4 text-center">
-                <div className="text-gray-500 text-sm">Classes</div>
-                <div className="text-lg font-semibold text-gray-900">{(formData.classFees || []).length}</div>
-              </div>
-              <div className="bg-white border rounded-lg p-4 text-center">
-                <div className="text-gray-500 text-sm">Scholarships</div>
-                <div className="text-lg font-semibold text-gray-900">{(formData.scholarships || []).length}</div>
-              </div>
-            </div>
-          </div>
-            </div>
-
-            <div className="block" id="technology">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl shadow-lg">
-                  <Cpu className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                    💻 Technology Adoption
-                  </h2>
-                  <p className="text-gray-600 mt-1">Smart classrooms and digital infrastructure</p>
-                </div>
-              </div>
-          <div className="space-y-8">
-            {/* Smart Classrooms Percentage */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Smart Classrooms</h3>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Smart Classrooms Percentage
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={formData.smartClassroomsPercentage || 0}
-                  onChange={(e) => setFormData(prev => ({ ...prev, smartClassroomsPercentage: e.target.value }))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between text-sm text-gray-600 mt-1">
-                  <span>0%</span>
-                  <span className="font-semibold text-indigo-600">{formData.smartClassroomsPercentage || 0}%</span>
-                  <span>100%</span>
-          </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Percentage of classrooms equipped with smart technology (interactive boards, projectors, etc.)
-                </p>
-              </div>
-            </div>
-
-            {/* E-Learning Platforms */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">E-Learning Platforms</h3>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Available E-Learning Platforms
-                </label>
-                <div className="space-y-3">
-                  {(formData.eLearningPlatforms || []).map((platform, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={platform}
-                        onChange={(e) => {
-                          const next = [...(formData.eLearningPlatforms || [])];
-                          next[index] = e.target.value;
-                          setFormData(prev => ({ ...prev, eLearningPlatforms: next }));
-                        }}
-                        placeholder="Platform name (e.g., Google Classroom, Zoom, Microsoft Teams)"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = [...(formData.eLearningPlatforms || [])];
-                          next.splice(index, 1);
-                          setFormData(prev => ({ ...prev, eLearningPlatforms: next }));
-                        }}
-                        className="text-red-500 hover:text-red-700 p-1"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-          </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = [...(formData.eLearningPlatforms || []), ''];
-                      setFormData(prev => ({ ...prev, eLearningPlatforms: next }));
-                    }}
-                    className="flex items-center text-sm text-indigo-600"
-                  >
-                    <PlusCircle size={16} className="mr-1" /> Add Platform
-                  </button>
-            </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  List all e-learning platforms used by the school (LMS, video conferencing, etc.)
-                </p>
-              </div>
-            </div>
-
-            {/* Technology Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-6 text-center">
-                <div className="text-indigo-600 text-sm font-medium mb-2">Smart Classrooms</div>
-                <div className="text-3xl font-bold text-indigo-700">{formData.smartClassroomsPercentage || 0}%</div>
-                <div className="text-xs text-indigo-600 mt-1">of classrooms are smart-enabled</div>
-              </div>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 text-center">
-                <div className="text-green-600 text-sm font-medium mb-2">E-Learning Platforms</div>
-                <div className="text-3xl font-bold text-green-700">{formData.eLearningPlatforms?.length || 0}</div>
-                <div className="text-xs text-green-600 mt-1">platforms in use</div>
-              </div>
-            </div>
-          </div>
-            </div>
-
-            <div className="block" id="academics">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-slate-50 to-gray-50 rounded-2xl border border-slate-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-slate-500 to-gray-500 rounded-xl shadow-lg">
-                  <GraduationCap className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-600 to-gray-600 bg-clip-text text-transparent">
-                    🎓 Academics
-                  </h2>
-                  <p className="text-gray-600 mt-1">Academic performance and exam results</p>
-                </div>
-              </div>
-
-          {/* Academics - Backend aligned inputs */}
-          <div className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                label="Average Class 10 Result (%)"
-                name="averageClass10Result"
-                type="number"
-                min="0"
-                value={formData.averageClass10Result}
-                onChange={handleInputChange}
-              />
-              <FormField
-                label="Average Class 12 Result (%)"
-                name="averageClass12Result"
-                type="number"
-                min="0"
-                value={formData.averageClass12Result}
-                onChange={handleInputChange}
-              />
-              <FormField
-                label="Average School Marks (%)"
-                name="averageSchoolMarks"
-                type="number"
-                min="0"
-                value={formData.averageSchoolMarks}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="mt-6">
-              <FormField
-                label="Special Exams Training"
-                name="specialExamsTraining"
-                type="checkboxGroup"
-                options={[
-                  'NEET','IIT-JEE','Olympiads','UPSC','CLAT','SAT/ACT','NTSE','KVPY'
-                ]}
-                value={formData.specialExamsTraining}
-                onChange={handleCheckboxChange}
-              />
-            </div>
-
-            <div className="mt-6">
-              <FormField
-                label="Extra Curricular Activities"
-                name="extraCurricularActivities"
-                type="checkboxGroup"
-                options={[
-                  'Sports','Music','Dance','Drama','Art','Debate','NCC','NSS','Coding','Robotics'
-                ]}
-                value={formData.extraCurricularActivities}
-                onChange={handleCheckboxChange}
-              />
-            </div>
-          </div>
-
-          {/* Board Results and Exam Qualifiers removed - not in backend schema */}
-            </div>
-
-            <div className="block" id="international">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl border border-cyan-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl shadow-lg">
-                  <Globe2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
-                    🌍 International Exposure
-                  </h2>
-                  <p className="text-gray-600 mt-1">Global programs and partnerships</p>
-                </div>
-              </div>
-
-          {/* Exchange Programs */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-700">Exchange Programs</h3>
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({
-                  ...prev,
-                  exchangePrograms: [...(prev.exchangePrograms || []), { partnerSchool: '', type: '', duration: '', studentsParticipated: '', activeSince: '' }]
-                }))}
-                className="flex items-center text-sm text-indigo-600"
-              >
-                <PlusCircle size={16} className="mr-1" /> Add Program
-              </button>
-            </div>
-            <div className="space-y-3">
-              {(formData.exchangePrograms || []).map((prog, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 bg-gray-50 p-4 rounded-md">
-                  <FormField
-                    label="Partner School"
-                    name={`ex-partner-${index}`}
-                    value={prog.partnerSchool}
-                    onChange={(e) => {
-                      const list = [...(formData.exchangePrograms || [])];
-                      list[index] = { ...list[index], partnerSchool: e.target.value };
-                      setFormData(prev => ({ ...prev, exchangePrograms: list }));
-                    }}
-                  />
-                  <FormField
-                    label="Type"
-                    name={`ex-type-${index}`}
-                    type="select"
-                    options={['Student Exchange', 'Faculty Exchange', 'Summer Program', 'Joint Research', 'Cultural Exchange']}
-                    value={prog.type}
-                    onChange={(e) => {
-                      const list = [...(formData.exchangePrograms || [])];
-                      list[index] = { ...list[index], type: e.target.value };
-                      setFormData(prev => ({ ...prev, exchangePrograms: list }));
-                    }}
-                  />
-                  <FormField
-                    label="Duration"
-                    name={`ex-duration-${index}`}
-                    type="select"
-                    options={['2 Weeks', '1 Month', '3 Months', '6 Months', '1 Year']}
-                    value={prog.duration}
-                    onChange={(e) => {
-                      const list = [...(formData.exchangePrograms || [])];
-                      list[index] = { ...list[index], duration: e.target.value };
-                      setFormData(prev => ({ ...prev, exchangePrograms: list }));
-                    }}
-                  />
-                  <FormField
-                    label="Students"
-                    name={`ex-students-${index}`}
-                    type="number"
-                    min="0"
-                    value={prog.studentsParticipated}
-                    onChange={(e) => {
-                      const value = Math.max(0, Number(e.target.value));
-                      const list = [...(formData.exchangePrograms || [])];
-                      list[index] = { ...list[index], studentsParticipated: value };
-                      setFormData(prev => ({ ...prev, exchangePrograms: list }));
-                    }}
-                  />
-                  <div className="flex items-end gap-2">
-                    <FormField
-                      label="Active Since"
-                      name={`ex-active-${index}`}
-                      value={prog.activeSince}
-                      onChange={(e) => {
-                        const list = [...(formData.exchangePrograms || [])];
-                        list[index] = { ...list[index], activeSince: e.target.value };
-                        setFormData(prev => ({ ...prev, exchangePrograms: list }));
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, exchangePrograms: (prev.exchangePrograms || []).filter((_, i) => i !== index) }))}
-                      className="text-red-500 mb-2"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Global Tie-ups */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-700">Global Tie-ups</h3>
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({
-                  ...prev,
-                  globalTieUps: [...(prev.globalTieUps || []), { partnerName: '', nature: '', activeSince: '', description: '' }]
-                }))}
-                className="flex items-center text-sm text-indigo-600"
-              >
-                <PlusCircle size={16} className="mr-1" /> Add Tie-up
-              </button>
-            </div>
-            <div className="space-y-3">
-              {(formData.globalTieUps || []).map((tie, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-gray-50 p-4 rounded-md">
-                  <FormField
-                    label="Partner Name"
-                    name={`gt-name-${index}`}
-                    value={tie.partnerName}
-                    onChange={(e) => {
-                      const list = [...(formData.globalTieUps || [])];
-                      list[index] = { ...list[index], partnerName: e.target.value };
-                      setFormData(prev => ({ ...prev, globalTieUps: list }));
-                    }}
-                  />
-                  <FormField
-                    label="Nature"
-                    name={`gt-nature-${index}`}
-                    type="select"
-                    options={['Memorandum of Understanding (MoU)', 'Research Collaboration', 'Curriculum Development', 'Faculty Training']}
-                    value={tie.nature}
-                    onChange={(e) => {
-                      const list = [...(formData.globalTieUps || [])];
-                      list[index] = { ...list[index], nature: e.target.value };
-                      setFormData(prev => ({ ...prev, globalTieUps: list }));
-                    }}
-                  />
-                  <FormField
-                    label="Active Since"
-                    name={`gt-active-${index}`}
-                    value={tie.activeSince}
-                    onChange={(e) => {
-                      const list = [...(formData.globalTieUps || [])];
-                      list[index] = { ...list[index], activeSince: e.target.value };
-                      setFormData(prev => ({ ...prev, globalTieUps: list }));
-                    }}
-                  />
-                  <div className="md:col-span-2 grid grid-cols-1 items-end gap-2">
-                    <FormField
-                      label="Description"
-                      name={`gt-desc-${index}`}
-                      value={tie.description}
-                      onChange={(e) => {
-                        const list = [...(formData.globalTieUps || [])];
-                        list[index] = { ...list[index], description: e.target.value };
-                        setFormData(prev => ({ ...prev, globalTieUps: list }));
-                      }}
-                    />
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, globalTieUps: (prev.globalTieUps || []).filter((_, i) => i !== index) }))}
-                        className="text-red-500"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-            </div>
-
-            <div className="block" id="diversity">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-rose-500 to-pink-500 rounded-xl shadow-lg">
-                  <Heart className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-                    ♡ Diversity & Inclusivity
-                  </h2>
-                  <p className="text-gray-600 mt-1">Inclusive policies and support systems</p>
-                </div>
-              </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FormField
-              label="Gender Ratio - Male (%)"
-              name="genderRatioMale"
-              type="number"
-              min="0"
-              value={formData.genderRatioMale}
-              onChange={handleInputChange}
-            />
-            <FormField
-              label="Gender Ratio - Female (%)"
-              name="genderRatioFemale"
-              type="number"
-              min="0"
-              value={formData.genderRatioFemale}
-              onChange={handleInputChange}
-            />
-            <FormField
-              label="Gender Ratio - Others (%)"
-              name="genderRatioOthers"
-              type="number"
-              min="0"
-              value={formData.genderRatioOthers}
-              onChange={handleInputChange}
-            />
-          </div>
-
-          <div className="mt-8">
-            <label className="block text-lg font-semibold text-gray-800 mb-4">Scholarship Diversity Types</label>
-            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {['Merit', 'Socio-economic', 'Cultural', 'Sports', 'Community', 'Academic Excellence'].map(opt => (
-                  <label key={opt} className="flex items-center p-3 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="scholarshipDiversityTypes"
-                    value={opt}
-                    checked={(formData.scholarshipDiversityTypes || []).includes(opt)}
-                    onChange={handleCheckboxChange}
-                      className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
-                  />
-                    <span className="ml-3 text-gray-700 font-medium">{opt}</span>
-                </label>
-              ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-            <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-4">Scholarship Coverage (%)</label>
-              <input
-              type="number" 
-              min="0"
-              name="scholarshipDiversityCoverage"
-              value={formData.scholarshipDiversityCoverage}
-              onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
-                placeholder="Enter coverage percentage"
-            />
-            </div>
-            <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-4">Special Needs Support</label>
-              <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
-                <label className="flex items-center p-3 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="specialNeedsStaff"
-                    checked={formData.specialNeedsStaff}
-                    onChange={(e) => setFormData(prev => ({ ...prev, specialNeedsStaff: e.target.checked }))}
-                    className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-3 text-gray-700 font-medium">Dedicated Staff Available</span>
-                </label>
-                <div className="flex items-center space-x-4">
-                  <label className="block text-sm font-medium text-gray-600">
-                    Students Supported (%)
-                  </label>
-                  <input
-                  type="number"
-                  min="0 "
-                  name="specialNeedsSupportPercentage"
-                  value={formData.specialNeedsSupportPercentage}
-                  onChange={handleInputChange}
-                    className="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <label className="block text-lg font-semibold text-gray-800 mb-4">Facilities Available</label>
-            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-              <div className="grid grid-cols-2 gap-4">
-                    {['Ramps', 'Wheelchair access', 'Special educators', 'Learning support', 'Resource room', 'Assistive devices'].map(opt => (
-                  <label key={opt} className="flex items-center p-3 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          name="specialNeedsFacilities"
-                          value={opt}
-                          checked={(formData.specialNeedsFacilities || []).includes(opt)}
-                          onChange={handleCheckboxChange}
-                      className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
-                        />
-                    <span className="ml-3 text-gray-700 font-medium">{opt}</span>
-                      </label>
-                    ))}
-              </div>
-            </div>
-          </div>
-            </div>
-
-            <div className="block" id="admission">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border border-indigo-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl shadow-lg">
-                  <CalendarDays className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-                    📅 Admission Process Timeline
-                  </h2>
-                  <p className="text-gray-600 mt-1">Define admission timelines with dates, eligibility, and required documents</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                {admissionSteps.map((timeline, index) => (
-                  <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800">Timeline Entry {index + 1}</h3>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = admissionSteps.filter((_, i) => i !== index);
-                          setAdmissionSteps(next);
-                        }}
-                        className="text-red-500 hover:text-red-700 p-1"
-                        aria-label={`Remove timeline ${index + 1}`}
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                    <div className="mt-8">
+                      <label className="block text-lg font-semibold text-gray-800 mb-4">Scholarship Diversity Types</label>
+                      <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {['Merit', 'Socio-economic', 'Cultural', 'Sports', 'Community', 'Academic Excellence'].map(opt => (
+                            <label key={opt} className="flex items-center p-3 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                name="scholarshipDiversityTypes"
+                                value={opt}
+                                checked={(formData.scholarshipDiversityTypes || []).includes(opt)}
+                                onChange={handleCheckboxChange}
+                                className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
+                              />
+                              <span className="ml-3 text-gray-700 font-medium">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Admission Start Date */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Admission Start Date <span className="text-red-500">*</span>
-                        </label>
+                        <label className="block text-lg font-semibold text-gray-800 mb-4">Scholarship Coverage (%)</label>
                         <input
-                          type="date"
-                          value={timeline.admissionStartDate || ''}
-                      onChange={(e) => {
-                        const next = admissionSteps.slice();
-                            next[index] = { ...next[index], admissionStartDate: e.target.value };
-                        setAdmissionSteps(next);
-                      }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                          min={new Date().toISOString().split('T')[0]}
+                          type="number"
+                          min="0"
+                          name="scholarshipDiversityCoverage"
+                          value={formData.scholarshipDiversityCoverage}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                          placeholder="Enter coverage percentage"
                         />
                       </div>
-
-                      {/* Admission End Date */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Admission End Date <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          value={timeline.admissionEndDate || ''}
-                      onChange={(e) => {
-                        const next = admissionSteps.slice();
-                            next[index] = { ...next[index], admissionEndDate: e.target.value };
-                        setAdmissionSteps(next);
-                      }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                          min={timeline.admissionStartDate || new Date().toISOString().split('T')[0]}
-                        />
+                        <label className="block text-lg font-semibold text-gray-800 mb-4">Special Needs Support</label>
+                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-4">
+                          <label className="flex items-center p-3 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              name="specialNeedsStaff"
+                              checked={formData.specialNeedsStaff}
+                              onChange={(e) => setFormData(prev => ({ ...prev, specialNeedsStaff: e.target.checked }))}
+                              className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-3 text-gray-700 font-medium">Dedicated Staff Available</span>
+                          </label>
+                          <div className="flex items-center space-x-4">
+                            <label className="block text-sm font-medium text-gray-600">
+                              Students Supported (%)
+                            </label>
+                            <input
+                              type="number"
+                              min="0 "
+                              name="specialNeedsSupportPercentage"
+                              value={formData.specialNeedsSupportPercentage}
+                              onChange={handleInputChange}
+                              className="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-colors"
+                            />
+                          </div>
+                        </div>
                       </div>
+                    </div>
 
-                      {/* Status */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Status <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={timeline.status || ''}
-                        onChange={(e) => {
-                          const next = admissionSteps.slice();
-                            next[index] = { ...next[index], status: e.target.value };
-                          setAdmissionSteps(next);
-                        }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        >
-                          <option value="">Select Status</option>
-                          <option value="Ongoing">Ongoing</option>
-                          <option value="Ended">Ended</option>
-                          <option value="Starting Soon">Starting Soon</option>
-                        </select>
+                    <div className="mt-8">
+                      <label className="block text-lg font-semibold text-gray-800 mb-4">Facilities Available</label>
+                      <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                        <div className="grid grid-cols-2 gap-4">
+                          {['Ramps', 'Wheelchair access', 'Special educators', 'Learning support', 'Resource room', 'Assistive devices'].map(opt => (
+                            <label key={opt} className="flex items-center p-3 hover:bg-white hover:shadow-sm rounded-lg transition-all duration-200 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                name="specialNeedsFacilities"
+                                value={opt}
+                                checked={(formData.specialNeedsFacilities || []).includes(opt)}
+                                onChange={handleCheckboxChange}
+                                className="h-5 w-5 text-rose-600 focus:ring-rose-500 border-gray-300 rounded"
+                              />
+                              <span className="ml-3 text-gray-700 font-medium">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Admission Level */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Admission Level <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={timeline.admissionLevel || ''}
-                          onChange={(e) => {
-                            const next = admissionSteps.slice();
-                            next[index] = { ...next[index], admissionLevel: e.target.value };
-                            setAdmissionSteps(next);
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        >
-                          <option value="">Select Level</option>
-                            <option value="KG">KG</option>
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-    <option value="6">6</option>
-    <option value="7">7</option>
-    <option value="8">8</option>
-    <option value="9">9</option>
-    <option value="10">10</option>
-    <option value="11">11</option>
-                        </select>
+                  <div className="block" id="admission">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl border border-indigo-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl shadow-lg">
+                        <CalendarDays className="w-6 h-6 text-white" />
                       </div>
                       <div>
-  {/* <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                          📅 Admission Process Timeline
+                        </h2>
+                        <p className="text-gray-600 mt-1">Define admission timelines with dates, eligibility, and required documents</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      {admissionSteps.map((timeline, index) => (
+                        <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-800">Timeline Entry {index + 1}</h3>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = admissionSteps.filter((_, i) => i !== index);
+                                setAdmissionSteps(next);
+                              }}
+                              className="text-red-500 hover:text-red-700 p-1"
+                              aria-label={`Remove timeline ${index + 1}`}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Admission Start Date */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Admission Start Date <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="date"
+                                value={timeline.admissionStartDate || ''}
+                                onChange={(e) => {
+                                  const next = admissionSteps.slice();
+                                  next[index] = { ...next[index], admissionStartDate: e.target.value };
+                                  setAdmissionSteps(next);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                min={new Date().toISOString().split('T')[0]}
+                              />
+                            </div>
+
+                            {/* Admission End Date */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Admission End Date <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="date"
+                                value={timeline.admissionEndDate || ''}
+                                onChange={(e) => {
+                                  const next = admissionSteps.slice();
+                                  next[index] = { ...next[index], admissionEndDate: e.target.value };
+                                  setAdmissionSteps(next);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                min={timeline.admissionStartDate || new Date().toISOString().split('T')[0]}
+                              />
+                            </div>
+
+                            {/* Status */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Status <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={timeline.status || ''}
+                                onChange={(e) => {
+                                  const next = admissionSteps.slice();
+                                  next[index] = { ...next[index], status: e.target.value };
+                                  setAdmissionSteps(next);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                              >
+                                <option value="">Select Status</option>
+                                <option value="Ongoing">Ongoing</option>
+                                <option value="Ended">Ended</option>
+                                <option value="Starting Soon">Starting Soon</option>
+                              </select>
+                            </div>
+
+                            {/* Admission Level */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Admission Level <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={timeline.admissionLevel || ''}
+                                onChange={(e) => {
+                                  const next = admissionSteps.slice();
+                                  next[index] = { ...next[index], admissionLevel: e.target.value };
+                                  setAdmissionSteps(next);
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                              >
+                                <option value="">Select Level</option>
+                                <option value="KG">KG</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                              </select>
+                            </div>
+                            <div>
+                              {/* <label className="block text-sm font-medium text-gray-700 mb-2">
     Application Fee (Optional)
   </label>
   <input
@@ -3949,217 +3943,217 @@ const handleUseCurrentLocation = () => {
     }}
     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
   /> */}
-</div>
+                            </div>
 
-                      {/* Age Criteria */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Age Criteria
-                        </label>
-                        <input
-                        type="text"
-                          placeholder="e.g., Child must be 3 years old by June 1, 2026"
-                          value={timeline.ageCriteria || ''}
-                        onChange={(e) => {
-                          const next = admissionSteps.slice();
-                            next[index] = { ...next[index], ageCriteria: e.target.value };
-                          setAdmissionSteps(next);
-                        }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </div>
-
-                      {/* Other Info */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Other Eligibility Information
-                        </label>
-                        <textarea
-                          placeholder="Any other eligibility information..."
-                          value={timeline.otherInfo || ''}
-                          onChange={(e) => {
-                            const next = admissionSteps.slice();
-                            next[index] = { ...next[index], otherInfo: e.target.value };
-                            setAdmissionSteps(next);
-                          }}
-                          rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                      </div>
-
-                      {/* Documents Required */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Documents Required
-                        </label>
-                        <div className="space-y-2">
-                          {(timeline.documentsRequired || []).map((doc, docIndex) => (
-                            <div key={docIndex} className="flex items-center gap-2">
-                        <input
+                            {/* Age Criteria */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Age Criteria
+                              </label>
+                              <input
                                 type="text"
-                                value={doc}
-                          onChange={(e) => {
-                            const next = admissionSteps.slice();
-                                  const nextDocs = [...(next[index].documentsRequired || [])];
-                                  nextDocs[docIndex] = e.target.value;
-                                  next[index] = { ...next[index], documentsRequired: nextDocs };
-                            setAdmissionSteps(next);
-                          }}
-                                placeholder="Document name"
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
+                                placeholder="e.g., Child must be 3 years old by June 1, 2026"
+                                value={timeline.ageCriteria || ''}
+                                onChange={(e) => {
                                   const next = admissionSteps.slice();
-                                  const nextDocs = [...(next[index].documentsRequired || [])];
-                                  nextDocs.splice(docIndex, 1);
-                                  next[index] = { ...next[index], documentsRequired: nextDocs };
+                                  next[index] = { ...next[index], ageCriteria: e.target.value };
                                   setAdmissionSteps(next);
                                 }}
-                                className="text-red-500 p-1"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                      </div>
-                          ))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            </div>
+
+                            {/* Other Info */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Other Eligibility Information
+                              </label>
+                              <textarea
+                                placeholder="Any other eligibility information..."
+                                value={timeline.otherInfo || ''}
+                                onChange={(e) => {
+                                  const next = admissionSteps.slice();
+                                  next[index] = { ...next[index], otherInfo: e.target.value };
+                                  setAdmissionSteps(next);
+                                }}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            </div>
+
+                            {/* Documents Required */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Documents Required
+                              </label>
+                              <div className="space-y-2">
+                                {(timeline.documentsRequired || []).map((doc, docIndex) => (
+                                  <div key={docIndex} className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={doc}
+                                      onChange={(e) => {
+                                        const next = admissionSteps.slice();
+                                        const nextDocs = [...(next[index].documentsRequired || [])];
+                                        nextDocs[docIndex] = e.target.value;
+                                        next[index] = { ...next[index], documentsRequired: nextDocs };
+                                        setAdmissionSteps(next);
+                                      }}
+                                      placeholder="Document name"
+                                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = admissionSteps.slice();
+                                        const nextDocs = [...(next[index].documentsRequired || [])];
+                                        nextDocs.splice(docIndex, 1);
+                                        next[index] = { ...next[index], documentsRequired: nextDocs };
+                                        setAdmissionSteps(next);
+                                      }}
+                                      className="text-red-500 p-1"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = admissionSteps.slice();
+                                    const nextDocs = [...(next[index].documentsRequired || []), ''];
+                                    next[index] = { ...next[index], documentsRequired: nextDocs };
+                                    setAdmissionSteps(next);
+                                  }}
+                                  className="flex items-center text-sm text-indigo-600"
+                                >
+                                  <PlusCircle size={16} className="mr-1" /> Add Document
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
                       <button
                         type="button"
-                        onClick={() => {
-                              const next = admissionSteps.slice();
-                              const nextDocs = [...(next[index].documentsRequired || []), ''];
-                              next[index] = { ...next[index], documentsRequired: nextDocs };
-                          setAdmissionSteps(next);
-                        }}
-                className="flex items-center text-sm text-indigo-600"
+                        onClick={() => setAdmissionSteps([...admissionSteps, {
+                          admissionStartDate: '',
+                          admissionEndDate: '',
+                          status: '',
+                          admissionLevel: '',
+                          ageCriteria: '',
+                          otherInfo: '',
+                          documentsRequired: [],
+                          applicationFee: 0
+                        }])}
+                        className="mt-4 flex items-center text-sm text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200"
                       >
-                            <PlusCircle size={16} className="mr-1" /> Add Document
+                        <PlusCircle size={16} className="mr-2" /> Add Timeline Entry
                       </button>
-                        </div>
-                      </div>
                     </div>
                   </div>
-                ))}
 
-                <button
-                  type="button"
-                  onClick={() => setAdmissionSteps([...admissionSteps, {
-                    admissionStartDate: '',
-                    admissionEndDate: '',
-                    status: '',
-                    admissionLevel: '',
-                    ageCriteria: '',
-                    otherInfo: '',
-                    documentsRequired: [],
-                    applicationFee: 0
-                  }])}
-                  className="mt-4 flex items-center text-sm text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200"
-                >
-                  <PlusCircle size={16} className="mr-2" /> Add Timeline Entry
-                </button>
-              </div>
-            </div>
+                  <div className="block" id="media">
+                    <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl border border-violet-200/50 shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl shadow-lg">
+                        <Image className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                          📸 Media
+                        </h2>
+                        <p className="text-gray-600 mt-1">Photos and videos showcasing your school</p>
+                      </div>
+                    </div>
 
-            <div className="block" id="media">
-  <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl border border-violet-200/50 shadow-lg">
-    <div className="p-3 bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl shadow-lg">
-      <Image className="w-6 h-6 text-white" />
-    </div>
-    <div>
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-        📸 Media
-      </h2>
-      <p className="text-gray-600 mt-1">Photos and videos showcasing your school</p>
-    </div>
-  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Photos Upload */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Upload Photos (4–5 recommended, max 5)
+                        </label>
 
-    {/* Photos Upload */}
-    <div>
-      <label className="block text-sm font-medium text-gray-700">
-        Upload Photos (4–5 recommended, max 5)
-      </label>
+                        {/* Hidden Input */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          ref={photoInputRef}
+                          onChange={handlePhotoChange}
+                          className="hidden"
+                        />
 
-      {/* Hidden Input */}
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        ref={photoInputRef}
-        onChange={handlePhotoChange}
-        className="hidden"
-      />
+                        {/* Button */}
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current.click()}
+                          className="mt-2 px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition"
+                        >
+                          Choose Photos
+                        </button>
 
-      {/* Button */}
-      <button
-        type="button"
-        onClick={() => photoInputRef.current.click()}
-        className="mt-2 px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition"
-      >
-        Choose Photos
-      </button>
+                        {selectedPhotos?.length > 0 && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            {selectedPhotos.length} selected
+                          </div>
+                        )}
+                      </div>
 
-      {selectedPhotos?.length > 0 && (
-        <div className="mt-2 text-sm text-gray-600">
-          {selectedPhotos.length} selected
-        </div>
-      )}
-    </div>
+                      {/* Video Upload */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Upload Video (max 20MB)
+                        </label>
 
-    {/* Video Upload */}
-    <div>
-      <label className="block text-sm font-medium text-gray-700">
-        Upload Video (max 20MB)
-      </label>
+                        {/* Hidden Input */}
+                        <input
+                          type="file"
+                          accept="video/*"
+                          ref={videoInputRef}
+                          onChange={handleVideoChange}
+                          className="hidden"
+                        />
 
-      {/* Hidden Input */}
-      <input
-        type="file"
-        accept="video/*"
-        ref={videoInputRef}
-        onChange={handleVideoChange}
-        className="hidden"
-      />
+                        {/* Button */}
+                        <button
+                          type="button"
+                          onClick={() => videoInputRef.current.click()}
+                          className="mt-2 px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition"
+                        >
+                          Choose Video
+                        </button>
 
-      {/* Button */}
-      <button
-        type="button"
-        onClick={() => videoInputRef.current.click()}
-        className="mt-2 px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition"
-      >
-        Choose Video
-      </button>
+                        {selectedVideo && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            {selectedVideo.name}
+                          </div>
+                        )}
+                      </div>
 
-      {selectedVideo && (
-        <div className="mt-2 text-sm text-gray-600">
-          {selectedVideo.name}
-        </div>
-      )}
-    </div>
+                    </div>
+                  </div>
 
-  </div>
-</div>
+                </div>
 
-          </div>
-
-          <div className="sticky bottom-0 -mx-6 px-6 py-6 bg-gradient-to-r from-white/95 to-white/90 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl">
-            <div className="flex items-center gap-4">
-              <button 
-                type="button" 
-                onClick={saveDraft} 
-                className="px-6 py-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 transform hover:scale-105 hover:shadow-lg font-semibold text-gray-700"
-              >
-                💾 Save Draft
-              </button>
-              <button 
-                type="button" 
-                onClick={clearDraft} 
-                className="px-4 py-3 rounded-xl border-2 border-red-300 bg-red-50 hover:bg-red-100 hover:border-red-400 transition-all duration-300 transform hover:scale-105 hover:shadow-lg font-semibold text-red-700"
-              >
-                🗑️ Clear Draft
-              </button>
-              {/* <button 
+                <div className="sticky bottom-0 -mx-6 px-6 py-6 bg-gradient-to-r from-white/95 to-white/90 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl">
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={saveDraft}
+                      className="px-6 py-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 transform hover:scale-105 hover:shadow-lg font-semibold text-gray-700"
+                    >
+                      💾 Save Draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearDraft}
+                      className="px-4 py-3 rounded-xl border-2 border-red-300 bg-red-50 hover:bg-red-100 hover:border-red-400 transition-all duration-300 transform hover:scale-105 hover:shadow-lg font-semibold text-red-700"
+                    >
+                      🗑️ Clear Draft
+                    </button>
+                    {/* <button 
                 type="button" 
                 disabled={isFirst} 
                 onClick={goPrev} 
@@ -4171,7 +4165,7 @@ const handleUseCurrentLocation = () => {
               >
                 ← Previous Slide
               </button> */}
-              {/* {!isLast ? (
+                    {/* {!isLast ? (
                 // <button 
                 //   type="button" 
                 //   onClick={goNext} 
@@ -4180,25 +4174,25 @@ const handleUseCurrentLocation = () => {
                 //   Next Slide →
                 // </button>
               ) : ( */}
-                <button
-                  type="submit"
-                  className="mt-8 w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-[1.01]"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      {hasExistingSchool ? 'Updating...' : 'Submitting...'}
-                    </>
-                  ) : (
-                    hasExistingSchool ? 'Update School Profile' : 'Submit Registration'
-                  )}
-                </button>
-              {/* )} */}
+                    <button
+                      type="submit"
+                      className="mt-8 w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-[1.01]"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                          {hasExistingSchool ? 'Updating...' : 'Submitting...'}
+                        </>
+                      ) : (
+                        hasExistingSchool ? 'Update School Profile' : 'Submit Registration'
+                      )}
+                    </button>
+                    {/* )} */}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          </div>
-          </div>
           </div>
         </form>
       </div>

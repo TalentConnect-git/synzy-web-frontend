@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Calendar, User, Search, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 import { getAllBlogs } from '../api/blogService';
 import { toast } from 'react-toastify';
+import SEO from '../components/SEO';
 
 const BlogPage = () => {
   const [blogs, setBlogs] = useState([]);
@@ -70,19 +72,18 @@ const BlogPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title="Education Blog | School & College Admission Tips | Synzy"
+        description="Read the latest articles, guides, and tips on college admissions, education trends, and student success."
+        canonical="https://synzy.in/blog"
+      />
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Link
-                to="/"
-                className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
-              >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                Back to Home
-              </Link>
-              <h1 className="text-3xl font-bold text-gray-900">Blog</h1>
+              <BackButton />
+              <h1 className="text-3xl font-bold text-gray-900 ml-4">Blog</h1>
             </div>
           </div>
           

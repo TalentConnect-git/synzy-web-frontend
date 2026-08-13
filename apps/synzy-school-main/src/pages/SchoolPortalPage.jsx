@@ -12,10 +12,13 @@ import { fetchStudentApplications, updateApplicationStatus, fetchApplicationsCou
 import { getSchoolForms, updateFormStatus } from "../api/applicationService";
 import InterviewSchedulingModal from "../components/InterviewSchedulingModal";
 import WrittenExamSchedulingModal from "../components/WrittenExamSchedulingModal";
+import Tooltip from "../components/Tooltip";
 import { useAuth } from "../context/AuthContext";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { toast } from "react-toastify";
-// import Logo from "../components/Logo";
+import { generateStudentPdf } from "../api/userService";
+// import Logo from "./Logo";
+import BackButton from "../components/BackButton";
 import logo from "../assets/logo.png";
 
 // Custom Logo component with image only
@@ -28,9 +31,9 @@ const Logo = ({ to = "/", size = "default" }) => {
 
   return (
     <Link to={to} className="flex items-center">
-      <img 
-        src={logo} 
-        alt="Synzy Logo" 
+      <img
+        src={logo}
+        alt="Synzy Logo"
         className={`${sizeClasses[size] || sizeClasses.default} object-contain`}
       />
     </Link>
@@ -40,58 +43,50 @@ const Logo = ({ to = "/", size = "default" }) => {
 const SchoolHeader = ({ schoolName, onLogout, applicationsCount, hasProfile, currentUser }) => (
   <header className="bg-white shadow-md">
     <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Back Button - Extreme Left */}
-        <button 
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors absolute left-6"
-          title="Go back"
-        >
-          <ArrowLeft size={18} />
-          <span className="text-sm font-medium">Back</span>
-        </button>
 
-        {/* Logo - Moved left with ml-4 */}
-        <div className="flex-1 flex justify-center md:justify-start md:ml-4">
-          <Logo to="/school-portal" size="default" />
-        </div>
-        
-        {/* Right Section - Navigation and Actions */}
-        <div className="flex items-center space-x-6">
-          {currentUser?.userType === 'school' && (
-            <Link
-              to="/school-portal/register"
-              className="text-gray-600 hover:text-blue-600 flex items-center"
-            >
-              <FileText size={18} className="mr-2" /> {hasProfile ? 'School Profile' : 'School Registration'}
-            </Link>
-          )}
-          {/* Approval Status removed per request */}
-          {/* <Link
+
+      {/* Logo - Moved left with ml-4 */}
+      <div className="flex-1 flex justify-center md:justify-start md:ml-4">
+        <Logo to="/school-portal" size="default" />
+      </div>
+
+      {/* Right Section - Navigation and Actions */}
+      <div className="flex items-center space-x-6">
+        {currentUser?.userType === 'school' && (
+          <Link
+            to="/school-portal/register"
+            className="text-gray-600 hover:text-blue-600 flex items-center"
+          >
+            <FileText size={18} className="mr-2" /> {hasProfile ? 'School Profile' : 'School Registration'}
+          </Link>
+        )}
+        {/* Approval Status removed per request */}
+        {/* <Link
             to="/school-portal/shortlisted"
             className="text-gray-600 hover:text-blue-600 flex items-center"
           >
             <Star size={18} className="mr-2" /> Shortlisted Applications
           </Link> */}
-          <Link
-            to="/school-portal/applications"
-            className="text-gray-600 hover:text-blue-600 flex items-center relative"
-          >
-            <Eye size={18} className="mr-2" /> View Student Applications
-            {typeof applicationsCount === 'number' && (
-              <span className="ml-2 inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-semibold rounded-full bg-blue-600 text-white">
-                {applicationsCount}
-              </span>
-            )}
-          </Link>
-          <span className="text-gray-500">|</span>
-          <button
-            onClick={onLogout}
-            className="text-gray-600 hover:text-blue-600 flex items-center"
-          >
-            <LogOut size={16} className="mr-1" /> Logout
-          </button>
-        </div>
-      </nav>
+        <Link
+          to="/school-portal/applications"
+          className="text-gray-600 hover:text-blue-600 flex items-center relative"
+        >
+          <Eye size={18} className="mr-2" /> View Student Applications
+          {typeof applicationsCount === 'number' && (
+            <span className="ml-2 inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-semibold rounded-full bg-blue-600 text-white">
+              {applicationsCount}
+            </span>
+          )}
+        </Link>
+        <span className="text-gray-500">|</span>
+        <button
+          onClick={onLogout}
+          className="text-gray-600 hover:text-blue-600 flex items-center"
+        >
+          <LogOut size={16} className="mr-1" /> Logout
+        </button>
+      </div>
+    </nav>
   </header>
 );
 
@@ -131,6 +126,7 @@ const ViewStudentApplications = ({ }) => {
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showWrittenExamModal, setShowWrittenExamModal] = useState(false);
+  const [showWrittenExamDetailsModal, setShowWrittenExamDetailsModal] = useState(false);
   const [selectedWrittenExamApplication, setSelectedWrittenExamApplication] = useState(null);
   const [detectedSchoolId, setDetectedSchoolId] = useState(null);
   const navigate = useNavigate();
@@ -156,7 +152,7 @@ const ViewStudentApplications = ({ }) => {
           if (schoolProfileData?._id) {
             schoolId = schoolProfileData._id;
             schoolIdentifier = schoolId;
-          }else {
+          } else {
             console.warn(`⚠️ [NO SCHOOL PROFILE] No school found for authId: ${currentUser._id}`);
           }
         } catch (profileError) {
@@ -184,22 +180,22 @@ const ViewStudentApplications = ({ }) => {
       // debugger;
       let response;
 
-    try {
-      response = await fetchStudentApplications(schoolIdentifier);
-    } catch (err) {
-      // 🆕 New school → backend throws 500 when no applications exist
-      // if (err.response?.status === 500) {
-      //   console.warn('🆕 [NO APPLICATIONS] Redirecting new school to profile page');
-      //   navigate('/school-portal/register', { replace: true });
-      //   return;
-      // }
-      if (err.response?.status === 500) {
-        console.warn("No applications yet");
-        setApplications([]);
-        return;
+      try {
+        response = await fetchStudentApplications(schoolIdentifier);
+      } catch (err) {
+        // 🆕 New school → backend throws 500 when no applications exist
+        // if (err.response?.status === 500) {
+        //   console.warn('🆕 [NO APPLICATIONS] Redirecting new school to profile page');
+        //   navigate('/school-portal/register', { replace: true });
+        //   return;
+        // }
+        if (err.response?.status === 500) {
+          console.warn("No applications yet");
+          setApplications([]);
+          return;
+        }
+        throw err; // real error
       }
-      throw err; // real error
-    }
       console.log(`✅ [API RESPONSE] Forms fetched successfully:`, {
         totalForms: response.data?.length || 0,
         hasData: !!response.data,
@@ -288,24 +284,24 @@ const ViewStudentApplications = ({ }) => {
 
       // For now, show all applications in this view
       const allApplications = response.data || [];
-    //   if (allApplications.length === 0) {
-    //   console.warn('🆕 [EMPTY APPLICATION LIST] Redirecting to profile');
-    //   navigate('/school-portal/register', { replace: true });
-    //   return;
-    // }
+      //   if (allApplications.length === 0) {
+      //   console.warn('🆕 [EMPTY APPLICATION LIST] Redirecting to profile');
+      //   navigate('/school-portal/register', { replace: true });
+      //   return;
+      // }
       if (allApplications.length === 0) {
         console.warn('🆕 No applications found for this school');
         setApplications([]);
         return;
       }
 
-console.log(`📊 [FETCH RESULTS] Applications fetched:`, {
-  totalForms: allApplications.length,
-  schoolId: detectedSchoolId,
-  statuses: allApplications.map(a => a.status)
-});
+      console.log(`📊 [FETCH RESULTS] Applications fetched:`, {
+        totalForms: allApplications.length,
+        schoolId: detectedSchoolId,
+        statuses: allApplications.map(a => a.status)
+      });
 
-setApplications(allApplications);
+      setApplications(allApplications);
 
     } catch (error) {
       console.error('❌ [FETCH APPLICATIONS ERROR] Failed to fetch applications:', {
@@ -339,7 +335,7 @@ setApplications(allApplications);
       setRefreshing(false);
     }
   };
-  
+
   useEffect(() => {
     if (currentUser?._id) {
       fetchApplications();
@@ -668,8 +664,8 @@ setApplications(allApplications);
       console.log('📋 Written exam details from existing form data:', app);
       console.log('🔍 All available fields in app:', Object.keys(app));
       console.log('🔍 Written exam status:', app?.status);
-      
-      
+
+
 
       // Set the application data for the modal using existing form data
       const interviewNote = app?.note ||
@@ -684,7 +680,7 @@ setApplications(allApplications);
         interviewNote: interviewNote !== 'No written exam details available' ? interviewNote : 'No written exam details available'
       });
 
-      setShowWrittenExamModal(true);
+      setShowWrittenExamDetailsModal(true);
     } catch (error) {
       console.error('❌ Error showing written exam details:', {
         applicationId: app?._id || app?.id,
@@ -730,44 +726,45 @@ setApplications(allApplications);
     } else if (app?._id) {
       // Case 5: fallback to application _id
       studId = app._id;
-    }let applicationId = null;
+    } let applicationId = null;
 
-// ✅ PRIORITY 1: correct application id from backend
-if (typeof app?._raw?.applicationId?._id === 'string') {
-  applicationId = app._raw.applicationId._id;
-}
-// Case 2: normalized app (if you already override _id)
-else if (typeof app?._id === 'string') {
-  applicationId = app._id;
-}
-// Case 3: applicationId as string
-else if (typeof app?.applicationId === 'string') {
-  applicationId = app.applicationId;
-}
-// Case 4: applicationId populated object
-else if (typeof app?.applicationId === 'object' && app?.applicationId?._id) {
-  applicationId = app.applicationId._id;
-}
-// Case 5: formId fallback
-else if (typeof app?.formId === 'string') {
-  applicationId = app.formId;
-}
-// Case 6: formId populated
-else if (typeof app?.formId === 'object' && app?.formId?._id) {
-  applicationId = app.formId._id;
-}
+    // ✅ PRIORITY 1: correct application id from backend
+    if (typeof app?._raw?.applicationId?._id === 'string') {
+      applicationId = app._raw.applicationId._id;
+    }
+    // Case 2: normalized app (if you already override _id)
+    else if (typeof app?._id === 'string') {
+      applicationId = app._id;
+    }
+    // Case 3: applicationId as string
+    else if (typeof app?.applicationId === 'string') {
+      applicationId = app.applicationId;
+    }
+    // Case 4: applicationId populated object
+    else if (typeof app?.applicationId === 'object' && app?.applicationId?._id) {
+      applicationId = app.applicationId._id;
+    }
+    // Case 5: formId fallback
+    else if (typeof app?.formId === 'string') {
+      applicationId = app.formId;
+    }
+    // Case 6: formId populated
+    else if (typeof app?.formId === 'object' && app?.formId?._id) {
+      applicationId = app.formId._id;
+    }
 
 
 
     if (studId && applicationId) {
       console.log('🔗 Opening PDF for student:', studId, 'Type:', typeof studId);
-      // Construct URL properly for both dev and production
-      const apiBaseURL = import.meta.env.DEV ? '' : import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
-      const pdfUrl = import.meta.env.DEV
-        ? `/api/users/pdf/view/${studId}/${applicationId}`
-        : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
-      console.log('📄 PDF URL:', pdfUrl);
-      window.open(pdfUrl, '_blank');
+      const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://school-api.synzy.in/api';
+      const pdfUrl = `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
+      generateStudentPdf(studId, applicationId)
+        .catch(err => console.warn('PDF generation check:', err))
+        .finally(() => {
+          console.log('📄 PDF URL:', pdfUrl);
+          window.open(pdfUrl, '_blank');
+        });
     } else {
       toast.error('Unable to view details: Student ID not found');
       console.warn('❌ No student ID found for application:', {
@@ -851,24 +848,24 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
             key={status}
             onClick={() => handleStatusFilter(status)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedStatus === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
               }`}
           >
             {status}
           </button>
         ))}
       </div>
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-lg shadow-lg overflow-visible border border-gray-200">
         <table className="min-w-full table-auto">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-4 text-left text-sm font-semibold text-gray-600">Student Name</th>
+              <th className="p-4 text-left text-sm font-semibold text-gray-600 rounded-tl-lg">Student Name</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Class</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Date</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Details</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Status</th>
-              <th className="p-4 text-left text-sm font-semibold text-gray-600">
+              <th className="p-4 text-left text-sm font-semibold text-gray-600 rounded-tr-lg">
                 Actions
               </th>
             </tr>
@@ -894,41 +891,46 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
                       <StatusBadge status={statusLower} />
                     </td>
                     <td className="p-4 flex flex-wrap gap-2 items-center">
-                      <button
-                        onClick={() => handleStatusChange(app, "Reviewed")}
-                        className="p-2 text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200"
-                        title="Mark as Reviewed"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleScheduleInterview(app)}
-                        className="p-2 text-purple-600 bg-purple-100 rounded-full hover:bg-purple-200"
-                        title="Schedule Interview"
-                      >
-                        <Calendar size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleScheduleWrittenExam(app)}
-                        className="p-2 text-indigo-600 bg-indigo-100 rounded-full hover:bg-indigo-200"
-                        title="Schedule Written Exam"
-                      >
-                        <FileText size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(app, "Accepted")}
-                        className="p-2 text-green-600 bg-green-100 rounded-full hover:bg-green-200"
-                        title="Accept"
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(app, "Rejected")}
-                        className="p-2 text-red-600 bg-red-100 rounded-full hover:bg-red-200"
-                        title="Reject"
-                      >
-                        <X size={16} />
-                      </button>
+                      <Tooltip text="View Details">
+                        <button
+                          onClick={() => handleStatusChange(app, "Reviewed")}
+                          className="p-2 text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip text="Schedule Interview">
+                        <button
+                          onClick={() => handleScheduleInterview(app)}
+                          className="p-2 text-purple-600 bg-purple-100 rounded-full hover:bg-purple-200"
+                        >
+                          <Calendar size={16} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip text="Schedule Written Exam">
+                        <button
+                          onClick={() => handleScheduleWrittenExam(app)}
+                          className="p-2 text-indigo-600 bg-indigo-100 rounded-full hover:bg-indigo-200"
+                        >
+                          <FileText size={16} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip text="Accept Application">
+                        <button
+                          onClick={() => handleStatusChange(app, "Accepted")}
+                          className="p-2 text-green-600 bg-green-100 rounded-full hover:bg-green-200"
+                        >
+                          <Check size={16} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip text="Reject Application">
+                        <button
+                          onClick={() => handleStatusChange(app, "Rejected")}
+                          className="p-2 text-red-600 bg-red-100 rounded-full hover:bg-red-200"
+                        >
+                          <X size={16} />
+                        </button>
+                      </Tooltip>
                     </td>
                   </tr>
                 );
@@ -983,92 +985,92 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
         />
       )}
       {/* Written Exam Details Modal */}
-{showWrittenExamModal && selectedWrittenExamApplication && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      {showWrittenExamDetailsModal && selectedWrittenExamApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
 
-      {/* Header */}
-      <div className="flex justify-between items-center p-6 border-b border-gray-200">
-        <div className="flex items-center">
-          <Calendar className="w-6 h-6 text-blue-600 mr-3" />
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Written Exam Details
-            </h2>
-            <p className="text-sm text-gray-600">
-              {selectedWrittenExamApplication?.studId?.name ||
-                selectedWrittenExamApplication?.studentName} -{" "}
-              {selectedWrittenExamApplication?.schoolId?.name ||
-                selectedWrittenExamApplication?.schoolName ||
-                "School"}
-            </p>
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <div className="flex items-center">
+                <Calendar className="w-6 h-6 text-blue-600 mr-3" />
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Written Exam Details
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {selectedWrittenExamApplication?.studId?.name ||
+                      selectedWrittenExamApplication?.studentName} -{" "}
+                    {selectedWrittenExamApplication?.schoolId?.name ||
+                      selectedWrittenExamApplication?.schoolName ||
+                      "School"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWrittenExamDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                <h3 className="font-medium text-blue-900 mb-2">
+                  Written Exam Information:
+                </h3>
+                <div className="text-sm text-blue-800 space-y-1">
+                  <p><strong>Student:</strong> {selectedWrittenExamApplication?.studId?.name || "N/A"}</p>
+                  <p><strong>School:</strong> {selectedWrittenExamApplication?.schoolId?.name || "N/A"}</p>
+                  <p><strong>Class:</strong> {selectedWrittenExamApplication?.standard || "N/A"}</p>
+                  <p><strong>Application Date:</strong> {selectedWrittenExamApplication?.date || "N/A"}</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-medium text-gray-900 mb-2">
+                  Written Exam Notes:
+                </h3>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {selectedWrittenExamApplication?.interviewNote ||
+                    "No written exam details available"}
+                </div>
+
+                {/* Debug */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-2">Debug Information:</p>
+                  <details className="text-xs text-gray-400">
+                    <summary className="cursor-pointer hover:text-gray-600">
+                      View Raw Data
+                    </summary>
+                    <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto max-h-32">
+                      {JSON.stringify({
+                        interviewNote:
+                          selectedWrittenExamApplication?.interviewNote,
+                        fullData: selectedWrittenExamApplication,
+                        allKeys: Object.keys(
+                          selectedWrittenExamApplication || {}
+                        )
+                      }, null, 2)}
+                    </pre>
+                  </details>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowWrittenExamModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
-        <button
-          onClick={() => setShowWrittenExamModal(false)}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="p-6">
-        <div className="bg-blue-50 rounded-lg p-4 mb-4">
-          <h3 className="font-medium text-blue-900 mb-2">
-            Written Exam Information:
-          </h3>
-          <div className="text-sm text-blue-800 space-y-1">
-            <p><strong>Student:</strong> {selectedWrittenExamApplication?.studId?.name || "N/A"}</p>
-            <p><strong>School:</strong> {selectedWrittenExamApplication?.schoolId?.name || "N/A"}</p>
-            <p><strong>Class:</strong> {selectedWrittenExamApplication?.standard || "N/A"}</p>
-            <p><strong>Application Date:</strong> {selectedWrittenExamApplication?.date || "N/A"}</p>
-          </div>
-        </div>
-
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="font-medium text-gray-900 mb-2">
-            Written Exam Notes:
-          </h3>
-          <div className="text-sm text-gray-700 whitespace-pre-wrap">
-            {selectedWrittenExamApplication?.interviewNote ||
-              "No written exam details available"}
-          </div>
-
-          {/* Debug */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 mb-2">Debug Information:</p>
-            <details className="text-xs text-gray-400">
-              <summary className="cursor-pointer hover:text-gray-600">
-                View Raw Data
-              </summary>
-              <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto max-h-32">
-                {JSON.stringify({
-                  interviewNote:
-                    selectedWrittenExamApplication?.interviewNote,
-                  fullData: selectedWrittenExamApplication,
-                  allKeys: Object.keys(
-                    selectedWrittenExamApplication || {}
-                  )
-                }, null, 2)}
-              </pre>
-            </details>
-          </div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
-        <button
-          onClick={() => setShowWrittenExamModal(false)}
-          className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Interview Details Modal */}
       {showInterviewDetailsModal && selectedInterviewApplication && (
@@ -1467,7 +1469,7 @@ const SchoolPortalPage = ({ currentUser, onLogout, onRegister }) => {
 
     redirectBasedOnApplications();
   }, [currentUser]);
-  
+
   // useEffect(() => {
   //   const loadCount = async () => {
   //     // const idForQuery = currentUser?.schoolId || currentUser?._id;
@@ -1600,6 +1602,9 @@ const SchoolPortalPage = ({ currentUser, onLogout, onRegister }) => {
   return (
     <div>
       <SchoolHeader schoolName={currentUser?.name} onLogout={onLogout} applicationsCount={applicationsCount} hasProfile={hasProfile} currentUser={currentUser} />
+      <div className="container mx-auto px-6 py-4">
+        <BackButton />
+      </div>
       <Routes>
         <Route
           path="shortlisted"

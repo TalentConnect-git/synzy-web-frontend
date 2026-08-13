@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { predictSchools } from '../api/predictorService';
 import SchoolCard from '../components/SchoolCard';
 import { toast } from 'react-toastify';
+import BackButton from '../components/BackButton';
 
 const schoolTypes = [
   'Government',
@@ -313,6 +314,7 @@ const PredictorPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <BackButton />
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
           <div className="text-center mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">

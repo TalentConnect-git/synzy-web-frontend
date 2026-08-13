@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getStudentForms, trackForm } from '../api/applicationService';
-import { getFormsByStudent, getUserProfile} from '../api/userService';
+import { getFormsByStudent, getUserProfile, generateStudentPdf } from '../api/userService';
 import { 
   FileText, 
   Clock, 
@@ -202,7 +202,7 @@ const StudentApplicationTrackingPage = () => {
     }
   }, [currentUser, selectedStatus]);
 
-  const handleViewDetails = (application) => {
+  const handleViewDetails = async (application) => {
     const statusLower = (application.status || '').toString().toLowerCase();
 
     // If status is Interview, show interview details instead of PDF
@@ -216,59 +216,50 @@ const StudentApplicationTrackingPage = () => {
     let studId = null;
 
     if (typeof application?.studId === 'string') {
-      // Case 1: studId is already a string
       studId = application.studId;
     } else if (typeof application?.studId === 'object' && application?.studId?._id) {
-      // Case 2: studId is an object with _id property
       studId = application.studId._id;
     } else if (typeof application?.studentId === 'string') {
-      // Case 3: studentId is a string
       studId = application.studentId;
     } else if (typeof application?.studentId === 'object' && application?.studentId?._id) {
-      // Case 4: studentId is an object with _id property
       studId = application.studentId._id;
-    } else if (application?._id) {
-      // Case 5: fallback to application _id
-      studId = application._id;
-
     }
+
+    if (!studId && currentUser?.studentId) {
+      studId = currentUser.studentId;
+    } else if (!studId && currentUser?._id) {
+      studId = currentUser._id;
+    }
+
     let applicationId = null;
 
-// Case 1: populated applicationId
-if (typeof application?.applicationId === 'object' && application?.applicationId?._id) {
-  applicationId = application.applicationId._id;
-}
-// Case 2: applicationId as string
-else if (typeof application?.applicationId === 'string') {
-  applicationId = application.applicationId;
-}
-// Case 3: formId string
-else if (typeof application?.formId === 'string') {
-  applicationId = application.formId;
-}
-// Case 4: formId populated
-else if (typeof application?.formId === 'object' && application?.formId?._id) {
-  applicationId = application.formId._id;
-}
-// Case 5: fallback to _id
-else if (typeof application?._id === 'string') {
-  applicationId = application._id;
-}
-
-
-
+    if (typeof application?.applicationId === 'object' && application?.applicationId?._id) {
+      applicationId = application.applicationId._id;
+    } else if (typeof application?.applicationId === 'string') {
+      applicationId = application.applicationId;
+    } else if (typeof application?.formId === 'string') {
+      applicationId = application.formId;
+    } else if (typeof application?.formId === 'object' && application?.formId?._id) {
+      applicationId = application.formId._id;
+    } else if (typeof application?._id === 'string') {
+      applicationId = application._id;
+    }
 
     if (studId && applicationId) {
-      console.log('🔗 Opening PDF for student:', studId, 'Type:', typeof studId);
-      // Construct URL properly for both dev and production
-      const apiBaseURL = import.meta.env.DEV ? '' : import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
-      const pdfUrl = import.meta.env.DEV
-        ? `/api/users/pdf/view/${studId}/${applicationId}`
-        : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
+      console.log('🔗 Generating and opening PDF for student:', studId, 'applicationId:', applicationId);
+      toast.info('Loading application PDF...');
+      
+      try {
+        await generateStudentPdf(studId, applicationId);
+      } catch (err) {
+        console.warn('PDF generation check:', err);
+      }
+
+      const pdfUrl = `/api/users/pdf/view/${studId}/${applicationId}`;
       console.log('📄 PDF URL:', pdfUrl);
       window.open(pdfUrl, '_blank');
     } else {
-      toast.error('Unable to view details: Student ID not found');
+      toast.error('Unable to view details: Student or Application ID not found');
       console.warn('No student ID found for application:', application);
       console.log('Available application properties:', Object.keys(application));
     }
