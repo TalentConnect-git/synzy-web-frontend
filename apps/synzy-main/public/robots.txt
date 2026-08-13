@@ -1,0 +1,20 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /signup/
+Disallow: /forgot-password/
+Disallow: /verify-email/
+Disallow: /college-portal/
+Disallow: /school-portal/
+Disallow: /my-applications/
+Disallow: /application-status/
+Disallow: /application-summary/
+Disallow: /application-confirmation/
+Disallow: /apply/
+Disallow: /shortlist/
+Disallow: /create-profile/
+Disallow: /search-colleges/
+Disallow: /search-schools/
+
+Sitemap: https://synzy.in/sitemap.xml
