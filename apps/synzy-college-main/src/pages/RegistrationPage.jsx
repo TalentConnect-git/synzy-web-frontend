@@ -44,6 +44,8 @@ import {
   updateInternationalExposure,
   updateFaculty,
   updateAdmissionTimeline,
+  updateTechnologyAdoption,
+  updateAcademics,
   getScholarshipsByCollege,
   addScholarship,
   upsertCourseFee,
@@ -430,7 +432,12 @@ const RegistrationPage = () => {
         streamsOffered: Array.isArray(college.streamsOffered) ? college.streamsOffered : 
                     (college.stream ? [college.stream] : []),
         specialist: Array.isArray(college.specialist) ? college.specialist : [],
-        tags: Array.isArray(college.tags) ? college.tags : []
+        tags: Array.isArray(college.tags) ? college.tags : [],
+        programLevels: Array.isArray(college.programLevels) ? college.programLevels : [],
+        feesTransparency: college.feesTransparency != null ? 
+            (college.feesTransparency === 100 ? 'full' :
+            college.feesTransparency === 50 ? 'partial' :
+            college.feesTransparency === 0 ? 'low' : String(college.feesTransparency)) : ""
       }));
       console.log('✅ Form data updated - ranking set to:', (college.ranking ?? college.rank) || "");
 
@@ -745,10 +752,6 @@ const RegistrationPage = () => {
       if (fees) {
         setFormData(prev => ({
           ...prev,
-          feesTransparency: fees.feesTransparency != null ? 
-            (fees.feesTransparency === 100 ? 'full' :
-            fees.feesTransparency === 50 ? 'partial' :
-            fees.feesTransparency === 0 ? 'low' : String(fees.feesTransparency)) : "",
           classFees: Array.isArray(fees.classFees) ? fees.classFees.map(fee => ({
             ...fee,
             tuition: fee.tuition || "",
@@ -1526,6 +1529,7 @@ const normalizePlacementsForBackend = (courses, courseIdMap) => {
         streamsOffered: Array.isArray(formData.streamsOffered) ? formData.streamsOffered : [],
         specialist: Array.isArray(formData.specialist) ? formData.specialist : [],
         tags: Array.isArray(formData.tags) ? formData.tags : [],
+        programLevels: Array.isArray(formData.programLevels) ? formData.programLevels : [],
        
          
  instagramHandle: socialLinks.instagramHandle,
@@ -1551,6 +1555,15 @@ payload.long = Number(
 );
 
 payload.acceptanceRate = Number(formData.acceptanceRate);
+
+let transparencyValue = 0;
+if (formData.feesTransparency === 'full') transparencyValue = 100;
+else if (formData.feesTransparency === 'partial') transparencyValue = 50;
+else if (formData.feesTransparency === 'low') transparencyValue = 0;
+else if (formData.feesTransparency !== '' && formData.feesTransparency != null) {
+  transparencyValue = Number(formData.feesTransparency);
+}
+payload.feesTransparency = transparencyValue;
 
 payload.collegeInfo = 
   formData.collegeInfo || 
@@ -1631,7 +1644,10 @@ payload.stream =
         infraSmartClassrooms: formData.infraSmartClassrooms,
       });
       const facultyChanged = isSectionChanged("faculty", facultyQuality || []);
-      // Technology Adoption removed from submit
+      const technologyChanged = isSectionChanged("technology", {
+        smartClassroomsPercentage: formData.smartClassroomsPercentage,
+        eLearningPlatforms: formData.eLearningPlatforms,
+      });
       const safetyChanged = isSectionChanged("safety", {
         cctvCoveragePercentage: formData.cctvCoveragePercentage,
         medicalFacility: formData.medicalFacility,
@@ -1645,7 +1661,13 @@ payload.stream =
         globalTieUps: formData.globalTieUps,
       });
 
-      // Academics removed from submit
+      const academicsChanged = isSectionChanged("academics", {
+        averageClass10Result: formData.averageClass10Result,
+        averageClass12Result: formData.averageClass12Result,
+        averagecollegeMarks: formData.averagecollegeMarks,
+        specialExamsTraining: formData.specialExamsTraining,
+        extraCurricularActivities: formData.extraCurricularActivities,
+      });
 
       const diversityChanged = isSectionChanged("diversity", {
         genderRatioMale: formData.genderRatioMale,
@@ -1814,7 +1836,20 @@ try {
       // Add Admission Timeline if any (matching backend AdmissionTimeline model)
     
 
-      // Technology Adoption removed from submit
+      // Add/Update Technology Adoption
+      if (
+        technologyChanged &&
+        (hasExistingcollege ||
+          (formData.smartClassroomsPercentage !== '' && formData.smartClassroomsPercentage != null) ||
+          formData.eLearningPlatforms?.length > 0)
+      ) {
+        const payloadTech = {
+          collegeId,
+          smartClassroomsPercentage: (formData.smartClassroomsPercentage === '' || formData.smartClassroomsPercentage == null) ? undefined : Number(formData.smartClassroomsPercentage),
+          eLearningPlatforms: formData.eLearningPlatforms || []
+        };
+        promises.push(updateOrAdd(updateTechnologyAdoption, addTechnologyAdoption, collegeId, payloadTech));
+      }
 
       // Add/Update Safety & Security
       if (
@@ -1930,7 +1965,26 @@ try {
         console.log('No valid international exposure data to send');
       }
 
-      // Academics removed from submit
+      // Add/Update Academics
+      if (
+        academicsChanged &&
+        (hasExistingcollege ||
+          (formData.averageClass10Result !== '' && formData.averageClass10Result != null) ||
+          (formData.averageClass12Result !== '' && formData.averageClass12Result != null) ||
+          (formData.averagecollegeMarks !== '' && formData.averagecollegeMarks != null) ||
+          formData.specialExamsTraining?.length > 0 ||
+          formData.extraCurricularActivities?.length > 0)
+      ) {
+        const payloadAcademics = {
+          collegeId,
+          averageClass10Result: (formData.averageClass10Result === '' || formData.averageClass10Result == null) ? undefined : Number(formData.averageClass10Result),
+          averageClass12Result: (formData.averageClass12Result === '' || formData.averageClass12Result == null) ? undefined : Number(formData.averageClass12Result),
+          averagecollegeMarks: (formData.averagecollegeMarks === '' || formData.averagecollegeMarks == null) ? undefined : Number(formData.averagecollegeMarks),
+          specialExamsTraining: formData.specialExamsTraining || [],
+          extraCurricularActivities: formData.extraCurricularActivities || []
+        };
+        promises.push(updateOrAdd(updateAcademics, addAcademics, collegeId, payloadAcademics));
+      }
 
       // Add/Update other details (matching backend OtherDetails model)
       if (
@@ -2333,6 +2387,38 @@ try {
        await saveAllCollegeData(collegeId, courses, admissionSteps);
      } else {
        console.log("⏭️ Skipping courses/admission timeline save (no changes detected)");
+     }
+
+     // Add/Update Hostels
+     const hostelsChanged = isSectionChanged("hostels", hostels || []);
+     if (hostelsChanged && (hasExistingcollege || hostels?.length > 0)) {
+       const validHostels = (hostels || []).filter(h => h.hostelName?.trim());
+       
+       for (const hostel of validHostels) {
+         try {
+           const payloadHostel = {
+             collegeId,
+             hostelName: hostel.hostelName.trim(),
+             type: hostel.type,
+             capacity: hostel.capacity ? Number(hostel.capacity) : 0,
+             availableSeats: hostel.availableSeats ? Number(hostel.availableSeats) : 0,
+             feePerYear: hostel.feePerYear ? Number(hostel.feePerYear) : 0,
+             facilities: Array.isArray(hostel.facilities) ? hostel.facilities : [],
+             rules: hostel.rules || "",
+             contactPerson: hostel.contactPerson || { name: "", phone: "" }
+           };
+
+           if (hostel._id && !hostel._isNew) {
+             await updateHostel(hostel._id, payloadHostel);
+             console.log('✅ Hostel updated:', hostel._id);
+           } else {
+             await addHostel(payloadHostel);
+             console.log('✅ Hostel created');
+           }
+         } catch (error) {
+           console.error('❌ Failed to save hostel:', error);
+         }
+       }
      }
 
 const feesChanged = isSectionChanged("fees", {
