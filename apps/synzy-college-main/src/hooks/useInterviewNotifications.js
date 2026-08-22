@@ -95,11 +95,13 @@ export const useInterviewNotifications = () => {
 
       if (notification) {
         const notificationKey = `${notification.application._id}-${notification.application.updatedAt}`;
-        const lastShownKey = localStorage.getItem('lastInterviewNotification');
+        const collegeIdStr = typeof notification.application.collegeId === 'object' ? notification.application.collegeId?._id : notification.application.collegeId;
+        const localStorageKey = `lastInterviewNotification_${studentId}_${collegeIdStr || 'unknown'}`;
+        const lastShownKey = localStorage.getItem(localStorageKey);
 
         if (notificationKey !== lastShownKey) {
           setInterviewNotification(notification);
-          localStorage.setItem('lastInterviewNotification', notificationKey);
+          localStorage.setItem(localStorageKey, notificationKey);
         }
       } else {
         setInterviewNotification(null);

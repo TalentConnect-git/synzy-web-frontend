@@ -51,6 +51,12 @@ export const AuthProvider = ({ children }) => {
   setUser(userData);
   setToken(token);
 
+  // Fix stale draft issue when creating new account
+  try {
+    localStorage.removeItem('collegeRegDraft');
+    localStorage.removeItem('lastCreatedcollegeId');
+  } catch (e) {}
+
   localStorage.setItem('userData', JSON.stringify(userData));
   localStorage.setItem('authToken', token);
 }, []);
@@ -62,6 +68,12 @@ export const AuthProvider = ({ children }) => {
       // Clear any existing user state first to prevent conflicts
       setUser(null);
       setToken(null);
+      
+      // Fix stale draft issue on account switch
+      try {
+        localStorage.removeItem('collegeRegDraft');
+        localStorage.removeItem('lastCreatedcollegeId');
+      } catch (e) {}
 
       let response;
 

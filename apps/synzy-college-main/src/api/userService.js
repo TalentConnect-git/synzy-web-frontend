@@ -289,7 +289,7 @@ export const saveUserPreferences = async (studentId, preferenceData) => {
 
 export const submitApplication = async (applicationData) => {
   try {
-    const response = await apiClient.post('/applications/', applicationData);
+    const response = await apiClient.post('/application/', applicationData);
     return response.data;
   } catch (error) {
     console.error("Error submitting application:", error.response?.data || error.message);
@@ -299,7 +299,7 @@ export const submitApplication = async (applicationData) => {
 
 export const getApplication = async (studId) => {
   try {
-    const response = await apiClient.get(`/applications/${studId}`);
+    const response = await apiClient.get(`/application/stud/${studId}`);
     return response.data;
   } catch (error) {
     if (error.response?.status === 404) return { data: null, status: 'Not Found' };
@@ -331,7 +331,7 @@ export const getFormsByStudent = async (studId) => {
   
   const candidates = [
     `/form/student/${studId}`,        // some deployments
-    `/applications/${studId}`,        // application-routes get by student
+    `/application/stud/${studId}`,    // application-routes get by student
     `/forms/student/${studId}`,       // alternate plural path
     `/users/forms/${studId}`,         // users namespaced
     `/form/${studId}`                 // fallback legacy

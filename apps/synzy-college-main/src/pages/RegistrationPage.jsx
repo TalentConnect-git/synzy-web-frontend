@@ -3138,7 +3138,6 @@ const checkForExistingcollege = async () => {
   twitterHandle: college.twitterHandle || "",
   linkedinHandle: college.linkedinHandle || ""
 });
-    debugger;
     // Load sub-resources in parallel and prefill form controls
     try {
       const [

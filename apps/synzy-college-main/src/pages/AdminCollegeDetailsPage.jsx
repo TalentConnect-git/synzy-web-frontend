@@ -6,16 +6,21 @@ import {
   getAmenitiesByCollegeId,
   getActivitiesByCollegeId,
   getInfrastructureById,
-  getFeesAndScholarshipsById,
-  getAcademicsById,
   getOtherDetailsById,
   getFacultyById,
   getAdmissionTimelineById,
-  getTechnologyAdoptionById,
   getSafetyAndSecurityById,
   getInternationalExposureById,
-  updatecollegeStatus
+  updatecollegeStatus,
+  getScholarshipsByCollege,
+  getCourseFeesByCollege,
+  getCollegeExams,
+  getPlacementsByCollege,
+  getCoursesByCollege,
+  getHostelsByCollege,
+  getAcademicsById
 } from "../api/adminService";
+import { getAlumniBycollege } from "../api/collegeService";
 import { toast } from "react-toastify";
 import {
   MapPin,
@@ -53,7 +58,37 @@ const InfoBox = ({ icon, label, value }) => (
   </div>
 );
 
-const AdmincollegeDetailsPage = () => {
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo });
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', background: '#ffebee', color: '#c62828', minHeight: '100vh', zIndex: 9999, position: 'relative' }}>
+          <h2>Something went wrong in AdminCollegeDetailsPage.</h2>
+          <details style={{ whiteSpace: 'pre-wrap' }}>
+            {this.state.error && this.state.error.toString()}
+            <br />
+            {this.state.errorInfo && this.state.errorInfo.componentStack}
+          </details>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const AdmincollegeDetailsPageContent = () => {
   const navigate = useNavigate();
   const { id: collegeId } = useParams();
   const { user: currentUser } = useAuth();
@@ -63,14 +98,22 @@ const AdmincollegeDetailsPage = () => {
   const [amenities, setAmenities] = useState([]);
   const [activities, setActivities] = useState([]);
   const [infrastructure, setInfrastructure] = useState(null);
-  const [feesAndScholarships, setFeesAndScholarships] = useState(null);
-  const [academics, setAcademics] = useState(null);
+  
+  // College specific sub-collections
+  const [scholarships, setScholarships] = useState([]);
+  const [courseFees, setCourseFees] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [placements, setPlacements] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [hostels, setHostels] = useState([]);
+  
   const [otherDetails, setOtherDetails] = useState(null);
   const [faculty, setFaculty] = useState(null);
   const [admissionTimeline, setAdmissionTimeline] = useState(null);
-  const [technologyAdoption, setTechnologyAdoption] = useState(null);
   const [safetyAndSecurity, setSafetyAndSecurity] = useState(null);
   const [internationalExposure, setInternationalExposure] = useState(null);
+  const [academics, setAcademics] = useState(null);
+  const [alumni, setAlumni] = useState(null);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
 
@@ -126,9 +169,11 @@ const AdmincollegeDetailsPage = () => {
               key.toLowerCase().includes('picture')
             )
           );
-          setcollege(collegeData);
+          // Backend getCollegeByIdService returns { college: {...}, courseCount, etc. }
+          setcollege(collegeData.college || collegeData);
         } else {
           console.warn(`No college data returned for ID: ${collegeId}`);
+
           toast.error(`college with ID ${collegeId} not found`);
           navigate("/admin/dashboard");
         }
@@ -144,8 +189,8 @@ const AdmincollegeDetailsPage = () => {
     const fetchAmenitiesAndActivities = async () => {
       try {
         const [amenitiesRes, activitiesRes] = await Promise.all([
-          getAmenitiesByCollegeId(collegeId),
-          getActivitiesByCollegeId(collegeId),
+          getAmenitiesByCollegeId(collegeId).catch(err => { console.error('Failed to load Amenities:', err); return { data: null }; }),
+          getActivitiesByCollegeId(collegeId).catch(err => { console.error('Failed to load Activities:', err); return { data: null }; }),
         ]);
         
         console.log("Amenities Response:", amenitiesRes?.data);
@@ -178,207 +223,64 @@ const AdmincollegeDetailsPage = () => {
       try {
         const [
           infrastructureRes,
-          feesRes,
-          academicsRes,
+          scholarshipsRes,
+          courseFeesRes,
+          coursesRes,
+          examsRes,
+          placementsRes,
+          hostelsRes,
           otherDetailsRes,
           facultyRes,
           admissionRes,
-          technologyRes,
           safetyRes,
           internationalRes
         ] = await Promise.allSettled([
-          getInfrastructureById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Infrastructure details not added for this college yet');
-            } else {
-              console.warn('Infrastructure fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getFeesAndScholarshipsById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Fees details not added for this college yet');
-            } else {
-              console.warn('Fees fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getAcademicsById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Academics details not added for this college yet');
-            } else {
-              console.warn('Academics fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getOtherDetailsById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Other details not added for this college yet');
-            } else {
-              console.warn('Other details fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getFacultyById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Faculty details not added for this college yet');
-            } else {
-              console.warn('Faculty fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getAdmissionTimelineById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Admission timeline not added for this college yet');
-            } else {
-              console.warn('Admission timeline fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getTechnologyAdoptionById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Technology adoption details not added for this college yet');
-            } else {
-              console.warn('Technology adoption fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getSafetyAndSecurityById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ Safety & security details not added for this college yet');
-            } else {
-              console.warn('Safety and security fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          }),
-          getInternationalExposureById(collegeId).catch(err => {
-            if (err.response?.status === 404) {
-              console.log('ℹ️ International exposure details not added for this college yet');
-            } else {
-              console.warn('International exposure fetch failed:', err.response?.status);
-            }
-            return { data: null };
-          })
+          getInfrastructureById(collegeId).catch(err => { console.error('Failed to load Infrastructure:', err); return { data: null }; }),
+          getScholarshipsByCollege(collegeId).catch(err => { console.error('Failed to load Scholarships:', err); return { data: null }; }),
+          getCourseFeesByCollege(collegeId).catch(err => { console.error('Failed to load Course Fees:', err); return { data: null }; }),
+          getCoursesByCollege(collegeId).catch(err => { console.error('Failed to load Courses:', err); return { data: null }; }),
+          getCollegeExams(collegeId).catch(err => { console.error('Failed to load Exams:', err); return { data: null }; }),
+          getPlacementsByCollege(collegeId).catch(err => { console.error('Failed to load Placements:', err); return { data: null }; }),
+          getHostelsByCollege(collegeId).catch(err => { console.error('Failed to load Hostels:', err); return { data: null }; }),
+          getOtherDetailsById(collegeId).catch(err => { console.error('Failed to load Other Details:', err); return { data: null }; }),
+          getFacultyById(collegeId).catch(err => { console.error('Failed to load Faculty:', err); return { data: null }; }),
+          getAdmissionTimelineById(collegeId).catch(err => { console.error('Failed to load Admission Timeline:', err); return { data: null }; }),
+          getSafetyAndSecurityById(collegeId).catch(err => { console.error('Failed to load Safety & Security:', err); return { data: null }; }),
+          getInternationalExposureById(collegeId).catch(err => { console.error('Failed to load International Exposure:', err); return { data: null }; }),
+          getAcademicsById(collegeId).catch(err => { console.error('Failed to load Academics:', err); return { data: null }; }),
+          getAlumniBycollege(collegeId).catch(err => { console.error('Failed to load Alumni:', err); return { data: null }; })
         ]);
 
-        // Extract data safely with null fallbacks
         const infrastructureData = infrastructureRes?.value?.data?.data || infrastructureRes?.value?.data || null;
-        const feesData = feesRes?.value?.data?.data || feesRes?.value?.data || null;
-        const academicsData = academicsRes?.value?.data?.data || academicsRes?.value?.data || null;
+        const scholarshipsData = scholarshipsRes?.value?.data?.data || scholarshipsRes?.value?.data || [];
+        const courseFeesData = courseFeesRes?.value?.data?.data || courseFeesRes?.value?.data || [];
+        const coursesData = coursesRes?.value?.data?.data || coursesRes?.value?.data || [];
+        const examsData = examsRes?.value?.data?.data || examsRes?.value?.data || [];
+        const placementsData = placementsRes?.value?.data?.data || placementsRes?.value?.data || [];
+        const hostelsData = hostelsRes?.value?.data?.data || hostelsRes?.value?.data || [];
         const otherDetailsData = otherDetailsRes?.value?.data?.data || otherDetailsRes?.value?.data || null;
-        const facultyData = facultyRes?.value?.data?.data || facultyRes?.value?.data || null;
+        const facultyResData = facultyRes?.value?.data?.data || facultyRes?.value?.data || null;
+        const facultyData = facultyResData?.facultyMembers || facultyResData?.faculty || (Array.isArray(facultyResData) ? facultyResData : []);
         const admissionData = admissionRes?.value?.data?.data || admissionRes?.value?.data || null;
-        const technologyData = technologyRes?.value?.data?.data || technologyRes?.value?.data || null;
         const safetyData = safetyRes?.value?.data?.data || safetyRes?.value?.data || null;
         const internationalData = internationalRes?.value?.data?.data || internationalRes?.value?.data || null;
+        const academicsData = academicsRes?.value?.data?.data || academicsRes?.value?.data || null;
+        const alumniData = alumniRes?.value?.data?.data || alumniRes?.value?.data || null;
 
-        // Debug logging
-        console.log('🔍 API Response Debug:');
-        console.log('Infrastructure:', infrastructureData);
-        console.log('Fees:', feesData);
-        console.log('Academics:', academicsData);
-        console.log('Admission Timeline:', admissionData);
-        console.log('Safety & Security:', safetyData);
-        console.log('Technology Adoption:', technologyData);
-        console.log('International Exposure:', internationalData);
-        
-        // Log the structure of successful API calls
-        if (technologyData) {
-          console.log('🔍 Technology Adoption structure:', Object.keys(technologyData));
-        }
-        if (internationalData) {
-          console.log('🔍 International Exposure structure:', Object.keys(internationalData));
-        }
-
-        // Check if we have college data with embedded details
-        if (college) {
-          console.log('🔍 Checking college object for embedded data...');
-          console.log('🔍 college object keys:', Object.keys(college));
-          console.log('🔍 Full college object:', college);
-          
-          // Check for any fields that might contain the data we need
-          const allKeys = Object.keys(college);
-          const relevantKeys = allKeys.filter(key => 
-            key.toLowerCase().includes('infrastructure') ||
-            key.toLowerCase().includes('fees') ||
-            key.toLowerCase().includes('academic') ||
-            key.toLowerCase().includes('admission') ||
-            key.toLowerCase().includes('safety') ||
-            key.toLowerCase().includes('security') ||
-            key.toLowerCase().includes('technology') ||
-            key.toLowerCase().includes('international')
-          );
-          console.log('🔍 Relevant keys in college object:', relevantKeys);
-          
-          // Try to extract data from college object if API endpoints failed
-          // Check multiple possible field names for each data type
-          const infrastructureFromcollege = college.infrastructure || college.infrastructureDetails || college.infrastructureData;
-          if (!infrastructureData && infrastructureFromcollege) {
-            console.log('📦 Found infrastructure in college object:', infrastructureFromcollege);
-            setInfrastructure(infrastructureFromcollege);
-          } else {
-            setInfrastructure(infrastructureData);
-          }
-          
-          const feesFromcollege = college.feesAndScholarships || college.fees || college.feesData || college.scholarships;
-          if (!feesData && feesFromcollege) {
-            console.log('📦 Found fees in college object:', feesFromcollege);
-            setFeesAndScholarships(feesFromcollege);
-          } else {
-            setFeesAndScholarships(feesData);
-          }
-          
-          const academicsFromcollege = college.academics || college.academicDetails || college.academicData;
-          if (!academicsData && academicsFromcollege) {
-            console.log('📦 Found academics in college object:', academicsFromcollege);
-            setAcademics(academicsFromcollege);
-          } else {
-            setAcademics(academicsData);
-          }
-          
-          const admissionFromcollege = college.admissionTimeline || college.admissionDetails || college.admissionData || college.admissionProcess;
-          if (!admissionData && admissionFromcollege) {
-            console.log('📦 Found admission timeline in college object:', admissionFromcollege);
-            setAdmissionTimeline(admissionFromcollege);
-          } else {
-            setAdmissionTimeline(admissionData);
-          }
-          
-          const safetyFromcollege = college.safetyAndSecurity || college.safetyDetails || college.safetyData || college.security;
-          if (!safetyData && safetyFromcollege) {
-            console.log('📦 Found safety & security in college object:', safetyFromcollege);
-            setSafetyAndSecurity(safetyFromcollege);
-          } else {
-            setSafetyAndSecurity(safetyData);
-          }
-          
-          const technologyFromcollege = college.technologyAdoption || college.technologyDetails || college.technologyData || college.technology;
-          if (!technologyData && technologyFromcollege) {
-            console.log('📦 Found technology adoption in college object:', technologyFromcollege);
-            setTechnologyAdoption(technologyFromcollege);
-          } else {
-            setTechnologyAdoption(technologyData);
-          }
-          
-          const internationalFromcollege = college.internationalExposure || college.internationalDetails || college.internationalData || college.international;
-          if (!internationalData && internationalFromcollege) {
-            console.log('📦 Found international exposure in college object:', internationalFromcollege);
-            setInternationalExposure(internationalFromcollege);
-          } else {
-            setInternationalExposure(internationalData);
-          }
-        } else {
-          // Fallback to API data
-          setInfrastructure(infrastructureData);
-          setFeesAndScholarships(feesData);
-          setAcademics(academicsData);
-          setOtherDetails(otherDetailsData);
-          setFaculty(facultyData);
-          setAdmissionTimeline(admissionData);
-          setTechnologyAdoption(technologyData);
-          setSafetyAndSecurity(safetyData);
-          setInternationalExposure(internationalData);
-        }
+        setInfrastructure(infrastructureData);
+        setScholarships(scholarshipsData);
+        setCourseFees(courseFeesData);
+        setCourses(coursesData);
+        setExams(examsData);
+        setPlacements(placementsData);
+        setHostels(hostelsData);
+        setOtherDetails(otherDetailsData);
+        setFaculty(facultyData);
+        setAdmissionTimeline(admissionData);
+        setSafetyAndSecurity(safetyData);
+        setInternationalExposure(internationalData);
+        setAcademics(academicsData);
+        setAlumni(alumniData);
       } catch (e) {
         console.error("Error fetching additional details:", e);
       }
@@ -459,921 +361,747 @@ const AdmincollegeDetailsPage = () => {
   }
 
   return (
-    <div className="bg-gray-100">
+    <div className="bg-gray-100 min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white shadow-lg rounded-lg p-6 mb-8 relative">
+        
+        {/* Top Header Section */}
+        <div className="bg-white shadow-lg rounded-xl p-6 mb-8 relative border border-gray-100">
           <div className="mb-4">
             <button
               onClick={() => navigate("/admin/dashboard")}
-              className="inline-flex items-center text-sm text-gray-700 hover:text-indigo-600"
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
             >
-              ← Back to Dashboard
+              <ArrowLeft size={16} className="mr-1" /> Back to Dashboard
             </button>
           </div>
           
-          {/* college Header with Profile Photo and Details */}
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
-            {/* college Profile Photo */}
             <div className="flex-shrink-0">
-            <img
-              src={(() => {
-                const imageSources = [
-                  college.photos && college.photos.length > 0 ? college.photos[0] : null,
-                  college.profilePhoto,
-                  college.image,
-                  college.logo,
-                  college.profileImage,
-                  college.collegeLogo,
-                  college.collegeImage,
-                  college.collegePhoto,
-                  college.avatar,
-                  college.picture,
-                  college.thumbnail
-                ].filter(Boolean);
-                
-                const selectedSource = imageSources[0] || "/api/placeholder/200/200";
-                console.log('🖼️ Available image sources:', imageSources);
-                console.log('🖼️ Selected image source:', selectedSource);
-                return selectedSource;
-              })()}
-              alt={`${college.name} profile`}
-              className="w-32 h-32 md:w-40 md:h-40 rounded-lg object-cover border-4 border-gray-200 shadow-lg"
-              onError={(e) => {
-                console.log('🖼️ Image failed to load:', e.target.src);
-                // Prevent infinite loop by checking if we're already on a fallback
-                if (e.target.src.includes('/api/placeholder/') || e.target.src.includes('data:image/svg+xml')) {
-                  console.log('🖼️ Fallback image also failed, using SVG placeholder');
-                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
-                } else {
-                  console.log('🖼️ Trying fallback to placeholder...');
-                  e.target.src = "/api/placeholder/200/200";
-                }
-              }}
-              onLoad={(e) => {
-                console.log('🖼️ Image loaded successfully:', e.target.src);
-              }}
-            />
+              <img
+                src={(() => {
+                  const imageSources = [
+                    college.photos && college.photos.length > 0 ? (typeof college.photos[0] === 'object' ? college.photos[0].url : college.photos[0]) : null,
+                    college.logo && (typeof college.logo === 'object' ? college.logo.url : college.logo),
+                    college.profilePhoto
+                  ].filter(Boolean);
+                  return imageSources[0] || "https://placehold.co/200x200?text=No+Image";
+                })()}
+                alt={`${college.name} profile`}
+                className="w-32 h-32 md:w-40 md:h-40 rounded-xl object-cover border-4 border-white shadow-md bg-gray-50"
+                onError={(e) => {
+                  if (!e.target.src.includes('placehold.co')) {
+                    e.target.src = 'https://placehold.co/200x200?text=No+Image';
+                  } else {
+                    e.target.src = "https://placehold.co/200x200?text=No+Image";
+                  }
+                }}
+              />
             </div>
             
-            {/* college Details */}
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
                 {college.name}
               </h1>
-              <p className="text-lg text-gray-600 flex items-center mb-4">
-                <MapPin size={18} className="mr-2" />
-                {college.address || college.location || "Address not provided"}
+              <p className="text-lg text-gray-600 flex items-center mb-4 font-medium">
+                <MapPin size={18} className="mr-2 text-indigo-500" />
+                {[college.address, college.area, college.city, college.state, college.country].filter(Boolean).join(', ')} {college.pinCode && `- ${college.pinCode}`}
               </p>
-              <p className="text-md text-gray-700 mb-4">{college.description}</p>
               
-              {/* Contact Information */}
               <div className="flex flex-wrap gap-4 mb-4">
-                {college.phone && (
-                  <div className="flex items-center text-gray-600 hover:text-indigo-600 transition-colors">
-                    <Phone size={16} className="mr-2" />
-                    <span className="text-sm">{college.phone}</span>
+                {college.mobileNo && (
+                  <div className="flex items-center text-gray-600">
+                    <Phone size={16} className="mr-2 text-indigo-400" />
+                    <span className="text-sm font-medium">{college.mobileNo}</span>
                   </div>
                 )}
                 {college.email && (
-                  <div className="flex items-center text-gray-600 hover:text-indigo-600 transition-colors">
-                    <Mail size={16} className="mr-2" />
-                    <span className="text-sm">{college.email}</span>
+                  <div className="flex items-center text-gray-600">
+                    <Mail size={16} className="mr-2 text-indigo-400" />
+                    <span className="text-sm font-medium">{college.email}</span>
                   </div>
                 )}
                 {college.website && (
-                  <div className="flex items-center text-gray-600 hover:text-indigo-600 transition-colors">
+                  <div className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors">
                     <Globe size={16} className="mr-2" />
-                    <a 
-                      href={college.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm hover:underline"
-                    >
+                    <a href={college.website} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline">
                       {college.website}
                     </a>
                   </div>
                 )}
               </div>
-              
-              {/* Social Media Links */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500">Follow us:</span>
-                <div className="flex gap-2">
-                  <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <Facebook className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="h-8 w-8 bg-pink-600 rounded-full flex items-center justify-center">
-                    <Instagram className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="h-8 w-8 bg-blue-400 rounded-full flex items-center justify-center">
-                    <Twitter className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="h-8 w-8 bg-blue-700 rounded-full flex items-center justify-center">
-                    <Linkedin className="h-4 w-4 text-white" />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
           
-          <div className="mt-6 flex flex-wrap gap-3">
-            {/* Status Badge */}
+          <div className="mt-6 flex flex-wrap gap-3 border-t border-gray-100 pt-4">
             {college.status && (
               <div className="w-full mb-2">
-                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                  college.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  college.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                  college.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
+                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${
+                  college.status === 'pending' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                  college.status === 'accepted' ? 'bg-green-100 text-green-800 border border-green-200' :
+                  college.status === 'rejected' ? 'bg-red-100 text-red-800 border border-red-200' :
+                  'bg-gray-100 text-gray-800 border border-gray-200'
                 }`}>
                   {college.status === 'pending' && <Clock className="h-4 w-4 mr-2" />}
                   {college.status === 'accepted' && <CheckCircle className="h-4 w-4 mr-2" />}
                   {college.status === 'rejected' && <XCircle className="h-4 w-4 mr-2" />}
-                  Status: {college.status ? college.status.charAt(0).toUpperCase() + college.status.slice(1) : 'Unknown'}
+                  Status: {college.status.toUpperCase()}
                 </span>
               </div>
             )}
 
-            {/* Approval Buttons - Only show if status is pending */}
             {college.status === 'pending' && (
-              <>
+              <div className="flex gap-3 mt-2">
                 <button
                   onClick={handleAcceptcollege}
                   disabled={isAccepting || isRejecting}
-                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+                  className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
                 >
-                  {isAccepting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Accepting...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-5 w-5 mr-2" />
-                      Accept college
-                    </>
-                  )}
+                  {isAccepting ? "Accepting..." : <><CheckCircle className="h-5 w-5 mr-2" /> Accept College</>}
                 </button>
-                
                 <button
                   onClick={handleRejectcollege}
                   disabled={isAccepting || isRejecting}
-                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+                  className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors shadow-sm"
                 >
-                  {isRejecting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Rejecting...
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="h-5 w-5 mr-2" />
-                      Reject college
-                    </>
-                  )}
+                  {isRejecting ? "Rejecting..." : <><XCircle className="h-5 w-5 mr-2" /> Reject College</>}
                 </button>
-              </>
+              </div>
             )}
-
-            {/* Visit Website Button */}
-            <a
-              href={college.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
-            >
-              <Globe className="h-5 w-5 mr-2" />
-              Visit Website
-            </a>
           </div>
         </div>
 
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              Basic Information
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <InfoBox
-                icon={<Award size={16} />}
-                label="Board"
-                value={college.board}
-              />
-              <InfoBox
-                icon={<Users size={16} />}
-                label="Gender Type"
-                value={college.genderType}
-              />
-              <InfoBox
-                icon={<Building size={16} />}
-                label="college Mode"
-                value={college.collegeMode}
-              />
-              <InfoBox
-                icon={<BookOpen size={16} />}
-                label="Classes Upto"
-                value={college.upto}
-              />
-              <InfoBox
-                icon={<Sun size={16} />}
-                label="Shifts"
-                value={college.shifts}
-              />
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              Amenities & Activities
-            </h2>
-            
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              
-              {/* Amenities Count Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle size={16} className="text-purple-600" />
-                </div>
-                <div className="text-2xl font-bold text-purple-600 mb-1">
-                  {amenities.length}
-                </div>
-                <div className="text-sm text-gray-600">Amenities</div>
-              </div>
-
-              {/* Activities Count Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Award size={16} className="text-teal-600" />
-                </div>
-                <div className="text-2xl font-bold text-teal-600 mb-1">
-                  {activities.length}
-                </div>
-                <div className="text-sm text-gray-600">Activities</div>
-              </div>
-
-              {/* Total Facilities Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Building size={16} className="text-blue-600" />
-                </div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">
-                  {amenities.length + activities.length}
-                </div>
-                <div className="text-sm text-gray-600">Total Facilities</div>
-              </div>
-
-              {/* Available Services Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Sun size={16} className="text-green-600" />
-                </div>
-                <div className="text-2xl font-bold text-green-600 mb-1">
-                  {amenities.length > 0 && activities.length > 0 ? '100%' : amenities.length > 0 || activities.length > 0 ? '50%' : '0%'}
-                </div>
-                <div className="text-sm text-gray-600">Services Available</div>
-              </div>
-            </div>
-
-            {/* Detailed Sections */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* Amenities Section */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Available Amenities</h3>
-                {amenities.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {amenities.map((amenity, index) => (
-                      <div key={index} className="flex items-center">
-                        <CheckCircle size={14} className="text-green-500 mr-2 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">{typeof amenity === 'object' ? amenity.name : amenity}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">No amenities information available</p>
-                )}
-              </div>
-
-              {/* Activities Section */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Available Activities</h3>
-                {activities.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {activities.map((activity, index) => (
-                      <div key={index} className="flex items-center">
-                        <Award size={14} className="text-blue-500 mr-2 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">{typeof activity === 'object' ? activity.name : activity}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">No activities information available</p>
-                )}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Infrastructure Section */}
-        {infrastructure && (
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              🏢 Infrastructure
-            </h2>
-            
-            {/* Infrastructure Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              
-              {/* Labs Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Building size={16} className="text-blue-600" />
-                </div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">
-                  {infrastructure.labs ? infrastructure.labs.length : 0}
-                </div>
-                <div className="text-sm text-gray-600">Laboratories</div>
-              </div>
-
-              {/* Sports Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Sun size={16} className="text-green-600" />
-                </div>
-                <div className="text-2xl font-bold text-green-600 mb-1">
-                  {infrastructure.sportsGrounds ? infrastructure.sportsGrounds.length : 0}
-                </div>
-                <div className="text-sm text-gray-600">Sports Facilities</div>
-              </div>
-
-              {/* Library Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <BookOpen size={16} className="text-purple-600" />
-                </div>
-                <div className="text-2xl font-bold text-purple-600 mb-1">
-                  {infrastructure.libraryBooks ? (infrastructure.libraryBooks / 1000).toFixed(1) + 'K' : '0'}
-                </div>
-                <div className="text-sm text-gray-600">Books</div>
-              </div>
-
-              {/* Smart Classrooms Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Award size={16} className="text-indigo-600" />
-                </div>
-                <div className="text-2xl font-bold text-indigo-600 mb-1">
-                  {infrastructure.smartClassrooms || 0}
-                </div>
-                <div className="text-sm text-gray-600">Smart Classrooms</div>
-              </div>
-            </div>
-
-            {/* Detailed Infrastructure Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {infrastructure.labs && infrastructure.labs.length > 0 && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Laboratories</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {infrastructure.labs.map((lab, index) => (
-                      <span key={index} className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                        {lab}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {infrastructure.sportsGrounds && infrastructure.sportsGrounds.length > 0 && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Sports Facilities</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {infrastructure.sportsGrounds.map((sport, index) => (
-                      <span key={index} className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                        {sport}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {infrastructure.libraryBooks && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Library</h3>
-                  <p className="text-gray-600">{infrastructure.libraryBooks.toLocaleString()} books available</p>
-                </div>
-              )}
-              {infrastructure.smartClassrooms && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Smart Classrooms</h3>
-                  <p className="text-gray-600">{infrastructure.smartClassrooms} smart classrooms</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Fees & Affordability Section */}
-        {feesAndScholarships && (
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              💰 Fees & Affordability
-            </h2>
-            
-            {/* Fees Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Award size={16} className="text-green-600" />
-                </div>
-                <div className="text-2xl font-bold text-green-600 mb-1">
-                  {feesAndScholarships.scholarships ? feesAndScholarships.scholarships.length : 0}
-                </div>
-                <div className="text-sm text-gray-600">Scholarships</div>
-              </div>
-              
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Building size={16} className="text-blue-600" />
-                </div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">
-                  {feesAndScholarships.classFees ? feesAndScholarships.classFees.length : 0}
-                </div>
-                <div className="text-sm text-gray-600">Class Levels</div>
-              </div>
-              
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm text-center">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Users size={16} className="text-purple-600" />
-                </div>
-                <div className="text-2xl font-bold text-purple-600 mb-1">
-                  {feesAndScholarships.scholarships && feesAndScholarships.scholarships.length > 0 ? 'Available' : 'N/A'}
-                </div>
-                <div className="text-sm text-gray-600">Financial Aid</div>
-              </div>
-            </div>
-
-            {feesAndScholarships.classFees && feesAndScholarships.classFees.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">Class-wise Fees</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-gray-50 rounded-lg">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Class</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Tuition</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Activity</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Transport</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {feesAndScholarships.classFees.map((fee, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="px-4 py-2 text-sm font-medium text-gray-900">{fee.className}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">₹{fee.tuition?.toLocaleString()}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">₹{fee.activity?.toLocaleString()}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">₹{fee.transport?.toLocaleString()}</td>
-                          <td className="px-4 py-2 text-sm font-semibold text-gray-900">
-                            ₹{((fee.tuition || 0) + (fee.activity || 0) + (fee.transport || 0)).toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-            {feesAndScholarships.scholarships && feesAndScholarships.scholarships.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">Scholarships Available</h3>
-                <div className="space-y-3">
-                  {feesAndScholarships.scholarships.map((scholarship, index) => (
-                    <div key={index} className="bg-green-50 p-4 rounded-lg border border-green-200">
-                      <h4 className="font-semibold text-green-800">{scholarship.name}</h4>
-                      <p className="text-green-700">Amount: ₹{scholarship.amount?.toLocaleString()}</p>
-                      <p className="text-green-600 text-sm">Type: {scholarship.type}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Academics Section */}
-        {academics && (
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              🎓 Academics
-            </h2>
-            
-            {/* Academic Results Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {academics.averageClass10Result && (
-                <InfoBox
-                  icon={<Award size={16} />}
-                  label="Class 10 Average"
-                  value={`${academics.averageClass10Result}%`}
-                />
-              )}
-              {academics.averageClass12Result && (
-                <InfoBox
-                  icon={<Award size={16} />}
-                  label="Class 12 Average"
-                  value={`${academics.averageClass12Result}%`}
-                />
-              )}
-              {academics.averagecollegeMarks && (
-                <InfoBox
-                  icon={<Award size={16} />}
-                  label="Overall Average"
-                  value={`${academics.averagecollegeMarks}%`}
-                />
-              )}
-            </div>
-
-            {/* Special Exam Training */}
-            {academics.specialExamsTraining && academics.specialExamsTraining.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">🎯 Special Exam Training</h3>
-                <div className="flex flex-wrap gap-2">
-                  {academics.specialExamsTraining.map((exam, index) => (
-                    <span key={index} className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">
-                      {exam}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Extra Curricular Activities */}
-            {academics.extraCurricularActivities && academics.extraCurricularActivities.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">🎨 Extra Curricular Activities</h3>
-                <div className="flex flex-wrap gap-2">
-                  {academics.extraCurricularActivities.map((activity, index) => (
-                    <span key={index} className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                      {activity}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Competitive Exam Qualifiers */}
-            {academics.examQualifiers && academics.examQualifiers.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">🏆 Competitive Exam Qualifiers</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-gray-50 rounded-lg">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Year</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Exam</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Students Participated</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {academics.examQualifiers.map((qualifier, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="px-4 py-2 text-sm font-medium text-gray-900">{qualifier.year}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">
-                            <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-medium">
-                              {qualifier.exam}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-sm text-gray-600">{qualifier.participation}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Yearly Academic Performance */}
-            {academics.academicResults && academics.academicResults.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">📊 Yearly Performance Data</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-gray-50 rounded-lg">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Year</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Pass Percentage</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Average Marks %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {academics.academicResults.map((result, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="px-4 py-2 text-sm font-medium text-gray-900">{result.year}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">
-                            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
-                              {result.passPercent}%
-                            </span>
-                          </td>
-                          <td className="px-4 py-2 text-sm text-gray-600">
-                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                              {result.averageMarksPercent}%
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Faculty Quality Section */}
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-            👨‍🏫 Faculty Quality
+        {/* Section: Basic Information */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <Building className="mr-3 text-indigo-500" /> Basic Information
           </h2>
-          {faculty ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <InfoBox icon={<Building size={16} />} label="College Mode" value={college.collegeMode} />
+            <InfoBox icon={<Users size={16} />} label="Gender Type" value={college.genderType} />
+            <InfoBox icon={<Award size={16} />} label="Streams Offered" value={college.streamsOffered} />
+            <InfoBox icon={<Award size={16} />} label="Program Levels" value={college.upto} />
+            
+            <InfoBox icon={<Calendar size={16} />} label="Established Year" value={college.establishedYear || college.estYear} />
+            <InfoBox icon={<BookOpen size={16} />} label="Board" value={college.board} />
+            <InfoBox icon={<Sun size={16} />} label="Shift(s)" value={college.shifts} />
+            <InfoBox icon={<Award size={16} />} label="Fee Range" value={college.feeRange} />
+            
+            <InfoBox icon={<BookOpen size={16} />} label="Language Medium" value={college.languageMedium} />
+            <InfoBox icon={<Star size={16} />} label="Acceptance Rate" value={college.acceptanceRate ? `${college.acceptanceRate}%` : "N/A"} />
+            <InfoBox icon={<Heart size={16} />} label="Transport Available" value={college.transportAvailable} />
+            <InfoBox icon={<Users size={16} />} label="Teacher:Student Ratio" value={college.TeacherToStudentRatio} />
+            
+            <InfoBox icon={<Star size={16} />} label="Ranking" value={college.ranking} />
+            <InfoBox icon={<Award size={16} />} label="Specialist" value={college.specialist} />
+            <InfoBox icon={<Star size={16} />} label="Tags" value={college.tags} />
+            <InfoBox icon={<MapPin size={16} />} label="Coordinates" value={`${college.latitude ?? college.lat ?? 'N/A'}, ${college.longitude ?? college.long ?? 'N/A'}`} />
+          </div>
+          
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+             <h3 className="text-sm font-semibold text-gray-600 mb-2">College Information</h3>
+             <p className="text-gray-800 whitespace-pre-line">{college.description || college.collegeInfo || "No additional information provided."}</p>
+          </div>
+        </div>
+
+        {/* Section: Social Media */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <Globe className="mr-3 text-blue-500" /> Social Media Links
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {college.instagramHandle ? (
+               <a href={college.instagramHandle} target="_blank" rel="noreferrer" className="flex items-center p-4 bg-gradient-to-r from-pink-50 to-orange-50 text-pink-600 rounded-xl hover:shadow-md transition-shadow border border-pink-100">
+                  <Instagram size={24} className="mr-3 flex-shrink-0" /> <span className="font-medium truncate">{college.instagramHandle}</span>
+               </a>
+            ) : <InfoBox icon={<Instagram size={16} />} label="Instagram" value="Not Provided" />}
+            {college.twitterHandle ? (
+               <a href={college.twitterHandle} target="_blank" rel="noreferrer" className="flex items-center p-4 bg-blue-50 text-blue-600 rounded-xl hover:shadow-md transition-shadow border border-blue-100">
+                  <Twitter size={24} className="mr-3 flex-shrink-0" /> <span className="font-medium truncate">{college.twitterHandle}</span>
+               </a>
+            ) : <InfoBox icon={<Twitter size={16} />} label="Twitter" value="Not Provided" />}
+            {college.linkedinHandle ? (
+               <a href={college.linkedinHandle} target="_blank" rel="noreferrer" className="flex items-center p-4 bg-indigo-50 text-indigo-700 rounded-xl hover:shadow-md transition-shadow border border-indigo-100">
+                  <Linkedin size={24} className="mr-3 flex-shrink-0" /> <span className="font-medium truncate">{college.linkedinHandle}</span>
+               </a>
+            ) : <InfoBox icon={<Linkedin size={16} />} label="LinkedIn" value="Not Provided" />}
+          </div>
+        </div>
+
+        {/* Section: Documents & Media */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <Heart className="mr-3 text-red-500" /> Documents & Media
+          </h2>
+          
+          <div className="space-y-8">
+             {/* Logo */}
+             <div>
+                <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">College Logo</h3>
+                {college.logo ? (
+                  <img 
+                    src={typeof college.logo === 'object' ? college.logo.url : college.logo} 
+                    alt="Logo" 
+                    className="h-32 w-auto object-contain rounded-lg border border-gray-200 bg-gray-50 p-2 shadow-sm"
+                  />
+                ) : <p className="text-gray-500 italic">No logo uploaded.</p>}
+             </div>
+             
+             {/* Photos */}
+             <div>
+                <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">College Photos</h3>
+                {Array.isArray(college.photos) && college.photos.length > 0 ? (
+                  <div className="flex flex-wrap gap-4">
+                    {college.photos.map((photo, i) => (
+                      <a key={i} href={typeof photo === 'object' ? photo.url : photo} target="_blank" rel="noreferrer">
+                        <img 
+                          src={typeof photo === 'object' ? photo.url : photo} 
+                          alt={`Photo ${i+1}`} 
+                          className="h-40 w-60 object-cover rounded-lg border border-gray-200 shadow-sm hover:opacity-90 transition-opacity" 
+                        />
+                      </a>
+                    ))}
+                  </div>
+                ) : <p className="text-gray-500 italic">No photos uploaded.</p>}
+             </div>
+
+             {/* Videos */}
+             <div>
+                <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">College Video</h3>
+                {college.videos ? (
+                  <div className="max-w-2xl">
+                    <video 
+                      controls 
+                      className="w-full rounded-lg shadow-md border border-gray-200"
+                      src={typeof college.videos === 'object' ? college.videos.url : college.videos}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                ) : <p className="text-gray-500 italic">No video uploaded.</p>}
+             </div>
+          </div>
+        </div>
+
+        {/* Section: Amenities & Activities */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <CheckCircle className="mr-3 text-green-500" /> Amenities & Activities
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              {/* Faculty Statistics */}
-              {faculty.facultyMembers && faculty.facultyMembers.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <InfoBox
-                    icon={<Users size={16} />}
-                    label="Total Faculty"
-                    value={`${faculty.facultyMembers.length} members`}
-                  />
-                  <InfoBox
-                    icon={<Award size={16} />}
-                    label="Avg Experience"
-                    value={`${Math.round(faculty.facultyMembers.reduce((sum, member) => sum + (member.experience || 0), 0) / faculty.facultyMembers.length)} years`}
-                  />
-                  <InfoBox
-                    icon={<Award size={16} />}
-                    label="Faculty with Awards"
-                    value={`${faculty.facultyMembers.filter(member => member.awards && member.awards.length > 0).length} members`}
-                  />
-                </div>
-              )}
-              
-              {/* Faculty Members */}
-              {faculty.facultyMembers && faculty.facultyMembers.length > 0 ? (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Faculty Members</h3>
-                  <div className="space-y-3">
-                    {faculty.facultyMembers.slice(0, 5).map((member, index) => (
-                      <div key={member._id || index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800">{member.name}</h4>
-                            <p className="text-gray-600">{member.qualification}</p>
-                            <p className="text-gray-500 text-sm">{member.experience} years experience</p>
-                          </div>
-                          {member.awards && member.awards.length > 0 && (
-                            <div className="ml-4">
-                              <p className="text-xs text-gray-500 mb-1">Awards:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {member.awards.slice(0, 2).map((award, awardIndex) => (
-                                  <span key={awardIndex} className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                                    {award}
-                                  </span>
-                                ))}
-                                {member.awards.length > 2 && (
-                                  <span className="text-xs text-gray-500">+{member.awards.length - 2} more</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {faculty.facultyMembers.length > 5 && (
-                      <div className="text-center text-gray-500 text-sm">
-                        And {faculty.facultyMembers.length - 5} more faculty members...
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-gray-500 text-center py-4">
-                  <p>No faculty members information available.</p>
-                </div>
-              )}
+              <h3 className="text-lg font-bold text-gray-700 mb-4 bg-green-50 p-3 rounded-lg border border-green-100 flex items-center">
+                 <Building className="mr-2 text-green-600" size={18}/> Amenities ({amenities.length})
+              </h3>
+              {Array.isArray(amenities) && amenities.length > 0 ? (
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {amenities.map((item, i) => (
+                    <li key={i} className="flex items-center text-gray-700">
+                      <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
+                      <span className="text-sm font-medium">{typeof item === 'object' ? item.name : item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="text-gray-500 italic text-sm">No amenities found.</p>}
             </div>
-          ) : (
-            <div className="text-gray-500 text-center py-8">
-              <p>No faculty information available.</p>
+            
+            <div>
+              <h3 className="text-lg font-bold text-gray-700 mb-4 bg-purple-50 p-3 rounded-lg border border-purple-100 flex items-center">
+                 <Sun className="mr-2 text-purple-600" size={18}/> Activities ({activities.length})
+              </h3>
+              {Array.isArray(activities) && activities.length > 0 ? (
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {activities.map((item, i) => (
+                    <li key={i} className="flex items-center text-gray-700">
+                      <CheckCircle size={16} className="text-purple-500 mr-2 flex-shrink-0" />
+                      <span className="text-sm font-medium">{typeof item === 'object' ? item.name : item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="text-gray-500 italic text-sm">No activities found.</p>}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Safety & Security Section */}
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-            🛡️ Safety & Security
+        {/* Section: Infrastructure */}
+        {infrastructure && (
+          <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <Building className="mr-3 text-teal-500" /> Infrastructure
+            </h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <InfoBox icon={<BookOpen size={16} />} label="Library Books" value={infrastructure.libraryBooks || 0} />
+              <InfoBox icon={<Award size={16} />} label="Smart Classrooms" value={infrastructure.smartClassroomsPercentage != null ? `${infrastructure.smartClassroomsPercentage}%` : (infrastructure.smartClassrooms != null ? `${infrastructure.smartClassrooms}%` : '0%')} />
+              <InfoBox icon={<Building size={16} />} label="Auditorium" value={infrastructure.auditorium || "N/A"} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {Array.isArray(infrastructure.labs) && infrastructure.labs.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 mb-2">Laboratories</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {infrastructure.labs.map((x, i) => <span key={i} className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-xs font-semibold border border-teal-100">{x}</span>)}
+                    </div>
+                  </div>
+               )}
+               {Array.isArray(infrastructure.libraryFacilities) && infrastructure.libraryFacilities.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 mb-2">Library Facilities</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {infrastructure.libraryFacilities.map((x, i) => <span key={i} className="bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-xs font-semibold border border-amber-100">{x}</span>)}
+                    </div>
+                  </div>
+               )}
+               {Array.isArray(infrastructure.sportsGrounds) && infrastructure.sportsGrounds.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 mb-2">Sports Grounds</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {infrastructure.sportsGrounds.map((x, i) => <span key={i} className="bg-rose-50 text-rose-700 px-3 py-1 rounded-full text-xs font-semibold border border-rose-100">{x}</span>)}
+                    </div>
+                  </div>
+               )}
+               {Array.isArray(infrastructure.eLearningPlatforms) && infrastructure.eLearningPlatforms.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 mb-2">E-Learning Platforms</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {infrastructure.eLearningPlatforms.map((x, i) => <span key={i} className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-semibold border border-indigo-100">{x}</span>)}
+                    </div>
+                  </div>
+               )}
+            </div>
+          </div>
+        )}
+
+        {/* Section: Courses */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <BookOpen className="mr-3 text-blue-600" /> Courses Offered
           </h2>
-          {safetyAndSecurity ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* CCTV Coverage (render even if 0) */}
-              <InfoBox
-                icon={<CheckCircle size={16} />}
-                label="CCTV Coverage"
-                value={
-                  typeof safetyAndSecurity.cctvCoveragePercentage === 'number'
-                    ? `${safetyAndSecurity.cctvCoveragePercentage}% coverage`
-                    : 'N/A'
-                }
-              />
-              
-              {/* Medical Facility */}
-              <InfoBox
-                icon={<CheckCircle size={16} />}
-                label="Medical Staff"
-                value={safetyAndSecurity.medicalFacility?.doctorAvailability || 'N/A'}
-              />
-              <InfoBox
-                icon={<CheckCircle size={16} />}
-                label="Medical Kit"
-                value={safetyAndSecurity.medicalFacility?.medkitAvailable ? 'Available' : 'Not available'}
-              />
-              <InfoBox
-                icon={<CheckCircle size={16} />}
-                label="Ambulance"
-                value={safetyAndSecurity.medicalFacility?.ambulanceAvailable ? 'Available' : 'Not available'}
-              />
-              
-              {/* Transport Safety */}
-              <InfoBox
-                icon={<CheckCircle size={16} />}
-                label="GPS Tracking"
-                value={safetyAndSecurity.transportSafety?.gpsTrackerAvailable ? 'Yes' : 'No'}
-              />
-              <InfoBox
-                icon={<CheckCircle size={16} />}
-                label="Driver Verification"
-                value={safetyAndSecurity.transportSafety?.driversVerified ? 'All drivers verified' : 'Not verified'}
-              />
-              
-              {/* Fire Safety */}
-              {Array.isArray(safetyAndSecurity.fireSafetyMeasures) && safetyAndSecurity.fireSafetyMeasures.length > 0 ? (
-                <div className="col-span-2">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Fire Safety Measures</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {safetyAndSecurity.fireSafetyMeasures.map((measure, index) => (
-                      <span key={index} className="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
-                        {measure}
-                      </span>
-                    ))}
+          {Array.isArray(courses) && courses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {courses.map((course, i) => (
+                <div key={i} className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{course.courseName}</h3>
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Category:</span> {course.category || course.degree || 'N/A'}</p>
+                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Duration:</span> {course.duration}</p>
+                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Fees:</span> {course.fees ? `₹${course.fees}` : 'N/A'}</p>
+                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Intake:</span> {course.intake || course.seatsAvailable || 'N/A'}</p>
                   </div>
+                  {Array.isArray(course.specializations) && course.specializations.length > 0 && (
+                     <div>
+                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Specializations</p>
+                       <div className="flex flex-wrap gap-1">
+                         {course.specializations.map((spec, j) => (
+                           <span key={j} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">{spec}</span>
+                         ))}
+                       </div>
+                     </div>
+                  )}
                 </div>
-              ) : (
-                <InfoBox
-                  icon={<CheckCircle size={16} />}
-                  label="Fire Safety"
-                  value="No measures recorded"
-                />
-              )}
-              
-              {/* Visitor Management */}
-              <InfoBox
-                icon={<CheckCircle size={16} />}
-                label="Visitor Management"
-                value={safetyAndSecurity.visitorManagementSystem ? 'System in place' : 'Not available'}
-              />
+              ))}
             </div>
-          ) : (
-            <div className="text-gray-500 text-center py-8">
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="text-gray-400 mb-2">🛡️</div>
-                <p className="text-gray-600 font-medium mb-2">Safety & Security Details</p>
-                <p className="text-gray-500 text-sm">This college hasn't added safety & security information yet.</p>
-              </div>
-            </div>
-          )}
+          ) : <p className="text-gray-500 italic">No courses added.</p>}
         </div>
 
-        {/* Admission Timeline Section */}
-        {admissionTimeline ? (
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              📅 Admission Timeline
-            </h2>
-            <div className="space-y-4">
-              {Array.isArray(admissionTimeline.timelines) && admissionTimeline.timelines.length > 0 ? (
-                admissionTimeline.timelines.map((timeline, index) => (
-                  <div key={timeline._id || index} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                    <div className="flex items-center">
-                      <Calendar size={20} className="text-blue-600 mr-3" />
-                      <div>
-                        <h3 className="font-semibold text-gray-800">{timeline.eligibility?.admissionLevel || 'Admission Process'}</h3>
-                        <p className="text-sm text-gray-600">{timeline.eligibility?.ageCriteria || '—'}</p>
+        {/* Section: Exams */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <Award className="mr-3 text-orange-500" /> Entrance Exams
+          </h2>
+          {Array.isArray(exams) && exams.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {exams.map((exam, i) => (
+                <div key={i} className="bg-orange-50 border border-orange-100 p-4 rounded-xl">
+                  <h3 className="text-lg font-bold text-orange-800 mb-2">{exam.examName || "Exam"}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(exam.marksType || exam.minMarks || exam.maxMarks) ? (
+                      <div className="w-full space-y-1 mt-2">
+                         <p className="text-sm text-gray-700"><span className="font-semibold">Type:</span> {exam.marksType || 'N/A'}</p>
+                         <p className="text-sm text-gray-700"><span className="font-semibold">Range:</span> {exam.minMarks || 0} - {exam.maxMarks || 100}</p>
                       </div>
+                    ) : Array.isArray(exam.acceptedExams) && exam.acceptedExams.map((ex, j) => (
+                      <span key={j} className="bg-white text-orange-700 text-xs px-2 py-1 rounded shadow-sm font-semibold">{ex}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-gray-500 italic">No exams information available.</p>}
+        </div>
+
+        {/* Section: Course Fees */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <BookOpen className="mr-3 text-emerald-500" /> Course Fees
+          </h2>
+          {Array.isArray(courseFees) && courseFees.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Course Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">First Year Fee</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total Fee</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {courseFees.map((fee, i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{fee.courseName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.firstYearFee ? fee.firstYearFee.toLocaleString() : 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.totalFee ? fee.totalFee.toLocaleString() : 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="text-gray-500 italic">No course fee information available.</p>}
+        </div>
+
+        {/* Section: Scholarships */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <Award className="mr-3 text-purple-500" /> Scholarships
+          </h2>
+          {Array.isArray(scholarships) && scholarships.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {scholarships.map((scholarship, i) => (
+                <div key={i} className="bg-purple-50 border border-purple-100 p-5 rounded-xl">
+                  <h3 className="text-lg font-bold text-purple-900 mb-2">{scholarship.scholarshipName}</h3>
+                  <div className="space-y-2">
+                     <p className="text-sm text-purple-800"><span className="font-semibold">Type:</span> {scholarship.scholarshipType || 'N/A'}</p>
+                     <p className="text-sm text-purple-800"><span className="font-semibold">Amount:</span> {scholarship.scholarshipAmount ? `₹${scholarship.scholarshipAmount}` : 'N/A'}</p>
+                     <p className="text-sm text-purple-800"><span className="font-semibold">Eligibility:</span> {scholarship.eligibilityCriteria || 'N/A'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-gray-500 italic">No scholarship information available.</p>}
+        </div>
+
+        {/* Section: Placements */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <Users className="mr-3 text-indigo-600" /> Placements
+          </h2>
+          {Array.isArray(placements) && placements.length > 0 ? (
+            <div className="space-y-6">
+              {placements.flatMap(p => p.placements ? p.placements.map(subP => ({ courseName: p.courseName, ...subP })) : [p]).map((placement, i) => (
+                <div key={i} className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">{placement.courseName || "General Placement"}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div className="bg-indigo-50 p-4 rounded-lg text-center border border-indigo-100">
+                       <p className="text-xs font-bold text-indigo-500 uppercase">Highest Package</p>
+                       <p className="text-2xl font-black text-indigo-700 mt-1">{placement.maxPackage || placement.highestPackage || 'N/A'}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-gray-700"><strong>Start:</strong> {timeline.admissionStartDate ? new Date(timeline.admissionStartDate).toLocaleDateString() : 'N/A'}</p>
-                      <p className="text-gray-700"><strong>End:</strong> {timeline.admissionEndDate ? new Date(timeline.admissionEndDate).toLocaleDateString() : 'N/A'}</p>
-                      <p className="text-gray-700"><strong>Status:</strong> {timeline.status || 'N/A'}</p>
+                    <div className="bg-emerald-50 p-4 rounded-lg text-center border border-emerald-100">
+                       <p className="text-xs font-bold text-emerald-500 uppercase">Average Package</p>
+                       <p className="text-2xl font-black text-emerald-700 mt-1">{placement.minPackage || placement.averagePackage || 'N/A'}</p>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg text-center border border-blue-100">
+                       <p className="text-xs font-bold text-blue-500 uppercase">Placement Rate</p>
+                       <p className="text-2xl font-black text-blue-700 mt-1">{placement.totalStudents && placement.placedStudents ? `${Math.round((placement.placedStudents / placement.totalStudents) * 100)}%` : 'N/A'}</p>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="p-4 border rounded-lg bg-gray-50 text-gray-600">No admission timeline entries yet.</div>
-              )}
+                  {Array.isArray((placement.companies || placement.topRecruiters)) && (placement.companies || placement.topRecruiters).length > 0 && (
+                     <div>
+                       <p className="text-sm font-bold text-gray-700 mb-2">Top Recruiters</p>
+                       <div className="flex flex-wrap gap-2">
+                         {(placement.companies || placement.topRecruiters).map((recruiter, j) => (
+                           <span key={j} className="bg-gray-100 text-gray-800 text-sm px-3 py-1 rounded-md font-medium border border-gray-200">{recruiter}</span>
+                         ))}
+                       </div>
+                     </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              📅 Admission Timeline
+          ) : <p className="text-gray-500 italic">No placement information available.</p>}
+        </div>
+
+        {/* Section: Faculty */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <User className="mr-3 text-cyan-600" /> Faculty Directory
+          </h2>
+          {Array.isArray(faculty) && faculty.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {faculty.map((member, i) => (
+                <div key={i} className="flex items-start p-4 border border-gray-200 rounded-xl bg-gray-50">
+                  <div className="h-12 w-12 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center font-bold text-lg mr-4 shadow-sm flex-shrink-0">
+                    {member.name ? member.name.charAt(0).toUpperCase() : 'F'}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
+                    <p className="text-sm font-medium text-cyan-700 mb-1">{member.role || member.designation || 'N/A'}</p>
+                    <p className="text-xs text-gray-600"><span className="font-semibold">Qualification:</span> {member.qualification}</p>
+                    <p className="text-xs text-gray-600"><span className="font-semibold">Experience:</span> {member.experience} {member.experience ? "years" : ""}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-gray-500 italic">No faculty information available.</p>}
+        </div>
+
+        {/* Section: Hostels */}
+        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <Building className="mr-3 text-rose-500" /> Hostels & Accommodation
+          </h2>
+          {Array.isArray(hostels) && hostels.length > 0 ? (
+            <div className="space-y-6">
+              {hostels.map((hostel, i) => (
+                <div key={i} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                   <div className="bg-rose-50 px-6 py-4 border-b border-rose-100">
+                     <h3 className="text-lg font-bold text-rose-800">Hostel Configuration</h3>
+                   </div>
+                   <div className="p-6 bg-white">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <InfoBox icon={<Users size={16} />} label="Boys Hostel" value={hostel.boysHostel} />
+                        <InfoBox icon={<Users size={16} />} label="Girls Hostel" value={hostel.girlsHostel} />
+                        <InfoBox icon={<BookOpen size={16} />} label="Capacity" value={hostel.capacity} />
+                        <InfoBox icon={<Award size={16} />} label="Hostel Fee" value={hostel.hostelFee ? `₹${hostel.hostelFee.toLocaleString()}` : 'N/A'} />
+                     </div>
+                     {Array.isArray(hostel.facilities) && hostel.facilities.length > 0 && (
+                        <div>
+                          <p className="text-sm font-bold text-gray-700 mb-2">Hostel Facilities</p>
+                          <div className="flex flex-wrap gap-2">
+                            {hostel.facilities.map((fac, j) => (
+                              <span key={j} className="bg-gray-100 text-gray-800 text-xs px-3 py-1 rounded-full font-medium border border-gray-200">{fac}</span>
+                            ))}
+                          </div>
+                        </div>
+                     )}
+                   </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-gray-500 italic">No hostel information available.</p>}
+        </div>
+
+        {/* Section: Admission Timeline */}
+        {admissionTimeline && (
+          <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <Calendar className="mr-3 text-sky-500" /> Admission Timeline
             </h2>
-            <div className="text-gray-500 text-center py-8">
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="text-gray-400 mb-2">📅</div>
-                <p className="text-gray-600 font-medium mb-2">Admission Timeline</p>
-                <p className="text-gray-500 text-sm">This college hasn't added admission timeline information yet.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <InfoBox icon={<Calendar size={16} />} label="Application Start Date" value={admissionTimeline.applicationStartDate ? new Date(admissionTimeline.applicationStartDate).toLocaleDateString() : 'N/A'} />
+               <InfoBox icon={<Calendar size={16} />} label="Application End Date" value={admissionTimeline.applicationEndDate ? new Date(admissionTimeline.applicationEndDate).toLocaleDateString() : 'N/A'} />
+               <InfoBox icon={<Calendar size={16} />} label="Exam Date" value={admissionTimeline.examDate ? new Date(admissionTimeline.examDate).toLocaleDateString() : 'N/A'} />
+               <InfoBox icon={<BookOpen size={16} />} label="Eligibility Criteria" value={admissionTimeline.eligibilityCriteria} />
+            </div>
+            {Array.isArray(admissionTimeline.requiredDocuments) && admissionTimeline.requiredDocuments.length > 0 && (
+               <div className="mt-6">
+                  <h3 className="font-bold text-gray-700 mb-3">Required Documents</h3>
+                  <div className="flex flex-wrap gap-2">
+                     {admissionTimeline.requiredDocuments.map((doc, i) => (
+                        <span key={i} className="bg-sky-50 text-sky-700 px-3 py-1 rounded border border-sky-100 text-sm font-medium">{doc}</span>
+                     ))}
+                  </div>
+               </div>
+            )}
+          </div>
+        )}
+
+        {/* Section: Safety & Security */}
+        {safetyAndSecurity && (
+          <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <Heart className="mr-3 text-red-500" /> Safety & Security
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+               <InfoBox icon={<CheckCircle size={16} />} label="CCTV Surveillance" value={safetyAndSecurity.cctvCoveragePercentage != null ? `${safetyAndSecurity.cctvCoveragePercentage}%` : (safetyAndSecurity.cctv ? 'Yes' : 'No')} />
+               <InfoBox icon={<CheckCircle size={16} />} label="Visitor Management" value={safetyAndSecurity.visitorManagementSystem ? 'Yes' : 'No'} />
+               <InfoBox icon={<CheckCircle size={16} />} label="Fire Safety Measures" value={Array.isArray(safetyAndSecurity.fireSafetyMeasures) && safetyAndSecurity.fireSafetyMeasures.length > 0 ? safetyAndSecurity.fireSafetyMeasures.join(', ') : (safetyAndSecurity.fireSafety ? 'Yes' : 'No')} />
+               <InfoBox icon={<CheckCircle size={16} />} label="Security Guards" value={safetyAndSecurity.securityGuards ? 'Yes' : 'No'} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                <h3 className="font-bold text-red-800 mb-3">Medical Facility</h3>
+                {safetyAndSecurity.medicalFacility ? (
+                  <ul className="space-y-2 text-sm text-red-700">
+                    <li><span className="font-semibold">Doctor Availability:</span> {safetyAndSecurity.medicalFacility.doctorAvailability || 'N/A'}</li>
+                    <li><span className="font-semibold">Medkit Available:</span> {safetyAndSecurity.medicalFacility.medkitAvailable ? 'Yes' : 'No'}</li>
+                    <li><span className="font-semibold">Ambulance Available:</span> {safetyAndSecurity.medicalFacility.ambulanceAvailable ? 'Yes' : 'No'}</li>
+                  </ul>
+                ) : <p className="text-sm text-red-700 italic">No medical facility details provided.</p>}
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <h3 className="font-bold text-blue-800 mb-3">Transport Safety</h3>
+                {safetyAndSecurity.transportSafety ? (
+                  <ul className="space-y-2 text-sm text-blue-700">
+                    <li><span className="font-semibold">GPS Tracker:</span> {safetyAndSecurity.transportSafety.gpsTrackerAvailable ? 'Yes' : 'No'}</li>
+                    <li><span className="font-semibold">Drivers Verified:</span> {safetyAndSecurity.transportSafety.driversVerified ? 'Yes' : 'No'}</li>
+                  </ul>
+                ) : <p className="text-sm text-blue-700 italic">No transport safety details provided.</p>}
               </div>
             </div>
           </div>
         )}
 
-        {/* Technology Adoption Section */}
-        {technologyAdoption && (
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              💻 Technology Adoption
+        {/* Section: International Exposure */}
+        {internationalExposure && (
+          <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <Globe className="mr-3 text-blue-500" /> International Exposure
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {technologyAdoption.smartClassroomsPercentage && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-800 mb-2">Smart Classrooms</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-blue-600">
-                      {technologyAdoption.smartClassroomsPercentage}%
-                    </span>
-                    <div className="w-16 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${technologyAdoption.smartClassroomsPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {technologyAdoption.elearningPlatforms && technologyAdoption.elearningPlatforms.length > 0 && (
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-800 mb-2">E-learning Platforms</h3>
-                  <div className="space-y-2">
-                    {technologyAdoption.elearningPlatforms.map((platform, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="text-sm text-gray-700">{platform.platform}</span>
-                        <span className="text-sm font-medium text-green-600">{platform.usagePercentage}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="space-y-6">
+               {Array.isArray(internationalExposure.globalTieUps) && internationalExposure.globalTieUps.length > 0 && (
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">Global Tie-Ups</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {internationalExposure.globalTieUps.map((tie, i) => (
+                       <div key={i} className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                         <h4 className="font-bold text-blue-900">{tie.partnerName}</h4>
+                         <p className="text-sm text-blue-800 mt-1"><span className="font-semibold">Nature:</span> {tie.nature || tie.natureOfTieUp}</p>
+                         <p className="text-sm text-blue-800"><span className="font-semibold">Active Since:</span> {tie.activeSince}</p>
+                         <p className="text-sm text-blue-800 mt-2">{tie.description}</p>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+               {Array.isArray(internationalExposure.exchangePrograms) && internationalExposure.exchangePrograms.length > 0 && (
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">Exchange Programs</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {internationalExposure.exchangePrograms.map((prog, i) => (
+                       <div key={i} className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                         <h4 className="font-bold text-indigo-900">{prog.partnercollege}</h4>
+                         <p className="text-sm text-indigo-800 mt-1"><span className="font-semibold">Type:</span> {prog.type || prog.programType}</p>
+                         <p className="text-sm text-indigo-800"><span className="font-semibold">Duration:</span> {prog.duration}</p>
+                         <p className="text-sm text-indigo-800"><span className="font-semibold">Students Participated:</span> {prog.studentsParticipated}</p>
+                         <p className="text-sm text-indigo-800"><span className="font-semibold">Active Since:</span> {prog.activeSince}</p>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
             </div>
           </div>
         )}
 
-        {/* International Exposure Section */}
-        {internationalExposure && (
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-              🌍 International Exposure
+        {/* Section: Academics */}
+        {academics && (
+          <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <BookOpen className="mr-3 text-cyan-500" /> Academic Performance
             </h2>
-            <div className="space-y-4">
-              {internationalExposure.studentsBenefitingPercentage && (
-                <div className="bg-purple-50 p-4 rounded-lg text-center">
-                  <h3 className="font-semibold text-gray-800 mb-2">Students Benefiting</h3>
-                  <div className="text-3xl font-bold text-purple-600 mb-2">
-                    {internationalExposure.studentsBenefitingPercentage}%
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="bg-cyan-50 p-4 rounded-lg text-center border border-cyan-100">
+                <p className="text-xs font-bold text-cyan-600 uppercase">Avg. Class 10 Result</p>
+                <p className="text-2xl font-black text-cyan-800 mt-1">{academics.averageClass10Result || 'N/A'}</p>
+              </div>
+              <div className="bg-cyan-50 p-4 rounded-lg text-center border border-cyan-100">
+                <p className="text-xs font-bold text-cyan-600 uppercase">Avg. Class 12 Result</p>
+                <p className="text-2xl font-black text-cyan-800 mt-1">{academics.averageClass12Result || 'N/A'}</p>
+              </div>
+              <div className="bg-cyan-50 p-4 rounded-lg text-center border border-cyan-100">
+                <p className="text-xs font-bold text-cyan-600 uppercase">Avg. College Marks</p>
+                <p className="text-2xl font-black text-cyan-800 mt-1">{academics.averagecollegeMarks || 'N/A'}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               {Array.isArray(academics.specialExamsTraining) && academics.specialExamsTraining.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 mb-2">Special Exams Training</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {academics.specialExamsTraining.map((x, i) => <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-semibold border border-gray-200">{x}</span>)}
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-purple-500 h-3 rounded-full"
-                      style={{ width: `${internationalExposure.studentsBenefitingPercentage}%` }}
-                    ></div>
+               )}
+               {Array.isArray(academics.extraCurricularActivities) && academics.extraCurricularActivities.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 mb-2">Extra-Curricular Activities</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {academics.extraCurricularActivities.map((x, i) => <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-semibold border border-gray-200">{x}</span>)}
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {internationalExposure.exchangePrograms && internationalExposure.exchangePrograms.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Exchange Programs</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {internationalExposure.exchangePrograms.map((program, index) => (
-                      <div key={index} className="bg-blue-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-gray-800">{program.partnercollege}</h4>
-                        <p className="text-sm text-gray-600">{program.type}</p>
-                        <p className="text-sm text-gray-500">Duration: {program.duration}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+               )}
+            </div>
+          </div>
+        )}
+
+        {/* Section: Alumni */}
+        {alumni && (
+          <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <Users className="mr-3 text-fuchsia-500" /> Alumni Directory
+            </h2>
+            <div className="space-y-6">
+               {Array.isArray(alumni.famousAlumnies) && alumni.famousAlumnies.length > 0 && (
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">Famous Alumni</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {alumni.famousAlumnies.map((person, i) => (
+                       <div key={i} className="bg-fuchsia-50 p-4 rounded-lg border border-fuchsia-100 flex items-center">
+                         <div className="w-10 h-10 bg-fuchsia-200 text-fuchsia-800 rounded-full flex items-center justify-center font-bold mr-3">{person.name ? person.name.charAt(0) : 'A'}</div>
+                         <div>
+                           <p className="font-bold text-fuchsia-900">{person.name}</p>
+                           <p className="text-xs text-fuchsia-700">{person.designation || 'Alumni'}</p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+               {Array.isArray(alumni.topAlumnis) && alumni.topAlumnis.length > 0 && (
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">Top Alumni</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {alumni.topAlumnis.map((person, i) => (
+                       <div key={i} className="bg-fuchsia-50 p-4 rounded-lg border border-fuchsia-100 flex items-center">
+                         <div className="w-10 h-10 bg-fuchsia-200 text-fuchsia-800 rounded-full flex items-center justify-center font-bold mr-3">{person.name ? person.name.charAt(0) : 'A'}</div>
+                         <div>
+                           <p className="font-bold text-fuchsia-900">{person.name}</p>
+                           <p className="text-xs text-fuchsia-700">{person.designation || 'Alumni'}</p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+               {Array.isArray(alumni.alumnis) && alumni.alumnis.length > 0 && (
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">Other Alumni</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {alumni.alumnis.map((person, i) => (
+                       <div key={i} className="bg-fuchsia-50 p-4 rounded-lg border border-fuchsia-100 flex items-center">
+                         <div className="w-10 h-10 bg-fuchsia-200 text-fuchsia-800 rounded-full flex items-center justify-center font-bold mr-3">{person.name ? person.name.charAt(0) : 'A'}</div>
+                         <div>
+                           <p className="font-bold text-fuchsia-900">{person.name}</p>
+                           <p className="text-xs text-fuchsia-700">{person.designation || 'Alumni'}</p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+            </div>
+          </div>
+        )}
+
+        {otherDetails && (
+          <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <CheckCircle className="mr-3 text-gray-500" /> Other Details & Diversity
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <InfoBox icon={<CheckCircle size={16} />} label="Minority Representation" value={otherDetails.minorityRepresentation || 'N/A'} />
+               <InfoBox icon={<CheckCircle size={16} />} label="International Students" value={otherDetails.internationalStudents || 'N/A'} />
+               <InfoBox icon={<CheckCircle size={16} />} label="Special Needs Support" value={
+                 otherDetails.specialNeedsSupport ? 
+                 (otherDetails.specialNeedsSupport.facilitiesAvailable?.length > 0 
+                   ? otherDetails.specialNeedsSupport.facilitiesAvailable.join(', ') 
+                   : (otherDetails.specialNeedsSupport.dedicatedStaff ? 'Dedicated Staff Available' : 'Yes'))
+                 : 'No'
+               } />
+               {otherDetails.genderRatio && (
+                 <InfoBox icon={<Users size={16} />} label="Gender Ratio (M:F:O)" value={`${otherDetails.genderRatio.male || 0}% : ${otherDetails.genderRatio.female || 0}% : ${otherDetails.genderRatio.others || 0}%`} />
+               )}
             </div>
           </div>
         )}
@@ -1383,5 +1111,11 @@ const AdmincollegeDetailsPage = () => {
   );
 };
 
+
+const AdmincollegeDetailsPage = () => (
+  <ErrorBoundary>
+    <AdmincollegeDetailsPageContent />
+  </ErrorBoundary>
+);
 export default AdmincollegeDetailsPage;
 

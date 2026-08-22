@@ -4,8 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import SEO from './SEO';
 
 const AdminProtectedRoute = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, loading: isLoading } = useAuth();
   const location = useLocation();
+
+  console.log("AdminProtectedRoute -> isLoading:", isLoading);
+  console.log("AdminProtectedRoute -> user:", user);
+  console.log("Admin token in localStorage:", localStorage.getItem("authToken"));
+  console.log("Admin user in localStorage:", localStorage.getItem("userData"));
 
   if (isLoading) {
     return (

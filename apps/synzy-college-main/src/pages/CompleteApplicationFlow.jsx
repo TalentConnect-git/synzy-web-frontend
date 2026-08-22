@@ -9,7 +9,7 @@ import {
   submitFormTocollege,
   handleApplicationFlow
 } from '../api/applicationService';
-import { getcollegeById } from '../api/adminService';
+import { getcollegeById, getAdmissionTimelineById } from '../api/adminService';
 import { Loader2, CheckCircle, AlertCircle, FileText, Send, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const CompleteApplicationFlow = () => {
@@ -24,6 +24,7 @@ const CompleteApplicationFlow = () => {
   const [college, setcollege] = useState(null);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [timelineId, setTimelineId] = useState(null);
 
   // Fetch college details
   useEffect(() => {
@@ -43,6 +44,13 @@ const CompleteApplicationFlow = () => {
     try {
       const response = await getcollegeById(collegeId);
       setcollege(response.data.data);
+
+      const timelineRes = await getAdmissionTimelineById(collegeId);
+      const timelineData = timelineRes?.data?.data || timelineRes?.data;
+      if (timelineData && timelineData.timelines && timelineData.timelines.length > 0) {
+        const active = timelineData.timelines.find(t => t.status === 'Ongoing') || timelineData.timelines[0];
+        setTimelineId(active._id);
+      }
     } catch (error) {
       console.error('Error fetching college details:', error);
       toast.error('Failed to fetch college details');
@@ -111,7 +119,7 @@ const CompleteApplicationFlow = () => {
     
     try {
       const formId = applicationData._id || applicationData.id;
-      const result = await submitFormTocollege(collegeId, currentUser._id, formId);
+      const result = await submitFormTocollege(collegeId, currentUser._id, formId, formId, timelineId);
       
       setFormSubmitted(true);
       toast.success('Form submitted to college successfully!');
@@ -309,13 +317,17 @@ const CompleteApplicationFlow = () => {
               </button>
               <button
                 onClick={handleSubmitTocollege}
-                disabled={loading}
+                disabled={loading || !timelineId}
                 className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Submitting...
+                  </>
+                ) : !timelineId ? (
+                  <>
+                    No active timeline
                   </>
                 ) : (
                   <>

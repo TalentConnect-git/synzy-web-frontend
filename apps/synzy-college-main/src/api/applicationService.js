@@ -33,7 +33,7 @@ import apiClient from './axios';
  */
 export const checkApplicationExists = async (studId) => {
   try {
-    const response = await apiClient.get(`/applications/${studId}`);
+    const response = await apiClient.get(`/application/stud/${studId}`);
     // Ensure we return the array of applications
     return response.data; 
   } catch (error) {
@@ -48,16 +48,16 @@ export const checkApplicationExists = async (studId) => {
  */
 export const createApplication = async (applicationData) => {
   try {
-    const response = await apiClient.post('/applications/', applicationData);
+    const response = await apiClient.post('/application/', applicationData);
     return response.data;
   } catch (error) {
     console.error('Error creating application:', error.response?.data || error.message);
-    throw error.response?.data || error;
+    throw error;
   }
 };
 export const getAllStudentApplications = async (studId) => {
     try {
-        const response = await apiClient.get(`/applications/student/${studId}`);
+        const response = await apiClient.get(`/application/stud/${studId}`);
         // Ensure we return an array. Backend might return { data: [...] } or just [...]
         return response.data.data || response.data || []; 
     } catch (error) {
@@ -67,7 +67,7 @@ export const getAllStudentApplications = async (studId) => {
 };
 export const getApplicationById = async (appId) => {
     try {
-        const response = await apiClient.get(`/applications/${appId}`); 
+        const response = await apiClient.get(`/application/${appId}`); 
         // Note: Backend team said use applicationId for specific fetching
         return response.data;
     } catch (error) {
@@ -83,11 +83,11 @@ export const getApplicationById = async (appId) => {
  */
 export const getApplicationByStudentId = async (studId) => {
   try {
-    const response = await apiClient.get(`/applications/${studId}`);
+    const response = await apiClient.get(`/application/stud/${studId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching application:', error.response?.data || error.message);
-    throw error.response?.data || error;
+    throw error;
   }
 };
 
@@ -97,13 +97,13 @@ export const getApplicationByStudentId = async (studId) => {
  * @param {Object} updateData - Updated application data
  * @returns {Promise<Object>} Updated application data
  */
-export const updateApplication = async (studId, updateData) => {
+export const updateApplication = async (applicationId, updateData) => {
   try {
-    const response = await apiClient.put(`/applications/${studId}`, updateData);
+    const response = await apiClient.put(`/application/${applicationId}`, updateData);
     return response.data;
   } catch (error) {
     console.error('Error updating application:', error.response?.data || error.message);
-    throw error.response?.data || error;
+    throw error;
   }
 };
 
@@ -112,13 +112,13 @@ export const updateApplication = async (studId, updateData) => {
  * @param {string} studId - Student ID
  * @returns {Promise<Object>} Deletion confirmation
  */
-export const deleteApplication = async (studId) => {
+export const deleteApplication = async (applicationId) => {
   try {
-    const response = await apiClient.delete(`/applications/${studId}`);
+    const response = await apiClient.delete(`/application/${applicationId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting application:', error.response?.data || error.message);
-    throw error.response?.data || error;
+    throw error;
   }
 };
 
@@ -176,7 +176,7 @@ export const checkFormSubmission = async (collegeId, studId, applicationId) => {
  * Step 2: Submit form to college
  * FIXED: Explicitly passes applicationId to the check function
  */
-export const submitFormTocollege = async (collegeId, studId, formId, applicationId) => {
+export const submitFormTocollege = async (collegeId, studId, formId, applicationId, timelineId) => {
   try {
     // 1. We MUST pass the applicationId (child profile ID) to the check function
     //    If we don't, it might just check "Does this student exist at this college?" which causes your bug.
@@ -193,8 +193,9 @@ export const submitFormTocollege = async (collegeId, studId, formId, application
     }    
     
     // 2. If check passes (returns false), proceed to Submit
+    // Added timelineId to match the backend route /:collegeId/:studId/:timelineId/:formId
     const response = await apiClient.post(
-      `/form/${collegeId}/${studId}/${formId}`,
+      `/form/${collegeId}/${studId}/${timelineId}/${formId}`,
       { 
         applicationId: applicationId, // Ensure backend links this specific child profile
         amount: 100 
@@ -333,9 +334,9 @@ export const getcollegeForms = async (collegeId, status = null) => {
         if (studId) {
           try {
             // console.log(`🔍 Fetching application data for student: ${studId}`);
-            const appResponse = await apiClient.get(`/applications/${studId}`);
-            if (appResponse?.data?.data) {
-              const appData = appResponse.data.data;
+            const appResponse = await apiClient.get(`/application/stud/${studId}`);
+            if (appResponse?.data?.data && Array.isArray(appResponse.data.data) && appResponse.data.data.length > 0) {
+              const appData = appResponse.data.data[0];
               studentName = appData.name || '—';
               studentstandard = appData.classCompleted || appData.standard || '—';
               // console.log(`✅ Found student data: ${studentName}, Standard: ${studentstandard}`);
@@ -398,8 +399,8 @@ export const getFormDetails = async (formId) => {
  */
 export const updateFormStatus = async (formId, status, note = null) => {
   try {
-    const url = `/form/${formId}?status=${status}`;
-    const body = note ? { note } : {};
+    const url = `/form/${formId}`;
+    const body = { status, ...(note ? { note } : {}) };
     const response = await apiClient.put(url, body);
     return response.data;
   } catch (error) {
@@ -413,9 +414,10 @@ export const updateFormStatus = async (formId, status, note = null) => {
  * @param {string} studId - Student ID
  * @param {string} collegeId - college ID
  * @param {Object} applicationData - Application form data (if creating new)
+ * @param {string} timelineId - Admission timeline ID
  * @returns {Promise<Object>} Complete flow result
  */
-export const completeApplicationFlow = async (studId, collegeId, applicationData = null) => {
+export const completeApplicationFlow = async (studId, collegeId, applicationData = null, timelineId) => {
   try {
     // Step 1: Check if application exists
     let application = await checkApplicationExists(studId);
@@ -438,7 +440,7 @@ export const completeApplicationFlow = async (studId, collegeId, applicationData
     // Step 2: Submit form to college using application ID as formId
     // console.log('Submitting form to college...');
     const formId = application._id || application.id; // formId = application ID
-    const submitResult = await submitFormTocollege(collegeId, studId, formId);
+    const submitResult = await submitFormTocollege(collegeId, studId, formId, formId, timelineId);
     
     return {
       success: true,
@@ -459,9 +461,10 @@ export const completeApplicationFlow = async (studId, collegeId, applicationData
  * @param {string} studId - Student ID
  * @param {string} collegeId - college ID
  * @param {Object} applicationData - Application form data (optional)
+ * @param {string} timelineId - Admission timeline ID
  * @returns {Promise<Object>} Flow result with scenario info
  */
-export const handleApplicationFlow = async (studId, collegeId, applicationData = null) => {
+export const handleApplicationFlow = async (studId, collegeId, applicationData = null, timelineId) => {
   try {
     // Check if application exists
     const existingApplication = await checkApplicationExists(studId);
@@ -483,7 +486,7 @@ export const handleApplicationFlow = async (studId, collegeId, applicationData =
       
       // Submit to college
       const formId = application._id || application.id;
-      const submitResult = await submitFormTocollege(collegeId, studId, formId);
+      const submitResult = await submitFormTocollege(collegeId, studId, formId, formId, timelineId);
       
       return {
         scenario: 'first-time',
@@ -499,7 +502,7 @@ export const handleApplicationFlow = async (studId, collegeId, applicationData =
       const formId = application._id || application.id;
       
       // Submit to college using existing application
-      const submitResult = await submitFormTocollege(collegeId, studId, formId);
+      const submitResult = await submitFormTocollege(collegeId, studId, formId, formId, timelineId);
       
       return {
         scenario: 'returning',
@@ -524,12 +527,12 @@ export const handleApplicationFlow = async (studId, collegeId, applicationData =
  * @param {Object} updateData - Updated application data
  * @returns {Promise<Object>} Updated application
  */
-export const updateExistingApplication = async (studId, updateData) => {
+export const updateExistingApplication = async (applicationId, updateData) => {
   try {
-    const response = await apiClient.put(`/applications/${studId}`, updateData);
+    const response = await apiClient.put(`/application/${applicationId}`, updateData);
     return response.data;
   } catch (error) {
     console.error('Error updating application:', error.response?.data || error.message);
-    throw error.response?.data || error;
+    throw error;
   }
 };

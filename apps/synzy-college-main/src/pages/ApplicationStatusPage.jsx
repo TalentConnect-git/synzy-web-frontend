@@ -115,48 +115,9 @@ const ApplicationStatusPage = () => {
     if (forms?.length) fetchNames();
   }, [forms, collegeNameById, currentUser]);
 
-  // Merge API forms with locally cached applications to ensure all applied colleges appear
+  // Disable synthetic localStorage merging to fix duplicates
   useEffect(() => {
-    try {
-      const userId = currentUser?._id;
-      const cached = [];
-      if (typeof localStorage !== 'undefined' && userId) {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith(`collegeInfo:${userId}:`)) {
-            const raw = localStorage.getItem(k);
-            try {
-              const parsed = JSON.parse(raw || '{}');
-              if (parsed && (parsed.collegeId || parsed.collegeName)) {
-                cached.push(parsed);
-              }
-            } catch (_) { }
-          }
-        }
-      }
-
-      const synthesizedFromCache = cached.map((c) => ({
-        _synthetic: true,
-        collegeName: c.collegeName,
-        collegeId: c.collegeId,
-        status: 'Submitted',
-        createdAt: c.createdAt || null,
-      }));
-
-      // Dedupe by strong id or collegeId+createdAt+collegeName
-      const map = new Map();
-      [...forms, ...synthesizedFromCache].forEach((item, idx) => {
-        const strong = item?._id || item?.id;
-        const sId = typeof item?.collegeId === 'object' ? (item?.collegeId?._id || item?.collegeId?.id) : item?.collegeId;
-        const sName = item?.collegeName || item?.college?.name || '';
-        const when = item?.createdAt || item?.updatedAt || '';
-        const key = strong || `${sId || 'noid'}-${when || 'notime'}-${sName || 'noname'}-${idx}`;
-        map.set(String(key), item);
-      });
-      setDisplayForms(Array.from(map.values()));
-    } catch (e) {
-      setDisplayForms(forms);
-    }
+    setDisplayForms(forms || []);
   }, [forms, currentUser]);
 
   if (!currentUser) {

@@ -34,19 +34,19 @@ export const getAllUsers = () => apiClient.get('/admin/users');
  */
 
 // Check if application exists for student
-export const checkApplicationExists = (studId) => apiClient.get(`/applications/${studId}`);
+export const checkApplicationExists = (studId) => apiClient.get(`/application/stud/${studId}`);
 
 // Create new application
-export const createApplication = (data) => apiClient.post('/applications/', data);
+export const createApplication = (data) => apiClient.post('/application/', data);
 
 // Get application by student ID
-export const getApplicationByStudentId = (studId) => apiClient.get(`/applications/${studId}`);
+export const getApplicationByStudentId = (studId) => apiClient.get(`/application/stud/${studId}`);
 
 // Update application
-export const updateApplication = (studId, data) => apiClient.put(`/applications/${studId}`, data);
+export const updateApplication = (applicationId, data) => apiClient.put(`/application/${applicationId}`, data);
 
 // Delete application
-export const deleteApplication = (studId) => apiClient.delete(`/applications/${studId}`);
+export const deleteApplication = (applicationId) => apiClient.delete(`/application/${applicationId}`);
 
 // Submit form to college
 export const submitFormTocollege = (collegeId, studId, formId) => 
@@ -63,7 +63,7 @@ export const trackForm = (formId) => apiClient.get(`/form/track/${formId}`);
 
 // Update form status
 export const updateFormStatus = (formId, status) => 
-  apiClient.put(`/form/${formId}?status=${status}`);
+  apiClient.put(`/form/${formId}`, { status });
 
 /**
  * ============================
@@ -82,8 +82,8 @@ export const handleApplicationFlow = (studId, collegeId, applicationData = null)
 };
 
 // Update existing application (Scenario C)
-export const updateExistingApplication = (studId, updateData) => {
-  return apiClient.put(`/applications/${studId}`, updateData);
+export const updateExistingApplication = (applicationId, updateData) => {
+  return apiClient.put(`/application/${applicationId}`, updateData);
 };
 
 /**
@@ -433,15 +433,15 @@ export const updateSafetyAndSecurity = (collegeId, data) =>
  */
 
 export const getStudentApplicationsBycollege = (collegeId) =>
-  apiClient.get(`/applications?collegeId=${encodeURIComponent(collegeId)}`);
+  apiClient.get(`/application?collegeId=${encodeURIComponent(collegeId)}`);
 
 export const getStudentApplicationsBycollegeEmail = (collegeEmail) =>
-  apiClient.get(`/applications?collegeEmail=${encodeURIComponent(collegeEmail)}`);
+  apiClient.get(`/application?collegeEmail=${encodeURIComponent(collegeEmail)}`);
 
 export const getAllStudentApplications = () =>
-  apiClient.get('/applications');
+  apiClient.get('/application');
 export const getApprovedcolleges = () => getcollegeByStatus('approved');
 export const getRejectedcolleges = () => getcollegeByStatus('rejected');
 export const getPendingcolleges = () => getPendingcollege();
 export const updatecollegeStatus = (collegeId, newStatus) =>
-  apiClient.put(`/college/${encodeURIComponent(collegeId)}`, { status: newStatus });
+  apiClient.put(`/colleges/${encodeURIComponent(collegeId)}`, { status: newStatus });

@@ -12,6 +12,7 @@ import { fetchStudentApplications, updateApplicationStatus, fetchApplicationsCou
 import { getcollegeForms, updateFormStatus } from "../api/applicationService";
 import InterviewSchedulingModal from "../components/InterviewSchedulingModal";
 import WrittenExamSchedulingModal from "../components/WrittenExamSchedulingModal";
+import ApplicationDetailsModal from "../components/ApplicationDetailsModal";
 import { useAuth } from "../context/AuthContext";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { toast } from "react-toastify";
@@ -128,6 +129,8 @@ const ViewStudentApplications = ({ }) => {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showWrittenExamModal, setShowWrittenExamModal] = useState(false);
   const [selectedWrittenExamApplication, setSelectedWrittenExamApplication] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedDetailsApplication, setSelectedDetailsApplication] = useState(null);
   const [detectedcollegeId, setDetectedcollegeId] = useState(null);
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
@@ -242,7 +245,7 @@ const ViewStudentApplications = ({ }) => {
             detectedcollegeId: detectedcollegeId,
             status: app.status,
             studentName: app.studentName,
-            standard: app.standard,
+            currentGrade: app.currentGrade || app.standard,
             date: app.date,
             applicationData: app.applicationData ? "present" : "missing",
             pdfUrl: app.pdfUrl ? "present" : "missing",
@@ -877,7 +880,10 @@ const ViewStudentApplications = ({ }) => {
 
 
 
-    if (studId && applicationId) {
+    if (app && app.fullApplication) {
+      setSelectedDetailsApplication(app);
+      setShowDetailsModal(true);
+    } else if (studId && applicationId) {
       console.log('🔗 Opening PDF for student:', studId, 'Type:', typeof studId);
       // Construct URL properly for both dev and production
       const apiBaseURL = import.meta.env.DEV ? '' : import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
@@ -887,7 +893,7 @@ const ViewStudentApplications = ({ }) => {
       console.log('📄 PDF URL:', pdfUrl);
       window.open(pdfUrl, '_blank');
     } else {
-      toast.error('Unable to view details: Student ID not found');
+      toast.error('Unable to view details: Complete application data not found');
       console.warn('❌ No student ID found for application:', {
         applicationId: app?._id || app?.id,
         formId: app?.formId,
@@ -990,6 +996,7 @@ const ViewStudentApplications = ({ }) => {
             <tr>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Student Name</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Class</th>
+              <th className="p-4 text-left text-sm font-semibold text-gray-600">Stream</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Date</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Details</th>
               <th className="p-4 text-left text-sm font-semibold text-gray-600">Status</th>
@@ -1007,7 +1014,8 @@ const ViewStudentApplications = ({ }) => {
                 return (
                   <tr key={app._id || app.id || app.formId || `app-${index}`} className="border-b last:border-b-0 hover:bg-gray-50">
                     <td className="p-4 align-top">{app.studentName}</td>
-                    <td className="p-4 align-top">{app.standard}</td>
+                    <td className="p-4 align-top">{app.standard || app.currentGrade || 'N/A'}</td>
+                    <td className="p-4 align-top">{app.stream || 'N/A'}</td>
                     <td className="p-4 align-top">{app.date}</td>
                     <td className="p-4 align-top">
                       <button onClick={() => handleOpenDetails(app)} className="text-sm text-blue-600 hover:underline">
@@ -1095,6 +1103,15 @@ const ViewStudentApplications = ({ }) => {
           onClose={() => setShowInterviewModal(false)}
           application={selectedApplication}
           onSchedule={handleInterviewScheduled}
+        />
+      )}
+
+      {/* Application Details Modal */}
+      {showDetailsModal && selectedDetailsApplication && (
+        <ApplicationDetailsModal
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
+          application={selectedDetailsApplication}
         />
       )}
 
@@ -1462,7 +1479,7 @@ const ViewShortlistedApplications = ({ }) => {
             {applications.map((app, index) => (
               <tr key={app._id || app.id || app.formId || `app-${index}`} className="border-b last:border-b-0">
                 <td className="p-4 text-gray-800">{app.studentName}</td>
-                <td className="p-4 text-gray-700">{app.standard}</td>
+                <td className="p-4 text-gray-700">{app.currentGrade || app.standard || 'N/A'}</td>
                 <td className="p-4 text-gray-700">{app.date}</td>
                 <td className="p-4 text-gray-700">
                   <StatusBadge status={(app.status || '').toString().toLowerCase()} />

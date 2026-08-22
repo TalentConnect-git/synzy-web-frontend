@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Save } from "lucide-react";
-import { getUserProfile } from "../api/userService";
+import { getUserProfile, getUserPreferences } from "../api/userService";
 
 
 const UserProfileForm = ({ currentUser, onProfileUpdate }) => {
@@ -31,8 +31,16 @@ useEffect(() => {
             const data = res.data;
             console.log("Profile data loaded:", data);
             
-            // Check if data exists before accessing properties
             if (data) {
+                // Fetch preferences separately using the student's _id
+                try {
+                    const prefRes = await getUserPreferences(data._id);
+                    if (prefRes && prefRes.data) {
+                        data.preferences = prefRes.data;
+                    }
+                } catch (prefErr) {
+                    console.log("No preferences found or error fetching them");
+                }
                 console.log("Preferences:", data.preferences);
                 
                 // Form ko fetched data se bhar do
@@ -47,11 +55,11 @@ useEffect(() => {
                     state: data.state || "",
                     city: data.city || "",
                     userType: data.userType || "parent",
-                    boards: data.preferences?.boards || "",
-                    preferredStandard: data.preferences?.preferredStandard || "",
+                    preferredStream: data.preferences?.preferredStream || "",
+                    currentGrade: data.preferences?.currentGrade || "",
                     interests: data.preferences?.interests || "",
                     collegeType: data.preferences?.collegeType || "",
-                    shift: data.preferences?.shift || "",
+                    shift: data.preferences?.shifts?.[0] || "",
                 });
             } else {
                 // No profile data found, reset with basic info and default preferences
@@ -59,8 +67,8 @@ useEffect(() => {
                 reset({ 
                     email: currentUser.email,
                     userType: "parent",
-                    boards: "CBSE", // Default board
-                    preferredStandard: "primary", // Default standard
+                    preferredStream: "Engineering", // Default stream
+                    currentGrade: "12th Grade", // Default grade
                     collegeType: "private", // Default college type
                     shift: "morning", // Default shift
                     interests: "Focusing on Academics" // Default interest
@@ -89,11 +97,11 @@ useEffect(() => {
     const preferencesData = {
       state: data.state || 'Unknown',
       city: data.city || 'Unknown',
-      boards: data.boards || 'CBSE',
-      preferredStandard: data.preferredStandard || 'primary',
-      interests: data.interests || 'Focusing on Academics',
-      collegeType: data.collegeType || 'private',
-      shift: data.shift || 'morning'
+        preferredStream: data.preferredStream || 'Engineering',
+        currentGrade: data.currentGrade || '12th Grade',
+        interests: data.interests || 'Focusing on Academics',
+        collegeType: data.collegeType || 'private',
+        shifts: data.shift ? [data.shift] : ['morning']
     };
     
     // Structure the data to include preferences
@@ -286,45 +294,61 @@ useEffect(() => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label
-                htmlFor="boards"
+                htmlFor="preferredStream"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Preferred Board <span className="text-red-500">*</span>
+                Preferred Stream <span className="text-red-500">*</span>
               </label>
               <select
-                id="boards"
-                {...register("boards", { required: "Board is required" })}
+                id="preferredStream"
+                {...register("preferredStream", { required: "Stream is required" })}
                 className="w-full p-2 border border-gray-300 rounded-md"
-                defaultValue="CBSE"
+                defaultValue="Engineering"
               >
-                <option value="CBSE">CBSE</option>
-                <option value="ICSE">ICSE</option>
-                 <option value="CISCE">CISCE</option>
-  <option value="NIOS">NIOS</option>
-  <option value="SSC">SSC</option>
-  <option value="IGCSE">IGCSE</option>
-  <option value="IB">IB</option>
-  <option value="KVS">KVS</option>
-  <option value="JNV">JNV</option>
-  <option value="DBSE">DBSE</option>
-  <option value="MSBSHSE">MSBSHSE</option>
-  <option value="UPMSP">UPMSP</option>
-  <option value="KSEEB">KSEEB</option>
-  <option value="WBBSE">WBBSE</option>
-  <option value="GSEB">GSEB</option>
-  <option value="RBSE">RBSE</option>
-  <option value="BSEB">BSEB</option>
-  <option value="PSEB">PSEB</option>
-  <option value="BSE">BSE</option>
-  <option value="SEBA">SEBA</option>
-  <option value="MPBSE">MPBSE</option>
-  
-                <option value="STATE">STATE</option>
-                <option value="OTHER">OTHER</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Management">Management</option>
+                <option value="Arts">Arts</option>
+                <option value="Science">Science</option>
+                <option value="Law">Law</option>
+                <option value="Medical">Medical</option>
+                <option value="Design">Design</option>
+                <option value="Humanities">Humanities</option>
               </select>
-              {errors.boards && (
+              {errors.preferredStream && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.boards.message}
+                  {errors.preferredStream.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="currentGrade"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Current Grade / Qualification <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="currentGrade"
+                {...register("currentGrade", { required: "Current Grade is required" })}
+                className="w-full p-2 border border-gray-300 rounded-md"
+                defaultValue="12th Grade"
+              >
+                <option value="10th Grade">10th Grade</option>
+                <option value="11th Grade">11th Grade</option>
+                <option value="12th Grade">12th Grade</option>
+                <option value="Diploma">Diploma</option>
+                <option value="Undergraduate - 1st Year">Undergraduate - 1st Year</option>
+                <option value="Undergraduate - 2nd Year">Undergraduate - 2nd Year</option>
+                <option value="Undergraduate - 3rd Year">Undergraduate - 3rd Year</option>
+                <option value="Undergraduate - 4th Year">Undergraduate - 4th Year</option>
+                <option value="Graduate">Graduate</option>
+                <option value="Postgraduate">Postgraduate</option>
+                <option value="Other">Other</option>
+              </select>
+              {errors.currentGrade && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.currentGrade.message}
                 </p>
               )}
             </div>
@@ -345,6 +369,7 @@ useEffect(() => {
                 <option value="morning">Morning</option>
                 <option value="afternoon">Afternoon</option>
                 <option value="night college">Night college</option>
+                <option value="online">Online</option>
               </select>
               {errors.shift && (
                 <p className="text-red-500 text-xs mt-1">
@@ -375,33 +400,6 @@ useEffect(() => {
               {errors.collegeType && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.collegeType.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="preferredStandard"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Preferred Standard <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="preferredStandard"
-                {...register("preferredStandard", {
-                  required: "Standard is required",
-                })}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                defaultValue="primary"
-              >
-                <option value="playcollege">Play college</option>
-                <option value="pre-primary">Pre-Primary</option>
-                <option value="primary">Primary</option>
-                <option value="secondary">Secondary</option>
-              </select>
-              {errors.preferredStandard && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.preferredStandard.message}
                 </p>
               )}
             </div>

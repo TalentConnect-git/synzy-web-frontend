@@ -99,7 +99,7 @@ const ReviewSection_fixed = ({ collegeId }) => {
 
       const reviewData = {
         collegeId,
-        studentId: currentUser._id,
+        studentId: currentUser.authId || currentUser._id,
         studentName: currentUser.name || currentUser.username || 'Anonymous Student',
         studentEmail: currentUser.email || 'student@example.com',
         rating: newReview.rating,
@@ -113,7 +113,7 @@ const ReviewSection_fixed = ({ collegeId }) => {
       } else {
         // Submit new review
         await submitReview(reviewData);
-        toast.success('Review submitted successfully! It will be visible after admin approval.');
+        toast.success('Review submitted successfully!');
       }
       
       setNewReview({ rating: 0, comment: '' });
@@ -307,7 +307,7 @@ const ReviewSection_fixed = ({ collegeId }) => {
 
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  Your review will be visible after admin approval.
+                  Your review helps other students.
                 </p>
                 <button
                   type="submit"

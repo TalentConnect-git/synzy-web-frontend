@@ -6,14 +6,14 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { submitApplication, generateStudentPdf, getUserProfile, createStudentProfile } from '../api/userService';
 import { createApplication, checkApplicationExists, updateExistingApplication, submitFormTocollege, getApplicationById } from '../api/applicationService';
-import { getcollegeById } from '../api/adminService';
+import { getcollegeById, getAdmissionTimelineById, getCoursesByCollege } from '../api/adminService';
 import { FileText, User, Users, Home, BookOpen, PlusCircle, Trash2, Shield } from 'lucide-react';
 const initialFormState = {
     name: '', location: '', dob: '', age: '', gender: '', motherTongue: '',
     placeOfBirth: '', speciallyAbled: false, speciallyAbledType: '',
     nationality: '', religion: '', caste: '', subcaste: '', aadharNo: '',
     bloodGroup: '', allergicTo: '', interest: '',
-    standard: '',
+    currentGrade: '', stream: '',
     lastcollegeName: '', classCompleted: '', lastAcademicYear: '',
     reasonForLeaving: '', board: '',
     fatherName: '', fatherAge: '', fatherQualification: '', fatherProfession: '',
@@ -25,6 +25,7 @@ const initialFormState = {
     guardianQualification: '', guardianProfession: '', guardianEmail: '', guardianAadharNo: '',
     presentAddress: '', permanentAddress: '',
     homeLanguage: '', yearlyBudget: '',
+    coursePreference1: '', coursePreference2: '', coursePreference3: '',
 };
 
 const FormField = ({ label, name, type = 'text', value, onChange, required = false, options = null, checked }) => {
@@ -83,79 +84,29 @@ const FormField = ({ label, name, type = 'text', value, onChange, required = fal
     );
 };
 
-const CLASS_OPTIONS = [
-    'Nursery',
-    'LKG',
-    'UKG',
-    '1st Class',
-    '2nd Class',
-    '3rd Class',
-    '4th Class',
-    '5th Class',
-    '6th Class',
-    '7th Class',
-    '8th Class',
-    '9th Class',
-    '10th Class',
-    '11th Class',
-    '12th Class'
+const GRADE_OPTIONS = [
+    '10th Grade',
+    '11th Grade',
+    '12th Grade',
+    'Diploma',
+    'Undergraduate - 1st Year',
+    'Undergraduate - 2nd Year',
+    'Undergraduate - 3rd Year',
+    'Undergraduate - 4th Year',
+    'Graduate',
+    'Postgraduate',
+    'Other'
 ];
 
 const normalizeStandardForBackend = (val) => {
-    if (!val) return val;
-    const s = String(val).trim().toLowerCase();
-
-    if (s.includes('nursery')) return 'nursery';
-    if (s.includes('lkg')) return 'lkg';
-    if (s.includes('ukg')) return 'ukg';
-    if (s.includes('kg')) return 'kg';
-
-    if (s.includes('1st') || s === '1' || s === 'class 1') return '1';
-    if (s.includes('2nd') || s === '2' || s === 'class 2') return '2';
-    if (s.includes('3rd') || s === '3' || s === 'class 3') return '3';
-    if (s.includes('4th') || s === '4' || s === 'class 4') return '4';
-    if (s.includes('5th') || s === '5' || s === 'class 5') return '5';
-    if (s.includes('6th') || s === '6' || s === 'class 6') return '6';
-    if (s.includes('7th') || s === '7' || s === 'class 7') return '7';
-    if (s.includes('8th') || s === '8' || s === 'class 8') return '8';
-    if (s.includes('9th') || s === '9' || s === 'class 9') return '9';
-    if (s.includes('10th') || s === '10' || s === 'class 10') return '10';
-    if (s.includes('11th') || s === '11' || s === 'class 11') return '11';
-    if (s.includes('12th') || s === '12' || s === 'class 12') return '12';
-
-    if (s === 'grade 1 - 5' || s === 'grade 1-5' || s === '1-5') return '1';
-    if (s === 'grade 6 - 10' || s === 'grade 6-10' || s === '6-10') return '6';
-    if (s === 'grade 11 - 12' || s === 'grade 11-12' || s === '11-12') return '11';
-
     return val;
 };
 
+const mapGradeToLevel = (grade) => {
+    return grade;
+};
+
 const mapStandardForUI = (val) => {
-    if (!val) return '';
-    const s = String(val).trim().toLowerCase();
-
-    if (s === 'nursery') return 'Nursery';
-    if (s === 'lkg') return 'LKG';
-    if (s === 'ukg') return 'UKG';
-    if (s === 'kg' || s === 'kgs') return 'LKG';
-
-    if (s === '1' || s === '1st') return '1st Class';
-    if (s === '2' || s === '2nd') return '2nd Class';
-    if (s === '3' || s === '3rd') return '3rd Class';
-    if (s === '4' || s === '4th') return '4th Class';
-    if (s === '5' || s === '5th') return '5th Class';
-    if (s === '6' || s === '6th') return '6th Class';
-    if (s === '7' || s === '7th') return '7th Class';
-    if (s === '8' || s === '8th') return '8th Class';
-    if (s === '9' || s === '9th') return '9th Class';
-    if (s === '10' || s === '10th') return '10th Class';
-    if (s === '11' || s === '11th') return '11th Class';
-    if (s === '12' || s === '12th') return '12th Class';
-
-    if (s === 'grade 1 - 5' || s === 'grade 1-5' || s === '1-5') return '1st Class';
-    if (s === 'grade 6 - 10' || s === 'grade 6-10' || s === '6-10') return '6th Class';
-    if (s === 'grade 11 - 12' || s === 'grade 11-12' || s === '11-12') return '11th Class';
-
     return val;
 };
 
@@ -168,10 +119,24 @@ const StudentApplicationPage = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [submittedAppInfo, setSubmittedAppInfo] = useState(null);
     const [isUpdate, setIsUpdate] = useState(false);
     const [existingApplication, setExistingApplication] = useState(null);
     const [formData, setFormData] = useState(initialFormState);
     const [siblings, setSiblings] = useState([]);
+    const [timelineId, setTimelineId] = useState(null);
+    const [collegeCourses, setCollegeCourses] = useState([]);
+
+    const calculateAge = (dob) => {
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -197,46 +162,10 @@ const StudentApplicationPage = () => {
 
     const ensureStudentProfileExists = async () => {
         try {
-
-            console.log('🔍 Checking if student profile exists for:', currentUser.authId);
-
-            // Check if student profile exists
             const profileResponse = await getUserProfile(currentUser.authId);
             return profileResponse.data;
-            // console.log('📋 Profile response:', profileResponse);
-
-            // if (profileResponse.data) {
-            //     console.log('✅ Student profile exists:', profileResponse.data);
-            //     return true;
-            // }
-
-            // if (profileResponse.status === 'Not Found') {
-            //     console.log('❌ Student profile not found, creating one...');
-
-            //     // Create a basic student profile with required fields
-            //     const profileData = {
-            //         authId: currentUser.authId,
-            //         email: currentUser.email,
-            //         name: currentUser.name || 'Student User',
-            //         contactNo: currentUser.contactNo || currentUser.phone || '0000000000',
-            //         dateOfBirth: currentUser.dateOfBirth || new Date('2000-01-01').toISOString(),
-            //         gender: currentUser.gender || 'other',
-            //         state: currentUser.state || 'Unknown',
-            //         city: currentUser.city || 'Unknown',
-            //         userType: 'student'
-            //     };
-
-            //     console.log('📝 Creating profile with data:', profileData);
-            //     const createResponse = await createStudentProfile(profileData);
-            //     console.log('✅ Student profile created successfully:', createResponse);
-            //     return true;
-            // }
-
-            // console.log('❓ Unexpected profile response structure');
-            // return false;
         } catch (error) {
             console.error('❌ Error ensuring student profile exists:', error);
-            // If profile creation fails, we'll let the application submission handle the error
             return false;
         }
     };
@@ -244,39 +173,41 @@ const StudentApplicationPage = () => {
     const handleSubmit = async (e) => {
 
         e.preventDefault();
-        // Validate only the most essential required fields
-        const requiredFields = [
-            'name', 'location', 'dob', 'gender', 'motherTongue', 'nationality',
-            'religion', 'caste', 'aadharNo', 'bloodGroup', 'interest',
-            'fatherName', 'fatherAge', 'fatherQualification', 'fatherProfession',
-            'fatherAnnualIncome', 'fatherPhoneNo', 'fatherAadharNo', 'fatherEmail',
-            'motherName', 'motherAge', 'motherQualification', 'motherProfession',
-            'motherAnnualIncome', 'motherPhoneNo', 'motherAadharNo', 'motherEmail',
-            'relationshipStatus', 'presentAddress', 'permanentAddress', 'homeLanguage', 'yearlyBudget'
-        ];
-
-        // Check if any essential fields are missing
-        const essentialFields = ['name', 'gender', 'dob', 'standard', 'fatherName', 'motherName'];
+        if (isSubmitting) return;
+        const essentialFields = ['name', 'gender', 'dob', 'fatherName', 'motherName'];
         const missingEssential = essentialFields.filter(field =>
             !formData[field] || formData[field].toString().trim() === ''
         );
 
         if (missingEssential.length > 0) {
-            console.log('Missing essential fields:', missingEssential);
             toast.error(`Please fill in essential fields: ${missingEssential.join(', ')}`);
             return;
         }
 
-        // Log all form data for debugging
-        console.log('All form data:', formData);
-        console.log('Siblings data:', siblings);
+        if (!formData.currentGrade) {
+            toast.error('Please select your qualification level.');
+            return;
+        }
 
-        console.log('Starting submission process...');
+        const mappedLevel = mapGradeToLevel(formData.currentGrade);
+        if (!mappedLevel) {
+            toast.error('Invalid qualification level selected. Please choose a valid grade.');
+            return;
+        }
+
+        if (!formData.stream) {
+            toast.error('Please select your stream.');
+            return;
+        }
+
+        if (!formData.caste) {
+            toast.error('Please enter your category/caste.');
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
-
-            // Ensure student profile exists
             const profileExists = await ensureStudentProfileExists();
             if (!profileExists) {
                 toast.info('Please complete your profile before submitting an application');
@@ -286,24 +217,32 @@ const StudentApplicationPage = () => {
 
             const studentId = profileExists._id;
 
-            const normalizedStandard = normalizeStandardForBackend(formData.standard);
+            const normalizedGrade = normalizeStandardForBackend(formData.currentGrade);
+
+            const coursePreferences = [];
+            if (formData.coursePreference1) coursePreferences.push({ priority: 1, courseName: formData.coursePreference1 });
+            if (formData.coursePreference2) coursePreferences.push({ priority: 2, courseName: formData.coursePreference2 });
+            if (formData.coursePreference3) coursePreferences.push({ priority: 3, courseName: formData.coursePreference3 });
 
             const payload = {
                 ...formData,
-                standard: normalizedStandard,
+                currentGrade: normalizedGrade,
+                age: calculateAge(formData.dob),
                 siblings,
                 studId: studentId,
                 collegeId,
                 collegeName: college.name,
                 collegeEmail: college.email,
+                category: formData.caste,
+                latestQualification: {
+                    level: mappedLevel
+                },
+                academicDetails: {
+                    stream: formData.stream
+                },
+                coursePreferences: coursePreferences.length > 0 ? coursePreferences : undefined
             };
 
-            console.log('📋 StudentApplication payload before submission:', payload);
-            console.log('🎓 Submitted standard value:', payload.standard);
-
-            // ---------------------------------------------------
-            // 1️⃣ SUBMIT STUDENT APPLICATION (CREATE OR UPDATE)
-            // ---------------------------------------------------
             let result;
 
             if (isUpdate && existingApplication?._id) {
@@ -321,16 +260,9 @@ const StudentApplicationPage = () => {
                 return;
             }
 
-            // ---------------------------------------------------
-            // 2️⃣ GENERATE PDF AND THEN GET PDF ID
-            // ---------------------------------------------------
-            // console.log("📄 Generating PDF...");
-
             let pdfResponse;
             try {
                 pdfResponse = await generateStudentPdf(studentId, applicationId);
-                console.log("PDF response:", pdfResponse);
-
                 toast.success("PDF generated successfully!");
             } catch (pdfError) {
                 console.error("❌ PDF Generation Error:", pdfError);
@@ -338,44 +270,23 @@ const StudentApplicationPage = () => {
                 return;
             }
 
-            // Extract PDF ID (depends on your backend structure)
-            const pdfId =
-                pdfResponse?.data?.pdfId ||
-                pdfResponse?.pdfId ||
-                pdfResponse?.id ||
-                null;
-
-            // console.log("📄 PDF ID:", pdfId);
-
-            if (!pdfId) {
-                console.warn("⚠ PDF generated but no PDF ID returned.");
-            }
-
-            // ---------------------------------------------------
-            // 3️⃣ SUBMIT APPLICATION TO college (AFTER PDF SUCCESS)
-            // ---------------------------------------------------
-            // console.log("📤 Submitting application to college...");
+            const pdfId = pdfResponse?.data?.pdfId || pdfResponse?.pdfId || pdfResponse?.id || null;
 
             try {
-                const formSubmission = await submitFormTocollege(
+                await submitFormTocollege(
                     collegeId,
                     studentId,
                     pdfId,
                     applicationId,
+                    timelineId
                 );
-
-                if (formSubmission.alreadySubmitted) {
-                    toast.info("Application already submitted to this college!");
-                } else {
-                    toast.success("Application submitted to college successfully!");
-                }
+                toast.success("Application submitted to college successfully!");
             } catch (submitError) {
                 console.error("❌ college Submission Error:", submitError);
                 toast.error("Application saved and PDF created, but submission to college failed.");
                 return;
             }
 
-            // Emit event for college portal updates
             window.dispatchEvent(new CustomEvent("applicationAdded", {
                 detail: {
                     collegeId,
@@ -385,24 +296,30 @@ const StudentApplicationPage = () => {
                 }
             }));
 
+            setSubmittedAppInfo({ studentId, applicationId });
             setSubmitted(true);
-
-            // Redirect
-            setTimeout(() => {
-                navigate(`/apply/${collegeId}`);
-            }, 2000);
 
         } catch (error) {
             console.error("Submission Error:", error);
-
-            if (error.response?.data?.message === "Student not found") {
-                toast.error("Please complete your profile before submitting an application");
-                setTimeout(() => (window.location.href = "/create-profile"), 2000);
-                return;
+            
+            let errorMessage = "Please fill all required fields.";
+            
+            // Extract status from Axios error structure or directly from error object
+            const status = error?.response?.status || error?.status;
+            
+            if (status === 404) {
+                errorMessage = "Application submission service is unavailable. Please try again.";
+            } else if (status === 400) {
+                errorMessage = error?.response?.data?.message || error?.message || "Validation error from server.";
+            } else if (status === 401 || status === 403) {
+                errorMessage = "Authentication or authorization failure. Please log in again.";
+            } else if (status === 500) {
+                errorMessage = "Server error. Please try again later.";
+            } else if (error?.message) {
+                errorMessage = error.message;
             }
 
-            toast.error(`Submission failed: ${error.message || "Please fill all required fields."}`);
-
+            toast.error(`Submission failed: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -414,58 +331,47 @@ const StudentApplicationPage = () => {
     const nextStep = () => setStep(prev => prev + 1);
     const prevStep = () => setStep(prev => prev - 1);
 
-    // Allow all authenticated users to access student application forms
-    // college users can now submit applications to other colleges if needed
-    // useEffect(() => {
-    //     if (currentUser && currentUser.userType === 'college') {
-    //         toast.error('college accounts cannot submit student applications.');
-    //         navigate('/college-portal');
-    //     }
-    // }, [currentUser, navigate]);
-
-    // Fetch college details to get college name
     useEffect(() => {
         const fetchcollege = async () => {
             if (!collegeId) {
-                console.error('❌ StudentApplicationPage: No collegeId provided');
                 toast.error('No college ID provided');
                 navigate('/colleges');
                 return;
             }
 
-            // console.log('🏫 StudentApplicationPage: Valid collegeId provided:', collegeId);
-
             try {
                 setLoading(true);
-                // console.log('🏫 StudentApplicationPage: Starting college fetch for collegeId:', collegeId);
-                // console.log('🏫 StudentApplicationPage: Current loading state:', loading);
-
-                // Add timeout to prevent hanging
                 const response = await Promise.race([
                     getcollegeById(collegeId),
                     new Promise((_, reject) =>
                         setTimeout(() => reject(new Error('college details request timeout')), 10000)
                     )
                 ]);
-                // console.log('🏫 StudentApplicationPage: Raw API response:', response);
-
                 const collegeData = response?.data?.data || response?.data;
-                // console.log('✅ StudentApplicationPage: college details fetched:', collegeData);
-
-                if (!collegeData) {
-                    console.error('❌ StudentApplicationPage: No college data in response');
-                    throw new Error('No college data received');
-                }
-
+                if (!collegeData) throw new Error('No college data received');
                 setcollege(collegeData);
-                // console.log('✅ StudentApplicationPage: college state set successfully');
+                
+                try {
+                    const timelineRes = await getAdmissionTimelineById(collegeId);
+                    const timelineData = timelineRes?.data?.data || timelineRes?.data;
+                    if (timelineData && timelineData.timelines && timelineData.timelines.length > 0) {
+                        const active = timelineData.timelines.find(t => t.status === 'Ongoing') || timelineData.timelines[0];
+                        setTimelineId(active._id);
+                    }
+                } catch (tError) {
+                    console.error("Error fetching timeline:", tError);
+                }
+                try {
+                    const coursesRes = await getCoursesByCollege(collegeId);
+                    const fetchedCourses = coursesRes?.data?.data || coursesRes?.data || [];
+                    setCollegeCourses(fetchedCourses);
+                } catch (cError) {
+                    console.error("Error fetching courses:", cError);
+                }
             } catch (error) {
-                console.error('❌ StudentApplicationPage: Error fetching college details:', error);
-                console.error('❌ StudentApplicationPage: Error details:', error.response?.data || error.message);
                 toast.error('Could not load college details');
                 navigate('/colleges');
             } finally {
-                console.log('🏁 StudentApplicationPage: college fetching completed, setting loading to false');
                 setLoading(false);
             }
         };
@@ -473,71 +379,39 @@ const StudentApplicationPage = () => {
         fetchcollege();
     }, [collegeId, navigate]);
 
-    // Check for update mode and load existing application
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const appId = urlParams.get('appId');
 
         if (appId) {
-            // EDIT MODE: Load specific application
             setIsUpdate(true);
-            loadApplicationById(appId); // Make sure you added this function from the previous step
+            loadSpecificApplication(appId);
         } else {
-            // NEW MODE: Reset everything for a fresh start
             setIsUpdate(false);
             setExistingApplication(null);
-            setFormData(initialFormState); // <--- No error now!
+            setFormData(initialFormState);
             setSiblings([]);
         }
     }, [window.location.search]);
+
     const loadSpecificApplication = async (appId) => {
         try {
-            // Import this from api/applicationService.js
             const appData = await getApplicationById(appId);
             setExistingApplication(appData);
             setFormData(prev => ({
                 ...prev,
                 ...appData,
-                standard: mapStandardForUI(appData?.standard) || prev.standard
+                interest: appData?.interest || prev.interest,
+                currentGrade: mapStandardForUI(appData?.currentGrade) || prev.currentGrade,
+                stream: appData?.academicDetails?.stream || prev.stream,
+                caste: appData?.category || appData?.caste || prev.caste,
+                coursePreference1: appData?.coursePreferences?.find(cp => cp.priority === 1)?.courseName || prev.coursePreference1,
+                coursePreference2: appData?.coursePreferences?.find(cp => cp.priority === 2)?.courseName || prev.coursePreference2,
+                coursePreference3: appData?.coursePreferences?.find(cp => cp.priority === 3)?.courseName || prev.coursePreference3,
             }));
-            // ... handle siblings logic
+            if (appData.siblings) setSiblings(appData.siblings);
         } catch (error) {
             toast.error('Failed to load application details');
-        }
-    };
-
-    const loadExistingApplication = async () => {
-        try {
-            const response = await checkApplicationExists(currentUser._id);
-            if (response && response.data) {
-                setExistingApplication(response.data);
-                const appData = response.data;
-
-                // Pre-populate form with existing data, ensuring all fields are properly mapped
-                setFormData(prevData => ({
-                    ...prevData,
-                    ...appData,
-                    // Ensure specific fields are properly set even if they're undefined
-                    name: appData.name || prevData.name,
-                    location: appData.location || prevData.location,
-                    dob: appData.dob || prevData.dob,
-                    age: appData.age || prevData.age,
-                    gender: appData.gender || prevData.gender,
-                    motherTongue: appData.motherTongue || prevData.motherTongue,
-                    standard: mapStandardForUI(appData.standard) || prevData.standard
-                }));
-
-                // Handle siblings separately as it's an array
-                if (appData.siblings && Array.isArray(appData.siblings) && appData.siblings.length > 0) {
-                    setSiblings(appData.siblings);
-                }
-
-                console.log('✅ Existing application loaded successfully:', appData);
-                toast.info('Existing application loaded. You can update the information.');
-            }
-        } catch (error) {
-            console.error('❌ Error loading existing application:', error);
-            toast.error('Failed to load existing application');
         }
     };
 
@@ -568,14 +442,6 @@ const StudentApplicationPage = () => {
         );
     }
 
-    const handleGenerateAndOpenPdf = async () => {
-        try {
-            await generateStudentPdf(currentUser._id);
-        } catch (_) { }
-        // Use relative path so dev proxy/axios base routes to the correct backend
-        window.open(`/api/users/pdf/view/${currentUser._id}`, '_blank');
-    };
-
     return (
         <div className="bg-gray-100 min-h-screen py-12">
             <div className="container mx-auto max-w-4xl px-4">
@@ -593,10 +459,24 @@ const StudentApplicationPage = () => {
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => window.open(`/api/users/pdf/view/${currentUser._id}`, '_blank')}
+                                        onClick={() => window.open(`/api/users/pdf/view/${submittedAppInfo?.studentId}/${submittedAppInfo?.applicationId}`, '_blank')}
                                         className="px-4 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700"
                                     >
                                         View PDF
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const link = document.createElement('a');
+                                            link.href = `/api/users/pdf/download/${submittedAppInfo?.studentId}/${submittedAppInfo?.applicationId}`;
+                                            link.download = `Application-${submittedAppInfo?.applicationId}.pdf`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                        }}
+                                        className="px-4 py-2 font-semibold text-indigo-700 bg-indigo-100 rounded-md hover:bg-indigo-200"
+                                    >
+                                        Download PDF
                                     </button>
                                     <button
                                         type="button"
@@ -644,10 +524,21 @@ const StudentApplicationPage = () => {
                     {step === 2 && (
                         <section className="space-y-6">
                             <h2 className="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center">
-                                <BookOpen className="mr-2" />Academic Details
+                                <BookOpen className="mr-2" />Academic Details & Course Preferences
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Class/Grade Applying For" name="standard" type="select" options={CLASS_OPTIONS} value={formData.standard} onChange={handleInputChange} required />
+                            {collegeCourses && collegeCourses.length > 0 && (
+                                <div className="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                                    <h3 className="text-lg font-medium text-indigo-800 mb-4">Course Preferences for {college?.name}</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <FormField label="Preference 1" name="coursePreference1" type="select" options={collegeCourses.map(c => c.courseName)} value={formData.coursePreference1} onChange={handleInputChange} required />
+                                        <FormField label="Preference 2" name="coursePreference2" type="select" options={collegeCourses.map(c => c.courseName)} value={formData.coursePreference2} onChange={handleInputChange} />
+                                        <FormField label="Preference 3" name="coursePreference3" type="select" options={collegeCourses.map(c => c.courseName)} value={formData.coursePreference3} onChange={handleInputChange} />
+                                    </div>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                <FormField label="Current Grade / Qualification" name="currentGrade" type="select" options={college?.programLevels?.length > 0 ? college.programLevels : GRADE_OPTIONS} value={formData.currentGrade} onChange={handleInputChange} required />
+                                <FormField label="Stream" name="stream" type="select" options={college?.streamsOffered?.length > 0 ? college.streamsOffered : ['PCM', 'PCB', 'PCMB', 'Arts', 'Commerce', 'Other']} value={formData.stream} onChange={handleInputChange} required />
                                 <FormField label="Last college Name" name="lastcollegeName" value={formData.lastcollegeName} onChange={handleInputChange} />
                                 <FormField label="Class Completed" name="classCompleted" value={formData.classCompleted} onChange={handleInputChange} />
                                 <FormField label="Last Academic Year" name="lastAcademicYear" value={formData.lastAcademicYear} onChange={handleInputChange} />
@@ -783,10 +674,10 @@ const StudentApplicationPage = () => {
                         {step === 4 && (
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !timelineId}
                                 className="px-6 py-2 font-semibold text-white bg-green-600 rounded-md ml-auto disabled:bg-gray-400"
                             >
-                                {isSubmitting ? 'Submitting...' : (submitted ? 'Submitted' : 'Submit Application')}
+                                {isSubmitting ? 'Submitting...' : (!timelineId ? 'No active timeline' : (submitted ? 'Submitted' : 'Submit Application'))}
                             </button>
                         )}
                     </div>

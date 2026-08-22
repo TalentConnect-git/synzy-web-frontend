@@ -312,7 +312,7 @@ useEffect(() => {
           <Route
             path="/college/:id"
             element={
-              <collegeDetailsPage
+              <CollegeDetailsPage
                 shortlist={shortlist}
                 onShortlistToggle={handleShortlistToggle}
               />

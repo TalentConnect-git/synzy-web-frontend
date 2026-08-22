@@ -7,7 +7,7 @@ import {
   checkApplicationExists,
   updateExistingApplication
 } from '../api/applicationService';
-import { getcollegeById } from '../api/adminService';
+import { getcollegeById, getAdmissionTimelineById } from '../api/adminService';
 import { 
   Loader2, 
   CheckCircle, 
@@ -33,6 +33,7 @@ const ApplicationFlowHandler = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [timelineId, setTimelineId] = useState(null);
 
   // Fetch college details
   useEffect(() => {
@@ -52,6 +53,13 @@ const ApplicationFlowHandler = () => {
     try {
       const response = await getcollegeById(collegeId);
       setcollege(response.data.data);
+      
+      const timelineRes = await getAdmissionTimelineById(collegeId);
+      const timelineData = timelineRes?.data?.data || timelineRes?.data;
+      if (timelineData && timelineData.timelines && timelineData.timelines.length > 0) {
+        const active = timelineData.timelines.find(t => t.status === 'Ongoing') || timelineData.timelines[0];
+        setTimelineId(active._id);
+      }
     } catch (error) {
       console.error('Error fetching college details:', error);
       toast.error('Failed to fetch college details');
@@ -90,12 +98,17 @@ const ApplicationFlowHandler = () => {
       toast.error('Missing application data or college ID');
       return;
     }
+    
+    if (!timelineId) {
+      toast.error('No active admission timeline found for this college.');
+      return;
+    }
 
     setLoading(true);
     setError('');
     
     try {
-      const result = await handleApplicationFlow(currentUser._id, collegeId);
+      const result = await handleApplicationFlow(currentUser._id, collegeId, null, timelineId);
       
       if (result.success) {
         setFormSubmitted(true);

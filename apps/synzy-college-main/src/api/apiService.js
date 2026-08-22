@@ -32,7 +32,7 @@ let studentApplicationsData = [
 // Fetch PDF data (the actual student application file)
 export const fetchStudentPDF = async (studId,applicationId) => {
   try {
-    const res = await apiClient.get(`/api/users/pdf/view/${studId}/${applicationId}`, {
+    const res = await apiClient.get(`/users/pdf/view/${studId}/${applicationId}`, {
       responseType: 'arraybuffer', // Get binary PDF data
       headers: { 'X-Silent-Request': '1' }
     });
@@ -122,6 +122,7 @@ export const fetchStudentApplications = async (collegeId) => {
       // Fetch student application data using APPLICATION ID
 let studentName = '—';
 let studentClass = '—';
+let studentStream = '—';
 let application = null;
 
 // ✅ CORRECT application_id extraction
@@ -144,10 +145,11 @@ if (application_id) {
     application = appResponse?.data?.data || null;
 
     if (application) {
-      studentClass = application.standard || '—';
+      studentClass = application?.latestQualification?.level || application?.currentGrade || application?.standard || '—';
+      studentStream = application?.academicDetails?.stream || '—';
 
       console.log(
-        `✅ SUCCESS → Name: ${studentName}, Class: ${studentClass}`
+        `✅ SUCCESS → Name: ${studentName}, Class: ${studentClass}, Stream: ${studentStream}`
       );
     }
   } catch (error) {
@@ -164,6 +166,7 @@ return {
   formId: form?._id,
   studentName,                 // ✅ WORKS
   standard: studentClass,      // ✅ WORKS
+  stream: studentStream,
   date: form?.createdAt
     ? new Date(form.createdAt).toISOString().slice(0, 10)
     : '—',
@@ -172,6 +175,7 @@ return {
   studId: application?.studId || form?.applicationId?.studId || null,
   application_id,              // ✅ CORRECT application id
   applicationData: form,
+  fullApplication: application,
   pdfUrl: pdfData?.url,
   pdfBlob: pdfData?.blob,
   _raw: form,

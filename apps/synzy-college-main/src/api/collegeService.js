@@ -13,7 +13,7 @@ import apiClient from './axios';
  */
 export const getPubliccollegesByStatus = (status) => {
   const safeStatus = encodeURIComponent(status);
-  return apiClient.get(`/admin/colleges/status/${safeStatus}`);
+  return apiClient.get(`/colleges/status/${safeStatus}`);
 };
 
 /**
@@ -21,7 +21,7 @@ export const getPubliccollegesByStatus = (status) => {
  * Backend: GET /api/colleges/:id
  */
 export const getcollegeById = (collegeId) => {
-  return apiClient.get(`/admin/colleges/${encodeURIComponent(collegeId)}`);
+  return apiClient.get(`/colleges/${encodeURIComponent(collegeId)}`);
 };
 
 /**
@@ -40,7 +40,7 @@ export const searchcolleges = async (searchQuery, filters = {}) => {
   });
   
   try {
-    return await apiClient.get(`/admin/search?${params.toString()}`);
+    return await apiClient.get(`/colleges/search?${params.toString()}`);
   } catch (error) {
     // Handle 404 as "no results found" instead of error
     if (error.response?.status === 404) {
@@ -68,7 +68,7 @@ export const searchcolleges = async (searchQuery, filters = {}) => {
  * Backend: POST /api/colleges/compare
  */
 export const comparecolleges = (collegeIds) => {
-  return apiClient.post('/admin/compare', { collegeIds });
+  return apiClient.post('/colleges/compare', { collegeIds });
 };
 
 /**
@@ -79,7 +79,7 @@ export const getcollegesByFeeRange = (minFee, maxFee) => {
   const params = new URLSearchParams();
   if (minFee) params.append('min', minFee);
   if (maxFee) params.append('max', maxFee);
-  return apiClient.get(`/admin/filter-feeRange?${params.toString()}`);
+  return apiClient.get(`/colleges/filter-feeRange?${params.toString()}`);
 };
 
 /**
@@ -87,7 +87,7 @@ export const getcollegesByFeeRange = (minFee, maxFee) => {
  * Backend: GET /api/colleges/filter-Shift?shift=...
  */
 export const getcollegesByShift = (shift) => {
-  return apiClient.get(`/admin/filter-Shift?shift=${encodeURIComponent(shift)}`);
+  return apiClient.get(`/colleges/filter-Shift?shift=${encodeURIComponent(shift)}`);
 };
 
 /**
@@ -95,7 +95,7 @@ export const getcollegesByShift = (shift) => {
  * Backend: GET /api/colleges/card/:id
  */
 export const getCollegeCardData = (collegeId) => {
-  return apiClient.get(`/admin/card/${encodeURIComponent(collegeId)}`);
+  return apiClient.get(`/colleges/card/${encodeURIComponent(collegeId)}`);
 };
 
 /**
@@ -131,7 +131,7 @@ export const updateAlumniBycollege = (collegeId,data) => {
  * Backend: GET /api/colleges/other-details/:id
  */
 export const getOtherDetailsById = (collegeId) => {
-  return apiClient.get(`/admin/colleges/other-details/${encodeURIComponent(collegeId)}`);
+  return apiClient.get(`/colleges/other-details/${encodeURIComponent(collegeId)}`);
 };
 
 /**
@@ -150,7 +150,7 @@ export const getOtherDetailsById = (collegeId) => {
  * Backend: GET /api/colleges/technology-adoption/:id
  */
 export const getTechnologyAdoptionById = (collegeId) => {
-  return apiClient.get(`/admin/colleges/technology-adoption/${encodeURIComponent(collegeId)}`);
+  return apiClient.get(`/colleges/technology-adoption/${encodeURIComponent(collegeId)}`);
 };
 
 /**
@@ -158,7 +158,7 @@ export const getTechnologyAdoptionById = (collegeId) => {
  * Backend: GET /api/colleges/admission/:id
  */
 export const getAdmissionDetails = (collegeId) => {
-  return apiClient.get(`/admin/colleges/admission-timeline/${encodeURIComponent(collegeId)}`);
+  return apiClient.get(`/colleges/admission-timeline/${encodeURIComponent(collegeId)}`);
 };
 
 /**
@@ -166,7 +166,7 @@ export const getAdmissionDetails = (collegeId) => {
  * Backend: GET /api/colleges/:id/photos
  */
 export const getcollegePhotos = (collegeId) => {
-  return apiClient.get(`/admin/${encodeURIComponent(collegeId)}/photos`);
+  return apiClient.get(`/colleges/${encodeURIComponent(collegeId)}/photos`);
 };
 
 /**
@@ -174,7 +174,7 @@ export const getcollegePhotos = (collegeId) => {
  * Backend: GET /api/colleges/:id/videos
  */
 export const getcollegeVideos = (collegeId) => {
-  return apiClient.get(`/admin/${encodeURIComponent(collegeId)}/videos`);
+  return apiClient.get(`/colleges/${encodeURIComponent(collegeId)}/videos`);
 };
 
 /**
@@ -182,7 +182,7 @@ export const getcollegeVideos = (collegeId) => {
  * Backend: GET /api/colleges/:id/photo/:publicId
  */
 export const getcollegePhoto = (collegeId, publicId) => {
-  return apiClient.get(`/admin/${encodeURIComponent(collegeId)}/photo/${encodeURIComponent(publicId)}`);
+  return apiClient.get(`/colleges/${encodeURIComponent(collegeId)}/photo/${encodeURIComponent(publicId)}`);
 };
 
 /**
@@ -190,7 +190,7 @@ export const getcollegePhoto = (collegeId, publicId) => {
  * Backend: GET /api/colleges/:id/video/:publicId
  */
 export const getcollegeVideo = (collegeId, publicId) => {
-  return apiClient.get(`/admin/${encodeURIComponent(collegeId)}/video/${encodeURIComponent(publicId)}`);
+  return apiClient.get(`/colleges/${encodeURIComponent(collegeId)}/video/${encodeURIComponent(publicId)}`);
 };
 
 /**
@@ -198,7 +198,7 @@ export const getcollegeVideo = (collegeId, publicId) => {
  * Backend: POST /api/colleges/support (requires authentication)
  */
 export const addSupport = (supportData) => {
-  return apiClient.post('/admin/support', supportData);
+  return apiClient.post('/colleges/support', supportData);
 };
 
 /**
@@ -206,7 +206,7 @@ export const addSupport = (supportData) => {
  * Backend: GET /api/colleges/support/:studId
  */
 export const getSupportByStudent = (studentId) => {
-  return apiClient.get(`/admin/support/${encodeURIComponent(studentId)}`);
+  return apiClient.get(`/colleges/support/${encodeURIComponent(studentId)}`);
 };
 
 /**
@@ -214,7 +214,7 @@ export const getSupportByStudent = (studentId) => {
  * Backend: GET /api/colleges/support-id/:supportId
  */
 export const getSupportById = (supportId) => {
-  return apiClient.get(`/admin/support-id/${encodeURIComponent(supportId)}`);
+  return apiClient.get(`/colleges/support-id/${encodeURIComponent(supportId)}`);
 };
 
 /**
@@ -222,7 +222,7 @@ export const getSupportById = (supportId) => {
  * Backend: DELETE /api/colleges/support/:supportId (requires authentication)
  */
 export const deleteSupport = (supportId) => {
-  return apiClient.delete(`/admin/support/${encodeURIComponent(supportId)}`);
+  return apiClient.delete(`/colleges/support/${encodeURIComponent(supportId)}`);
 };
 
 /**
@@ -230,7 +230,7 @@ export const deleteSupport = (supportId) => {
  * Backend: POST /api/colleges/predict-colleges OR /api/colleges/predict
  */
 export const predictcolleges = (predictorData) => {
-  return apiClient.post('/admin/predict-colleges', predictorData);
+  return apiClient.post('/colleges/predict-colleges', predictorData);
 };
 
 /**
@@ -238,7 +238,7 @@ export const predictcolleges = (predictorData) => {
  * Backend: GET /api/colleges/blogs
  */
 export const getAllBlogs = () => {
-  return apiClient.get('/admin/blogs');
+  return apiClient.get('/colleges/blogs');
 };
 
 /**
@@ -246,7 +246,7 @@ export const getAllBlogs = () => {
  * Backend: GET /api/colleges/blogs/:id
  */
 export const getBlogById = (blogId) => {
-  return apiClient.get(`/admin/blogs/${encodeURIComponent(blogId)}`);
+  return apiClient.get(`/colleges/blogs/${encodeURIComponent(blogId)}`);
 };
 
 /**
@@ -254,7 +254,7 @@ export const getBlogById = (blogId) => {
  * Backend: POST /api/colleges/blogs
  */
 export const createBlog = (blogData) => {
-  return apiClient.post('/admin/blogs', blogData);
+  return apiClient.post('/colleges/blogs', blogData);
 };
 
 /**
@@ -262,7 +262,7 @@ export const createBlog = (blogData) => {
  * Backend: GET /api/colleges/admission-status/:studentId (requires authentication)
  */
 export const getAdmissionStatusByStudent = (studentId) => {
-  return apiClient.get(`/admin/admission-status/${encodeURIComponent(studentId)}`);
+  return apiClient.get(`/colleges/admission-status/${encodeURIComponent(studentId)}`);
 };
 
 /**
@@ -270,7 +270,7 @@ export const getAdmissionStatusByStudent = (studentId) => {
  * Backend: POST /api/colleges/admission-status (requires authentication)
  */
 export const addAdmissionStatus = (statusData) => {
-  return apiClient.post('/admin/admission-status', statusData);
+  return apiClient.post('/colleges/admission-status', statusData);
 };
 
 /**
@@ -278,7 +278,7 @@ export const addAdmissionStatus = (statusData) => {
  * Backend: PUT /api/colleges/admission-status/:studentId/:collegeId (requires authentication)
  */
 export const updateAdmissionStatus = (studentId, collegeId, statusData) => {
-  return apiClient.put(`/admin/admission-status/${encodeURIComponent(studentId)}/${encodeURIComponent(collegeId)}`, statusData);
+  return apiClient.put(`/colleges/admission-status/${encodeURIComponent(studentId)}/${encodeURIComponent(collegeId)}`, statusData);
 };
 
 /**
@@ -286,7 +286,7 @@ export const updateAdmissionStatus = (studentId, collegeId, statusData) => {
  * Backend: DELETE /api/colleges/admission-status/:studentId/:collegeId (requires authentication)
  */
 export const deleteAdmissionStatus = (studentId, collegeId) => {
-  return apiClient.delete(`/admin/admission-status/${encodeURIComponent(studentId)}/${encodeURIComponent(collegeId)}`);
+  return apiClient.delete(`/colleges/admission-status/${encodeURIComponent(studentId)}/${encodeURIComponent(collegeId)}`);
 };
 
 /**
@@ -294,7 +294,7 @@ export const deleteAdmissionStatus = (studentId, collegeId) => {
  * Backend: GET /api/colleges/filter/:studentId (requires authentication)
  */
 export const filtercollegesByPreferences = (studentId) => {
-  return apiClient.get(`/admin/filter/${encodeURIComponent(studentId)}`);
+  return apiClient.get(`/colleges/filter/${encodeURIComponent(studentId)}`);
 };
 
 /**
@@ -306,7 +306,7 @@ export const getNearbycolleges = (longitude, latitude, state) => {
   if (longitude) params.append('longitude', longitude);
   if (latitude) params.append('latitude', latitude);
   if (state) params.append('state', state);
-  return apiClient.get(`/admin/colleges/nearby?${params.toString()}`);
+  return apiClient.get(`/colleges/nearby?${params.toString()}`);
 };
 
 export default {

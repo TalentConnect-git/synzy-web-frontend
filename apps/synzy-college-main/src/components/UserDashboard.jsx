@@ -5,8 +5,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import CollegeCard from './CollegeCard';
 import UserProfileForm from './UserProfileForm';
-import { fetchPdfBlob } from '../utils/pdfHelper';
-
+import { fetchStudentPDF } from '../api/apiService';
 import {
   updateUserProfile,
   createStudentProfile,
@@ -18,7 +17,7 @@ import {
   getFormsByStudent
 } from '../api/userService';
 import { getcollegeById } from '../api/adminService';
-import { Download } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
 
 const UserDashboard = ({ shortlist, comparisonList, onCompareToggle, onShortlistToggle }) => {
   const navigate = useNavigate();
@@ -141,48 +140,9 @@ const UserDashboard = ({ shortlist, comparisonList, onCompareToggle, onShortlist
     loadForms();
   }, [currentUser]);
 
-  // Merge API forms with locally cached applications (no network)
+  // Disable synthetic localStorage merging to fix duplicates
   useEffect(() => {
-    try {
-      const userId = currentUser?._id;
-      const cached = [];
-      if (typeof localStorage !== 'undefined' && userId) {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith(`collegeInfo:${userId}:`)) {
-            const raw = localStorage.getItem(k);
-            try {
-              const parsed = JSON.parse(raw || '{}');
-              if (parsed && (parsed.collegeId || parsed.collegeName)) {
-                cached.push(parsed);
-              }
-            } catch (_) {}
-          }
-        }
-      }
-
-      const synthesizedFromCache = cached.map((c) => ({
-        _synthetic: true,
-        collegeName: c.collegeName,
-        collegeId: c.collegeId,
-        status: 'Submitted',
-        createdAt: c.createdAt || null,
-      }));
-
-      const merged = [...(forms || []), ...synthesizedFromCache];
-      const map = new Map();
-      merged.forEach((item, idx) => {
-        const strong = item?._id || item?.id;
-        const sId = typeof item?.collegeId === 'object' ? (item?.collegeId?._id || item?.collegeId?.id) : item?.collegeId;
-        const sName = item?.collegeName || item?.college?.name || '';
-        const when = item?.createdAt || item?.updatedAt || '';
-        const key = strong || `${sId || 'noid'}-${when || 'notime'}-${sName || 'noname'}-${idx}`;
-        map.set(String(key), item);
-      });
-      setDisplayForms(Array.from(map.values()));
-    } catch (e) {
-      setDisplayForms(forms || []);
-    }
+    setDisplayForms(forms || []);
   }, [forms, currentUser]);
 
   // Load college names for applications (only based on current display list)
@@ -503,27 +463,32 @@ const extractStudentId = (app, currentUser) => {
                           )}
    {/* View PDF */}
 {(() => {
-  const studId = currentUser?._id;
+  const studentId = extractStudentId(row, currentUser);
   const applicationId = extractApplicationId(row);
 
-  if (!studId || !applicationId) return null;
+  if (!studentId || !applicationId) return null;
 
-  const pdfUrl = `https://api.synzy.in/api/users/pdf/view/${studId}/${applicationId}`;
-
-  const handleOpenPdf = () => {
+  const handleOpenPdfClick = async () => {
+    const toastId = toast.loading("Opening PDF...");
     try {
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      const pdfData = await fetchStudentPDF(studentId, applicationId);
+      if (!pdfData || !pdfData.blob) {
+        throw new Error("Failed to get PDF blob");
+      }
+      toast.update(toastId, { render: "PDF ready!", type: "success", isLoading: false, autoClose: 2000 });
+      window.open(pdfData.url, "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error(err);
-      toast.error("Unable to open PDF");
+      toast.update(toastId, { render: "Unable to open PDF. Please try again.", type: "error", isLoading: false, autoClose: 3000 });
     }
   };
 
   return (
     <button
-      onClick={handleOpenPdf}
+      onClick={handleOpenPdfClick}
       className="inline-flex items-center bg-white text-gray-700 font-semibold px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 mr-2"
     >
+      <Eye size={16} className="mr-1.5" />
       View PDF
     </button>
   );
@@ -545,26 +510,39 @@ const extractStudentId = (app, currentUser) => {
     return null;
   }
 
-  const apiBaseURL = import.meta.env.DEV
-    ? ''
-    : import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
+  const handleDownloadPdfClick = async () => {
+    const toastId = toast.loading("Downloading PDF...");
+    try {
+      const pdfData = await fetchStudentPDF(studentId, applicationId);
+      if (!pdfData || !pdfData.blob) {
+        throw new Error("Failed to get PDF blob");
+      }
+      
+      // Use displayName if available, fallback to 'Details'
+      const safeDisplayName = displayName ? displayName.replace(/[^a-zA-Z0-9]/g, '_') : 'Details';
+      const link = document.createElement("a");
+      link.href = pdfData.url;
+      link.download = `College-${safeDisplayName}-Details.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(pdfData.url);
 
-  const downloadUrl = import.meta.env.DEV
-    ? `/api/users/pdf/download/${studentId}/${applicationId}`
-    : `${apiBaseURL}/users/pdf/download/${studentId}/${applicationId}`;
-
-  console.log('⬇️ Download PDF:', downloadUrl);
+      toast.update(toastId, { render: "PDF downloaded!", type: "success", isLoading: false, autoClose: 3000 });
+    } catch (err) {
+      console.error(err);
+      toast.update(toastId, { render: "Unable to download college PDF. Please try again.", type: "error", isLoading: false, autoClose: 3000 });
+    }
+  };
 
   return (
-    <a
-      href={downloadUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      onClick={handleDownloadPdfClick}
       className="inline-flex items-center bg-green-600 text-white font-semibold px-3 py-1.5 rounded-md hover:bg-green-700"
     >
       <Download size={16} className="mr-1.5" />
       Download PDF
-    </a>
+    </button>
   );
 })()}
 

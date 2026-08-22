@@ -9,7 +9,7 @@ import apiClient from './axios';
  */
 export const getcollegeReviews = async (collegeId) => {
   try {
-    const response = await apiClient.get(`/reviews/${collegeId}`);
+    const response = await apiClient.get(`/colleges/reviews/${collegeId}`);
     return response.data;
   } catch (error) {
     throw error;
@@ -34,7 +34,7 @@ export const submitReview = async (reviewData) => {
         studentId: reviewData.studentId
       }
     };
-    const response = await apiClient.post(`/reviews/`, backendData);
+    const response = await apiClient.post(`/colleges/reviews/add`, backendData);
     return response.data;
   } catch (error) {
     throw error;

@@ -45,13 +45,7 @@ const CreateProfilePage = () => {
                 userType: formData.userType,
                 email: user.email,          // User ka email context se jod diya
                 authId: user._id,           // User ki ID context se jod di
-                preferences: {              // Preferences ko ek alag object mein daal diya
-                    boards: formData.boards,
-                    preferredStandard: formData.preferredStandard,
-                    interests: formData.interests,
-                    collegeType: formData.collegeType,
-                    shift: formData.shift
-                }
+                preferences: formData.preferences || {}
             };
 
             console.log("Creating/Updating profile with payload:", payload);
@@ -74,34 +68,20 @@ const CreateProfilePage = () => {
             }
 
             // Save preferences against created student id
-            const studentId = response.data?._id || response.data?.data?._id;
+            const studentId = response.data?._id || response.data?.data?._id || response.data?.student?._id;
             if (studentId) {
-                // Ensure all required fields are provided with valid values
                 const preferencesData = {
                     studentId,
                     state: formData.state || 'Unknown',
                     city: formData.city || 'Unknown',
-                    boards: formData.boards || 'CBSE', // Default to CBSE if not provided
-                    preferredStandard: formData.preferredStandard || 'primary', // Default to primary
-                    interests: formData.interests || 'Focusing on Academics', // Default interest
-                    collegeType: formData.collegeType || 'private', // Default to private
-                    shift: formData.shift || 'morning' // Default to morning
+                    ...formData.preferences
                 };
                 
                 console.log('Saving preferences with data:', preferencesData);
                 await saveUserPreferences(studentId, preferencesData);
             }
 
-            // Enrich context with preferences so Dashboard pre-fills immediately
-            const fullProfile = { ...(response.data?.data || response.data), preferences: {
-                state: formData.state,
-                city: formData.city,
-                boards: formData.boards,
-                preferredStandard: formData.preferredStandard,
-                interests: formData.interests,
-                collegeType: formData.collegeType,
-                shift: formData.shift,
-            }};
+            const fullProfile = { ...(response.data?.student || response.data?.data || response.data), preferences: formData.preferences };
             updateUserContext(fullProfile);
             toast.success("Profile updated successfully! Welcome.");
             navigate('/dashboard');

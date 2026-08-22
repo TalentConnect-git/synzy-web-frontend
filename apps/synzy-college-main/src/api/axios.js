@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // Use dev proxy (Vite) in development; direct base URL in production builds
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
+// const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
 
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 console.log('🔧 Axios Base URL:', apiBaseURL);
 
 const apiClient = axios.create({
@@ -56,7 +57,7 @@ apiClient.interceptors.response.use(
     const url = error.config?.url || '';
     const status = error.response?.status;
     const isSearch404 = url.includes('/search') && status === 404;
-    const isApplicationCheck404 = url.includes('/applications/') && status === 404;
+    const isApplicationCheck404 = url.includes('/application/') && status === 404;
 
     // Suppress expected 404s for missing college sub-resources on profile view
     const iscollegeSubResource404 = status === 404 && (
