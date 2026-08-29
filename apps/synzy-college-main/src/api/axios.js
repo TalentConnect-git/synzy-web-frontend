@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // Use dev proxy (Vite) in development; direct base URL in production builds
-// const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
 
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+// const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 console.log('🔧 Axios Base URL:', apiBaseURL);
 
 const apiClient = axios.create({
