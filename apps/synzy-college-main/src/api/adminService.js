@@ -425,6 +425,10 @@ export const updateOtherDetails = (collegeId, data) =>
   apiClient.put(`/colleges/other-details/${collegeId}`, data);
 export const updateSafetyAndSecurity = (collegeId, data) =>
   apiClient.put(`/colleges/safety/${collegeId}`, data);
+export const updateAcademics = (collegeId, data) =>
+  apiClient.put(`/colleges/academics/${encodeURIComponent(collegeId)}`, data);
+export const updateTechnologyAdoption = (collegeId, data) =>
+  apiClient.put(`/colleges/technology-adoption/${encodeURIComponent(collegeId)}`, data);
 
 /**
  * ============================

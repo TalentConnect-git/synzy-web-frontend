@@ -40,7 +40,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const ApplicationCard = ({ application, onViewDetails }) => {
+const ApplicationCard = ({ application, onViewDetails, onShowInterviewDetails }) => {
   
   const formatDate = (dateString) => {
     if (!dateString) return 'Not available';
@@ -124,10 +124,32 @@ const ApplicationCard = ({ application, onViewDetails }) => {
                 const currentStatus = trackingData.status || 'Unknown';
                 const lastUpdated = trackingData.updatedAt || trackingData.createdAt;
                 
-                toast.success(`Status: ${currentStatus} at ${collegeName}`, {
-                  autoClose: 5000,
-                  hideProgressBar: false,
-                });
+                const details = trackingData.interviewNote || trackingData.note;
+                
+                const currentStatusLower = currentStatus.toLowerCase();
+                
+                if (currentStatusLower === 'interview' || currentStatusLower === 'writtenexam' || currentStatusLower.includes('written')) {
+                  toast.dismiss();
+                  toast.success(`${currentStatus} scheduled at ${collegeName}`);
+                  onShowInterviewDetails(trackingData);
+                } else {
+                  toast.dismiss();
+                  toast.success(
+                    <div>
+                      <div className="font-semibold">Status: {currentStatus}</div>
+                      <div className="text-sm">{collegeName}</div>
+                      {details && (
+                        <div className="mt-2 pt-2 border-t border-green-200 text-sm">
+                          <span className="font-semibold">Details:</span> {details}
+                        </div>
+                      )}
+                    </div>, 
+                    {
+                      autoClose: details ? 8000 : 5000,
+                      hideProgressBar: false,
+                    }
+                  );
+                }
                 
                 // Log detailed tracking info for debugging
                 console.log('📋 Detailed tracking info:', {
@@ -471,6 +493,7 @@ const StudentApplicationTrackingPage = () => {
                 key={application.formId || application._id || application.id || `app-${index}`}
                 application={application}
                 onViewDetails={handleViewDetails}
+                onShowInterviewDetails={showInterviewDetails}
               />
             ))}
           </div>

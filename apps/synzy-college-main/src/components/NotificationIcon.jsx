@@ -3,6 +3,7 @@ import { Bell, X, Check, CheckCheck, FileText } from 'lucide-react';
 import { getStudentNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../api/notificationService';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import InterviewNotificationModal from './InterviewNotificationModal';
 
 const NotificationIcon = () => {
   const navigate = useNavigate();
@@ -10,6 +11,8 @@ const NotificationIcon = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const dropdownRef = useRef(null);
   const { user: currentUser } = useAuth();
 
@@ -63,6 +66,16 @@ const NotificationIcon = () => {
         )
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
+
+      const statusLower = (notification.status || '').toLowerCase();
+      if (statusLower === 'interview' || statusLower === 'writtenexam' || statusLower.includes('written')) {
+        setSelectedNotification(notification);
+        setIsModalOpen(true);
+        setIsOpen(false);
+      } else {
+        setIsOpen(false);
+        navigate('/my-applications');
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -229,6 +242,20 @@ const NotificationIcon = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Render the interview notification modal */}
+      {selectedNotification && (
+        <InterviewNotificationModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedNotification(null);
+          }}
+          interviewData={selectedNotification.rawForm}
+          collegeName={selectedNotification.collegeName}
+          notificationType={selectedNotification.status}
+        />
       )}
     </div>
   );

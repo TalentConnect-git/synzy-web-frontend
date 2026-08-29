@@ -10,6 +10,7 @@ const PredictorPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     stream: '',
+    customStream: '',
     examType: '',
     examRank: ''
   });
@@ -136,7 +137,7 @@ const PredictorPage = () => {
 
     try {
       const payload = {
-        stream: formData.stream,
+        stream: formData.stream === 'Other' ? formData.customStream : formData.stream,
         examType: formData.examType,
         examRank: parseInt(formData.examRank)
       };
@@ -251,10 +252,14 @@ const PredictorPage = () => {
                   >
                     <option value="">Select Stream</option>
                     <option value="Engineering">Engineering</option>
-                    <option value="Medical">Medical</option>
-                    <option value="Commerce">Commerce</option>
+                    <option value="Management">Management</option>
                     <option value="Arts">Arts</option>
                     <option value="Science">Science</option>
+                    <option value="Law">Law</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Design">Design</option>
+                    <option value="Humanities">Humanities</option>
+                    <option value="Other">Other</option>
                   </select>
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,6 +269,19 @@ const PredictorPage = () => {
                 </div>
                 {errors.stream && (
                   <p className="text-red-500 text-sm mt-1">{errors.stream}</p>
+                )}
+                {formData.stream === 'Other' && (
+                  <div className="mt-3">
+                    <label className="block text-xs text-gray-500 mb-1">Specify Custom Stream</label>
+                    <input
+                      type="text"
+                      value={formData.customStream}
+                      onChange={(e) => handleInputChange('customStream', e.target.value)}
+                      placeholder="e.g. Aviation"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      required
+                    />
+                  </div>
                 )}
               </div>
 

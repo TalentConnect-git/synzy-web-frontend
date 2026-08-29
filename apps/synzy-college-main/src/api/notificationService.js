@@ -34,6 +34,10 @@ export const getStudentNotifications = async (studId) => {
           message = `Interview scheduled for ${collegeName}`;
           type = 'warning';
           break;
+        case 'writtenexam':
+          message = `Written Exam scheduled for ${collegeName}`;
+          type = 'warning';
+          break;
         case 'accepted':
           message = `Congratulations! You've been accepted to ${collegeName}`;
           type = 'success';
@@ -56,7 +60,8 @@ export const getStudentNotifications = async (studId) => {
         createdAt: new Date(createdAt),
         isRead: false, // For now, all notifications are unread
         formId: form._id,
-        collegeId: form.collegeId?._id || form.collegeId
+        collegeId: form.collegeId?._id || form.collegeId,
+        rawForm: form
       };
     });
 

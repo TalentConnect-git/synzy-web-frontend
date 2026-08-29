@@ -233,7 +233,9 @@ const AdmincollegeDetailsPageContent = () => {
           facultyRes,
           admissionRes,
           safetyRes,
-          internationalRes
+          internationalRes,
+          academicsRes,
+          alumniRes
         ] = await Promise.allSettled([
           getInfrastructureById(collegeId).catch(err => { console.error('Failed to load Infrastructure:', err); return { data: null }; }),
           getScholarshipsByCollege(collegeId).catch(err => { console.error('Failed to load Scholarships:', err); return { data: null }; }),
@@ -252,8 +254,23 @@ const AdmincollegeDetailsPageContent = () => {
         ]);
 
         const infrastructureData = infrastructureRes?.value?.data?.data || infrastructureRes?.value?.data || null;
-        const scholarshipsData = scholarshipsRes?.value?.data?.data || scholarshipsRes?.value?.data || [];
-        const courseFeesData = courseFeesRes?.value?.data?.data || courseFeesRes?.value?.data || [];
+        let scholarshipsData = scholarshipsRes?.value?.data?.data || scholarshipsRes?.value?.data || [];
+        if (!Array.isArray(scholarshipsData) && scholarshipsData.scholarships) {
+          scholarshipsData = scholarshipsData.scholarships;
+        }
+        
+        let courseFeesData = courseFeesRes?.value?.data?.data || courseFeesRes?.value?.data || [];
+        if (!Array.isArray(courseFeesData) && courseFeesData.classFees) {
+          courseFeesData = courseFeesData.classFees;
+        }
+        
+        // Ensure course fees have courseName attached properly if populated
+        if (Array.isArray(courseFeesData)) {
+          courseFeesData = courseFeesData.map(fee => ({
+            ...fee,
+            courseName: fee.courseId?.courseName || fee.courseName || 'Unknown Course'
+          }));
+        }
         const coursesData = coursesRes?.value?.data?.data || coursesRes?.value?.data || [];
         const examsData = examsRes?.value?.data?.data || examsRes?.value?.data || [];
         const placementsData = placementsRes?.value?.data?.data || placementsRes?.value?.data || [];
@@ -680,17 +697,21 @@ const AdmincollegeDetailsPageContent = () => {
           </h2>
           {Array.isArray(courses) && courses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {courses.map((course, i) => (
+              {courses.map((course, i) => {
+                const courseExams = exams.filter(e => e.courseId === course._id || e.courseId?._id === course._id || e.courseName === course.courseName);
+                const coursePlacements = placements.filter(p => p.courseId === course._id || p.courseId?._id === course._id || p.courseName === course.courseName);
+                const detailedFee = courseFees.find(f => f.courseId?._id === course._id || f.courseId === course._id || f.courseName === course.courseName || f.courseId?.courseName === course.courseName);
+                return (
                 <div key={i} className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{course.courseName}</h3>
                   <div className="space-y-2 mb-4">
                     <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Category:</span> {course.category || course.degree || 'N/A'}</p>
-                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Duration:</span> {course.duration}</p>
-                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Fees:</span> {course.fees ? `₹${course.fees}` : 'N/A'}</p>
+                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Duration:</span> {course.duration || detailedFee?.courseDuration || 'N/A'}</p>
+                    <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Fees:</span> {detailedFee ? `₹${(detailedFee.tuition || 0) + (detailedFee.activity || 0) + (detailedFee.transport || 0) + (detailedFee.hostel || 0) + (detailedFee.misc || 0)}` : course.fees ? `₹${course.fees}` : 'N/A'}</p>
                     <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Intake:</span> {course.intake || course.seatsAvailable || 'N/A'}</p>
                   </div>
                   {Array.isArray(course.specializations) && course.specializations.length > 0 && (
-                     <div>
+                     <div className="mb-4">
                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Specializations</p>
                        <div className="flex flex-wrap gap-1">
                          {course.specializations.map((spec, j) => (
@@ -699,8 +720,43 @@ const AdmincollegeDetailsPageContent = () => {
                        </div>
                      </div>
                   )}
+                  {courseExams.length > 0 && (
+                     <div className="mt-4 border-t pt-4">
+                       <p className="text-sm font-bold text-gray-800 mb-2">Exam Eligibility</p>
+                       <div className="space-y-2">
+                         {courseExams.map((exam, j) => (
+                           <div key={j} className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                             <p className="font-semibold text-orange-900 text-sm">{exam.examName || "Exam"}</p>
+                             {Array.isArray(exam.acceptedExams) && exam.acceptedExams.length > 0 && (
+                               <p className="text-xs text-orange-800 mt-1"><span className="font-semibold">Accepted:</span> {exam.acceptedExams.join(', ')}</p>
+                             )}
+                             {(exam.minMarks || exam.maxMarks) && (
+                               <p className="text-xs text-orange-800 mt-1"><span className="font-semibold">Cutoff:</span> {exam.minMarks || 0} - {exam.maxMarks || 100} ({exam.marksType || 'N/A'})</p>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                  )}
+                  {coursePlacements.length > 0 && (
+                     <div className="mt-4 border-t pt-4">
+                       <p className="text-sm font-bold text-gray-800 mb-2">Placement Details</p>
+                       <div className="space-y-2">
+                         {coursePlacements.flatMap(p => (p.placements && Array.isArray(p.placements)) ? p.placements : [p]).map((placement, j) => (
+                           <div key={j} className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                             {placement.year && <p className="font-semibold text-indigo-900 text-sm mb-1">{placement.year}</p>}
+                             <div className="grid grid-cols-2 gap-2 text-xs text-indigo-800">
+                               <p><span className="font-semibold">Highest:</span> {placement.maxPackage || placement.highestPackage || 'N/A'}</p>
+                               <p><span className="font-semibold">Average:</span> {placement.averagePackage || 'N/A'}</p>
+                               <p><span className="font-semibold">Placed:</span> {placement.placedStudents || 0}/{placement.totalStudents || 0}</p>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           ) : <p className="text-gray-500 italic">No courses added.</p>}
         </div>
@@ -742,16 +798,24 @@ const AdmincollegeDetailsPageContent = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Course Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">First Year Fee</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total Fee</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tuition</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Activity</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Transport</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Hostel</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Misc</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {courseFees.map((fee, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{fee.courseName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.firstYearFee ? fee.firstYearFee.toLocaleString() : 'N/A'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.totalFee ? fee.totalFee.toLocaleString() : 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.tuition ? fee.tuition.toLocaleString() : '0'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.activity ? fee.activity.toLocaleString() : '0'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.transport ? fee.transport.toLocaleString() : '0'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.hostel ? fee.hostel.toLocaleString() : '0'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{fee.misc ? fee.misc.toLocaleString() : '0'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">₹{((fee.tuition||0)+(fee.activity||0)+(fee.transport||0)+(fee.hostel||0)+(fee.misc||0)).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -769,56 +833,16 @@ const AdmincollegeDetailsPageContent = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {scholarships.map((scholarship, i) => (
                 <div key={i} className="bg-purple-50 border border-purple-100 p-5 rounded-xl">
-                  <h3 className="text-lg font-bold text-purple-900 mb-2">{scholarship.scholarshipName}</h3>
+                  <h3 className="text-lg font-bold text-purple-900 mb-2">{scholarship.name || scholarship.scholarshipName}</h3>
                   <div className="space-y-2">
-                     <p className="text-sm text-purple-800"><span className="font-semibold">Type:</span> {scholarship.scholarshipType || 'N/A'}</p>
-                     <p className="text-sm text-purple-800"><span className="font-semibold">Amount:</span> {scholarship.scholarshipAmount ? `₹${scholarship.scholarshipAmount}` : 'N/A'}</p>
-                     <p className="text-sm text-purple-800"><span className="font-semibold">Eligibility:</span> {scholarship.eligibilityCriteria || 'N/A'}</p>
+                     <p className="text-sm text-purple-800"><span className="font-semibold">Type:</span> {scholarship.type || scholarship.scholarshipType || 'N/A'}</p>
+                     <p className="text-sm text-purple-800"><span className="font-semibold">Amount:</span> {scholarship.amount || scholarship.scholarshipAmount ? `₹${(scholarship.amount || scholarship.scholarshipAmount).toLocaleString()}` : 'N/A'}</p>
+                     <p className="text-sm text-purple-800"><span className="font-semibold">Documents Required:</span> {Array.isArray(scholarship.documentsRequired) ? scholarship.documentsRequired.join(', ') : 'N/A'}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : <p className="text-gray-500 italic">No scholarship information available.</p>}
-        </div>
-
-        {/* Section: Placements */}
-        <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-            <Users className="mr-3 text-indigo-600" /> Placements
-          </h2>
-          {Array.isArray(placements) && placements.length > 0 ? (
-            <div className="space-y-6">
-              {placements.flatMap(p => p.placements ? p.placements.map(subP => ({ courseName: p.courseName, ...subP })) : [p]).map((placement, i) => (
-                <div key={i} className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{placement.courseName || "General Placement"}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div className="bg-indigo-50 p-4 rounded-lg text-center border border-indigo-100">
-                       <p className="text-xs font-bold text-indigo-500 uppercase">Highest Package</p>
-                       <p className="text-2xl font-black text-indigo-700 mt-1">{placement.maxPackage || placement.highestPackage || 'N/A'}</p>
-                    </div>
-                    <div className="bg-emerald-50 p-4 rounded-lg text-center border border-emerald-100">
-                       <p className="text-xs font-bold text-emerald-500 uppercase">Average Package</p>
-                       <p className="text-2xl font-black text-emerald-700 mt-1">{placement.minPackage || placement.averagePackage || 'N/A'}</p>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-lg text-center border border-blue-100">
-                       <p className="text-xs font-bold text-blue-500 uppercase">Placement Rate</p>
-                       <p className="text-2xl font-black text-blue-700 mt-1">{placement.totalStudents && placement.placedStudents ? `${Math.round((placement.placedStudents / placement.totalStudents) * 100)}%` : 'N/A'}</p>
-                    </div>
-                  </div>
-                  {Array.isArray((placement.companies || placement.topRecruiters)) && (placement.companies || placement.topRecruiters).length > 0 && (
-                     <div>
-                       <p className="text-sm font-bold text-gray-700 mb-2">Top Recruiters</p>
-                       <div className="flex flex-wrap gap-2">
-                         {(placement.companies || placement.topRecruiters).map((recruiter, j) => (
-                           <span key={j} className="bg-gray-100 text-gray-800 text-sm px-3 py-1 rounded-md font-medium border border-gray-200">{recruiter}</span>
-                         ))}
-                       </div>
-                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-gray-500 italic">No placement information available.</p>}
         </div>
 
         {/* Section: Faculty */}
@@ -859,10 +883,10 @@ const AdmincollegeDetailsPageContent = () => {
                    </div>
                    <div className="p-6 bg-white">
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <InfoBox icon={<Users size={16} />} label="Boys Hostel" value={hostel.boysHostel} />
-                        <InfoBox icon={<Users size={16} />} label="Girls Hostel" value={hostel.girlsHostel} />
-                        <InfoBox icon={<BookOpen size={16} />} label="Capacity" value={hostel.capacity} />
-                        <InfoBox icon={<Award size={16} />} label="Hostel Fee" value={hostel.hostelFee ? `₹${hostel.hostelFee.toLocaleString()}` : 'N/A'} />
+                        <InfoBox icon={<Users size={16} />} label="Boys Hostel" value={hostel.type === 'Boys' || hostel.type === 'Both' ? 'Yes' : (hostel.type ? 'No' : 'N/A')} />
+                        <InfoBox icon={<Users size={16} />} label="Girls Hostel" value={hostel.type === 'Girls' || hostel.type === 'Both' ? 'Yes' : (hostel.type ? 'No' : 'N/A')} />
+                        <InfoBox icon={<BookOpen size={16} />} label="Capacity" value={hostel.capacity || 'N/A'} />
+                        <InfoBox icon={<Award size={16} />} label="Hostel Fee" value={hostel.feePerYear ? `₹${hostel.feePerYear.toLocaleString()}` : 'N/A'} />
                      </div>
                      {Array.isArray(hostel.facilities) && hostel.facilities.length > 0 && (
                         <div>
@@ -882,27 +906,51 @@ const AdmincollegeDetailsPageContent = () => {
         </div>
 
         {/* Section: Admission Timeline */}
-        {admissionTimeline && (
+        {admissionTimeline && Array.isArray(admissionTimeline.timelines) && admissionTimeline.timelines.length > 0 && (
           <div className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-              <Calendar className="mr-3 text-sky-500" /> Admission Timeline
+              <Calendar className="mr-3 text-sky-500" /> Admission Timelines
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <InfoBox icon={<Calendar size={16} />} label="Application Start Date" value={admissionTimeline.applicationStartDate ? new Date(admissionTimeline.applicationStartDate).toLocaleDateString() : 'N/A'} />
-               <InfoBox icon={<Calendar size={16} />} label="Application End Date" value={admissionTimeline.applicationEndDate ? new Date(admissionTimeline.applicationEndDate).toLocaleDateString() : 'N/A'} />
-               <InfoBox icon={<Calendar size={16} />} label="Exam Date" value={admissionTimeline.examDate ? new Date(admissionTimeline.examDate).toLocaleDateString() : 'N/A'} />
-               <InfoBox icon={<BookOpen size={16} />} label="Eligibility Criteria" value={admissionTimeline.eligibilityCriteria} />
-            </div>
-            {Array.isArray(admissionTimeline.requiredDocuments) && admissionTimeline.requiredDocuments.length > 0 && (
-               <div className="mt-6">
-                  <h3 className="font-bold text-gray-700 mb-3">Required Documents</h3>
-                  <div className="flex flex-wrap gap-2">
-                     {admissionTimeline.requiredDocuments.map((doc, i) => (
-                        <span key={i} className="bg-sky-50 text-sky-700 px-3 py-1 rounded border border-sky-100 text-sm font-medium">{doc}</span>
-                     ))}
+            <div className="space-y-6">
+              {admissionTimeline.timelines.map((timeline, idx) => (
+                <div key={idx} className="bg-sky-50 rounded-lg p-5 border border-sky-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InfoBox 
+                      icon={<Calendar size={16} />} 
+                      label="Application Start Date" 
+                      value={timeline.admissionStartDate ? new Date(timeline.admissionStartDate).toLocaleDateString() : 'N/A'} 
+                    />
+                    <InfoBox 
+                      icon={<Calendar size={16} />} 
+                      label="Application End Date" 
+                      value={timeline.admissionEndDate ? new Date(timeline.admissionEndDate).toLocaleDateString() : 'N/A'} 
+                    />
+                    <InfoBox 
+                      icon={<BookOpen size={16} />} 
+                      label="Eligibility Criteria" 
+                      value={timeline.eligibility?.minQualification ? `${timeline.eligibility.minQualification} - ${timeline.eligibility.otherInfo || ''}` : 'N/A'} 
+                    />
+                    <InfoBox 
+                      icon={<Calendar size={16} />} 
+                      label="Application Fee" 
+                      value={timeline.applicationFee ? `₹${timeline.applicationFee}` : 'Free'} 
+                    />
                   </div>
-               </div>
-            )}
+                  {Array.isArray(timeline.documentsRequired) && timeline.documentsRequired.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="font-bold text-gray-700 mb-3 text-sm">Required Documents</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {timeline.documentsRequired.map((doc, i) => (
+                          <span key={i} className="bg-white text-sky-700 px-3 py-1 rounded border border-sky-200 text-sm font-medium">
+                            {doc}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

@@ -6,7 +6,8 @@ import { checkForInterviewNotifications } from '../services/interviewNotificatio
  * Hook to manage interview notifications for students
  */
 export const useInterviewNotifications = () => {
-  const { user: currentUser } = useAuth();
+  const auth = useAuth();
+  const currentUser = auth?.user ?? null;
   const [interviewNotification, setInterviewNotification] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
   const [lastChecked, setLastChecked] = useState(null);

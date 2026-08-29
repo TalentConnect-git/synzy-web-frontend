@@ -263,7 +263,7 @@ export const CollegePlacements = ({ placements }) => {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {placements.flatMap(p => p.placements ? p.placements.map(subP => ({ courseName: p.courseName, ...subP })) : [p]).map((placement, index) => (
+        {placements.flatMap(p => (p.placements && Array.isArray(p.placements)) ? p.placements.map(subP => ({ courseName: p.courseName, ...subP })) : (p.year ? [p] : [])).map((placement, index) => (
           <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
             <div className="flex justify-between items-start mb-4">
               <div>

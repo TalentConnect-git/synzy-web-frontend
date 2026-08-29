@@ -13,7 +13,7 @@ const initialFormState = {
     placeOfBirth: '', speciallyAbled: false, speciallyAbledType: '',
     nationality: '', religion: '', caste: '', subcaste: '', aadharNo: '',
     bloodGroup: '', allergicTo: '', interest: '',
-    currentGrade: '', stream: '',
+    currentGrade: '', stream: '', customStream: '',
     lastcollegeName: '', classCompleted: '', lastAcademicYear: '',
     reasonForLeaving: '', board: '',
     fatherName: '', fatherAge: '', fatherQualification: '', fatherProfession: '',
@@ -238,7 +238,7 @@ const StudentApplicationPage = () => {
                     level: mappedLevel
                 },
                 academicDetails: {
-                    stream: formData.stream
+                    stream: formData.stream === 'Other' ? formData.customStream : formData.stream
                 },
                 coursePreferences: coursePreferences.length > 0 ? coursePreferences : undefined
             };
@@ -402,8 +402,9 @@ const StudentApplicationPage = () => {
                 ...prev,
                 ...appData,
                 interest: appData?.interest || prev.interest,
-                currentGrade: mapStandardForUI(appData?.currentGrade) || prev.currentGrade,
+                currentGrade: appData?.currentGrade || appData?.academicDetails?.currentGrade || prev.currentGrade,
                 stream: appData?.academicDetails?.stream || prev.stream,
+                customStream: appData?.academicDetails?.stream && !['Engineering', 'Management', 'Arts', 'Science', 'Law', 'Medical', 'Design', 'Humanities'].includes(appData.academicDetails.stream) && !(college?.streamsOffered || []).includes(appData.academicDetails.stream) ? appData.academicDetails.stream : prev.customStream,
                 caste: appData?.category || appData?.caste || prev.caste,
                 coursePreference1: appData?.coursePreferences?.find(cp => cp.priority === 1)?.courseName || prev.coursePreference1,
                 coursePreference2: appData?.coursePreferences?.find(cp => cp.priority === 2)?.courseName || prev.coursePreference2,
@@ -538,7 +539,10 @@ const StudentApplicationPage = () => {
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                                 <FormField label="Current Grade / Qualification" name="currentGrade" type="select" options={college?.programLevels?.length > 0 ? college.programLevels : GRADE_OPTIONS} value={formData.currentGrade} onChange={handleInputChange} required />
-                                <FormField label="Stream" name="stream" type="select" options={college?.streamsOffered?.length > 0 ? college.streamsOffered : ['PCM', 'PCB', 'PCMB', 'Arts', 'Commerce', 'Other']} value={formData.stream} onChange={handleInputChange} required />
+                                <FormField label="Stream" name="stream" type="select" options={college?.streamsOffered?.length > 0 ? [...college.streamsOffered, 'Other'] : ['Engineering', 'Management', 'Arts', 'Science', 'Law', 'Medical', 'Design', 'Humanities', 'Other']} value={formData.stream} onChange={handleInputChange} required />
+                                {formData.stream === 'Other' && (
+                                    <FormField label="Specify Custom Stream" name="customStream" value={formData.customStream} onChange={handleInputChange} required />
+                                )}
                                 <FormField label="Last college Name" name="lastcollegeName" value={formData.lastcollegeName} onChange={handleInputChange} />
                                 <FormField label="Class Completed" name="classCompleted" value={formData.classCompleted} onChange={handleInputChange} />
                                 <FormField label="Last Academic Year" name="lastAcademicYear" value={formData.lastAcademicYear} onChange={handleInputChange} />
