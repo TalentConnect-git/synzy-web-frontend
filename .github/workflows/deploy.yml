@@ -1,0 +1,56 @@
+name: Deploy Synzy Web
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Ubuntu Server
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+
+          script: |
+            set -e
+
+            echo "🚀 Starting deployment..."
+
+            cd /root/synzy/synzy-web
+
+            echo "🔀 Switching to prod branch..."
+            git checkout prod
+
+            echo "📦 Stashing local server changes..."
+            git stash push -m "server-auto-stash-$(date +%Y%m%d-%H%M%S)" -- . ':(exclude).env*'
+
+            echo "📥 Pulling latest prod code..."
+            git pull origin prod
+
+            cd apps
+
+            echo "🏗️ Building synzy-college-main..."
+            cd synzy-college-main
+            npm i
+            npm run build
+            cd ..
+
+            echo "🏫 Building synzy-school-main..."
+            cd synzy-school-main
+            npm i
+            npm run build
+            cd ..
+
+            echo "🌐 Building synzy-main..."
+            cd synzy-main
+            npm i
+            npm run build
+            cd ..
+
+            echo "✅ Deployment completed successfully!"
