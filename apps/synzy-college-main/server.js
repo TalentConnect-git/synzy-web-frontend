@@ -7,6 +7,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Normalize double-slash URLs: redirect //foo → /foo
+// This prevents React Router links from ever generating //path in the address bar
+app.use((req, res, next) => {
+  if (req.path.startsWith('//') || /\/{2,}/.test(req.path)) {
+    const normalized = req.path.replace(/\/{2,}/g, '/');
+    return res.redirect(301, normalized + (req.search || ''));
+  }
+  next();
+});
+
 // Serve static files from the dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
