@@ -602,10 +602,18 @@ const RegistrationPage = () => {
     }
   };
 
+  const MAX_PHOTO_SIZE_MB = 5;
   const handlePhotoChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 5) {
       toast.error("Maximum 5 photos allowed");
+      e.target.value = "";
+      return;
+    }
+    const oversized = files.filter(f => f.size > MAX_PHOTO_SIZE_MB * 1024 * 1024);
+    if (oversized.length > 0) {
+      toast.error(`Each photo must be under ${MAX_PHOTO_SIZE_MB}MB. Please compress or resize: ${oversized.map(f => f.name).join(", ")}`);
+      e.target.value = "";
       return;
     }
     setSelectedPhotos(files);
@@ -1175,13 +1183,15 @@ const RegistrationPage = () => {
         });
       }
 
-      // Upload photos if selected
+      // Upload photos if selected — upload one at a time to avoid 413 payload limits
       if (selectedPhotos.length > 0) {
-        const photoFormData = new FormData();
-        selectedPhotos.forEach(photo => photoFormData.append('files', photo));
-        await apiClient.post(`/admin/${schoolId}/upload/photos`, photoFormData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        for (const photo of selectedPhotos) {
+          const photoFormData = new FormData();
+          photoFormData.append('files', photo);
+          await apiClient.post(`/admin/${schoolId}/upload/photos`, photoFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        }
       }
 
       // Upload video if selected
@@ -1230,7 +1240,14 @@ const RegistrationPage = () => {
       console.error('Error response:', error.response);
       console.error('Error data:', error.response?.data);
 
-      const errorMessage = error.response?.data?.message || error.message || (isEditMode ? "Update failed." : "Registration failed.");
+      // 413 = server rejected payload as too large; CORS blocks response so status may be undefined
+      const status = error.response?.status;
+      let errorMessage;
+      if (status === 413 || (error.message === 'Network Error' && !error.response)) {
+        errorMessage = "One or more files are too large. Please reduce photo/video size and try again.";
+      } else {
+        errorMessage = error.response?.data?.message || error.message || (isEditMode ? "Update failed." : "Registration failed.");
+      }
       toast.error(errorMessage);
 
       // Show detailed error in console for debugging
