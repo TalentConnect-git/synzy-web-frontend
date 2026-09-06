@@ -2336,7 +2336,7 @@ const RegistrationPage = () => {
                 minMarks: exam.minValue ? Number(exam.minValue) : 0,
                 maxMarks: exam.maxValue ? Number(exam.maxValue) : 100
               }));
-              
+
               try {
                 await addExamAPI({ courseId, exams: formattedExams });
                 console.log('✅ Exams saved for course:', courseId);
@@ -2397,20 +2397,20 @@ const RegistrationPage = () => {
               };
 
               if (timelinePayload.timelines.length === 0) {
-                 console.warn("Admission timelines skipped: No valid course matches found.");
+                console.warn("Admission timelines skipped: No valid course matches found.");
               } else {
 
-              try {
-                await updateAdmissionTimeline(collegeId, timelinePayload);
-                console.log('✅ Admission timelines saved');
-              } catch (error) {
-                if (error?.response?.status === 404) {
-                  await addAdmissionTimeline(timelinePayload);
-                } else {
-                  throw error;
+                try {
+                  await updateAdmissionTimeline(collegeId, timelinePayload);
+                  console.log('✅ Admission timelines saved');
+                } catch (error) {
+                  if (error?.response?.status === 404) {
+                    await addAdmissionTimeline(timelinePayload);
+                  } else {
+                    throw error;
+                  }
                 }
-              }
-            } // Close the newly added else block
+              } // Close the newly added else block
             } // Close if (validTimelines.length > 0)
           } // Close if (admissionSteps?.length > 0)
 
@@ -3889,8 +3889,8 @@ const RegistrationPage = () => {
                   scrollToSection(section.id);
                 }}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${activeSection === section.id
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 scale-125'
-                    : 'bg-gray-300'
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 scale-125'
+                  : 'bg-gray-300'
                   }`}
                 title={`Go to ${section.label}`}
               />
@@ -3923,20 +3923,20 @@ const RegistrationPage = () => {
                     scrollToSection(id);
                   }}
                   className={`flex items-center gap-3 whitespace-nowrap rounded-2xl px-6 py-4 text-sm font-medium border-2 ${activeSection === id
-                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
-                      : "bg-white/80 text-gray-700 border-gray-200 shadow-md"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-transparent shadow-lg shadow-indigo-500/25"
+                    : "bg-white/80 text-gray-700 border-gray-200 shadow-md"
                     }`}
                 >
                   <div className={`p-2 rounded-xl transition-all duration-300 ${activeSection === id
-                      ? "bg-white/20"
-                      : "bg-gray-100"
+                    ? "bg-white/20"
+                    : "bg-gray-100"
                     }`}>
                     {Icon ? <Icon size={20} className={activeSection === id ? "text-white" : "text-gray-600"} /> : null}
                   </div>
                   <span className="font-semibold">{label}</span>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${activeSection === id
-                      ? "bg-white/20 text-white"
-                      : "bg-gray-200 text-gray-600"
+                    ? "bg-white/20 text-white"
+                    : "bg-gray-200 text-gray-600"
                     }`}>
                     {index + 1}
                   </div>
@@ -4069,8 +4069,8 @@ const RegistrationPage = () => {
                     onClick={handleUseCurrentLocation}
                     disabled={isFetchingLocation}
                     className={`h-10 mt-7 rounded-md px-4 flex items-center justify-center gap-2 ${isFetchingLocation
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-indigo-600 text-white"
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-indigo-600 text-white"
                       }`}
                   >
                     {isFetchingLocation ? (
@@ -5666,8 +5666,8 @@ const RegistrationPage = () => {
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600">Status:</span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${formData.feesTransparency === 'full' ? 'bg-green-100 text-green-800' :
-                              formData.feesTransparency === 'partial' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
+                            formData.feesTransparency === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
                             }`}>
                             {formData.feesTransparency === 100 ? 'Fully Transparent' :
                               formData.feesTransparency === 50 ? 'Partial' : 'Low Transparency'}
@@ -5710,17 +5710,17 @@ const RegistrationPage = () => {
                           <tbody className="divide-y divide-gray-200">
                             {(formData.classFees || []).map((fee, index) => (
                               <tr key={index} className="">
-                              <td className="px-4 py-3">
-                                <input
-                                  type="text"
-                                  value={fee.courseId || ""}
-                                  onChange={(e) =>
-                                    handleFeeChange(index, "courseId", e.target.value)
-                                  }
-                                  placeholder="Enter Course Name"
-                                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                              </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="text"
+                                    value={fee.courseId || ""}
+                                    onChange={(e) =>
+                                      handleFeeChange(index, "courseId", e.target.value)
+                                    }
+                                    placeholder="Enter Course Name"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                  />
+                                </td>
                                 <td className="px-4 py-3">
                                   <input
                                     type="text"
@@ -6025,7 +6025,7 @@ const RegistrationPage = () => {
                         <div className="bg-white border rounded-lg p-4 text-center">
                           <div className="text-gray-500 text-sm">Transparency</div>
                           <div className={`text-lg font-semibold ${formData.feesTransparency === 'full' ? 'text-green-600' :
-                              formData.feesTransparency === 'partial' ? 'text-yellow-600' : 'text-red-600'
+                            formData.feesTransparency === 'partial' ? 'text-yellow-600' : 'text-red-600'
                             }`}>
                             {formData.feesTransparency === 'full' ? '🟢 Full' :
                               formData.feesTransparency === 'partial' ? '🟡 Partial' : '🔴 Low'}
