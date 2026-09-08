@@ -118,11 +118,9 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
         <div className="px-6 py-4 border-t">
           {currentUser ? (
             <>
-              {(currentUser.userType === 'student' || currentUser.userType === 'parent') && (
-                <div className="mb-4">
-                  <NotificationIcon />
-                </div>
-              )}
+              <div className="mb-4">
+                <NotificationIcon />
+              </div>
               <button onClick={() => { onLogout(); setMobileMenuOpen(false); }} className="w-full text-center text-gray-600 hover:text-blue-600 flex items-center justify-center">
                   <LogOut size={16} className="mr-1" /> Logout
               </button>

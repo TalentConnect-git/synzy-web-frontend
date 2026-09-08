@@ -226,10 +226,10 @@ const HomePage = ({ onCompareToggle, comparisonList, shortlist, onShortlistToggl
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
         <div className="container mx-auto px-6 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            {currentUser ? `Welcome back, ${currentUser.email?.split('@')[0] || 'User'}!` : 'Find Your Perfect College'}
+            {currentUser && (currentUser.userType === 'student' || currentUser.userType === 'parent') ? `Welcome back, ${currentUser.name || currentUser.email?.split('@')[0] || 'User'}!` : 'Find Your Perfect College'}
           </h1>
           <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            {currentUser 
+            {currentUser && (currentUser.userType === 'student' || currentUser.userType === 'parent')
               ? 'Discover colleges that match your preferences and educational goals'
               : 'Discover, compare, and apply to the best colleges tailored to your preferences'
             }

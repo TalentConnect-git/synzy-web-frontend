@@ -70,9 +70,8 @@ const PendingReviewsSection = () => {
       // Fetch college names for all reviews
       await fetchcollegeNames(currentReviews);
     } catch (error) {
-      console.error('Error fetching pending reviews:', error);
-      toast.error('Failed to load pending reviews');
-      // Set empty array on error to show the component
+      console.warn('Could not load pending reviews:', error);
+      // Set empty array on error so the component renders cleanly
       setPendingReviews([]);
     } finally {
       setLoading(false);

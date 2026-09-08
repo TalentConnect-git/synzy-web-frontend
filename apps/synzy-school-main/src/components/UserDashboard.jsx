@@ -503,19 +503,27 @@ const extractStudentId = (app, currentUser) => {
                           )}
    {/* View PDF */}
 {(() => {
-  const studId = currentUser?._id;
+  const studentId = extractStudentId(row, currentUser);
   const applicationId = extractApplicationId(row);
 
-  if (!studId || !applicationId) return null;
+  if (!studentId || !applicationId) return null;
 
-  const pdfUrl = `https://api.synzy.in/api/users/pdf/view/${studId}/${applicationId}`;
+  const apiBaseURL = import.meta.env.DEV
+    ? ''
+    : import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
 
-  const handleOpenPdf = () => {
+  const pdfUrl = import.meta.env.DEV
+    ? `/api/users/pdf/view/${studentId}/${applicationId}`
+    : `${apiBaseURL}/users/pdf/view/${studentId}/${applicationId}`;
+
+  const handleOpenPdf = async () => {
     try {
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      const blob = await fetchPdfBlob(pdfUrl);
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      console.error(err);
-      toast.error("Unable to open PDF");
+      console.error('View PDF error:', err);
+      toast.error('Unable to open PDF. Please try again.');
     }
   };
 

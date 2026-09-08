@@ -54,9 +54,8 @@ const AdminDashboardPage = () => {
           activeUsers: totalUsers  // Using total users as active users (adjust if you have different logic)
         });
       } catch (error) {
-        console.error('Failed to load admin stats:', error);
-        toast.error('Failed to load dashboard data');
-        // Set to 0 if API fails
+        console.warn('Could not load admin stats:', error);
+        // Keep stats at 0 if API is unavailable
         setStats({
           totalUsers: 0,
           totalcolleges: 0,

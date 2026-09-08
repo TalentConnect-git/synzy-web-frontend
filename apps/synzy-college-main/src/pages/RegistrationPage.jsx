@@ -1617,8 +1617,13 @@ const RegistrationPage = () => {
             await addFn(payload);
           }
         } catch (error) {
-          // If update fails with 404, the resource doesn't exist yet, so add it instead
-          if (error.response?.status === 404 && isEditMode) {
+          // If update fails with 404 or a "not found" message, the resource doesn't exist yet, so add it instead
+          const errorMessage = error.response?.data?.message?.toLowerCase() || "";
+          const isNotFound = error.response?.status === 404 || 
+                             errorMessage.includes('not found') || 
+                             errorMessage.includes('no alumni data found');
+
+          if (isNotFound && isEditMode) {
             console.log('⚠️ Resource not found, creating new one instead of updating');
             await addFn(payload);
           } else {
