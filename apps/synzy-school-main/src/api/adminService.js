@@ -130,7 +130,7 @@ export const addInternationalExposure = (data) =>
  */
 
 export const getSchoolById = (schoolId, config) =>
-  apiClient.get(`/admin/schools/auth/${encodeURIComponent(schoolId)}`, config);
+  apiClient.get(`/admin/schools/${encodeURIComponent(schoolId)}`, config);
 export const getSchoolById1 = (schoolId, config) =>
   apiClient.get(`/admin/schools/${encodeURIComponent(schoolId)}`, config);
 
@@ -302,7 +302,7 @@ export const getSchoolByAuthId = async (authId) => {
 export const checkSchoolProfileExists = async (authId) => {
   if (!authId) return { data: null };
   try {
-    const res = await getSchoolById(authId, { headers: { 'X-Silent-Request': '1' } });
+    const res = await getSchoolByAuthId(authId);
     return res;
   } catch (error) {
     const status = error?.response?.status;

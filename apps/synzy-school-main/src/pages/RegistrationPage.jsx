@@ -695,8 +695,13 @@ const RegistrationPage = () => {
         await addFn(payload);
       }
     } catch (error) {
-      // If update fails with 404, the resource doesn't exist yet, so add it instead
-      if (error.response?.status === 404 && isEditMode) {
+      // If update fails with 404 or a "not found" message, the resource doesn't exist yet, so add it instead
+      const errorMessage = error.response?.data?.message?.toLowerCase() || "";
+      const isNotFound = error.response?.status === 404 || 
+                         errorMessage.includes('not found') || 
+                         errorMessage.includes('no alumni data found');
+
+      if (isNotFound && isEditMode) {
         console.log('⚠️ Resource not found, creating new one instead of updating');
         await addFn(payload);
       } else {
@@ -887,22 +892,23 @@ const RegistrationPage = () => {
       // Add alumni if any (skip for now as there's no alumni UI)
       // TODO: Uncomment when alumni UI is added
 
-      if (famousAlumnies.length > 0 || topAlumnies.length > 0 || otherAlumnies.length > 0) {
+      const cleanFamous = famousAlumnies.filter(a => a.name && a.profession);
+      const cleanTop = topAlumnies.filter(a => a.name && a.percentage);
+      const cleanOther = otherAlumnies.filter(a => a.name && a.percentage);
 
-        const alumniPayload = {
-          schoolId,
-          famousAlumnies: famousAlumnies,
-          // ⚠️ KEY FIX: Map frontend 'topAlumnies' -> backend 'topAlumnis'
-          topAlumnis: topAlumnies,
-          // ⚠️ KEY FIX: Map frontend 'otherAlumnies' -> backend 'alumnis'
-          alumnis: otherAlumnies
-        };
+      const alumniPayload = {
+        schoolId,
+        famousAlumnies: cleanFamous,
+        // ⚠️ KEY FIX: Map frontend 'topAlumnies' -> backend 'topAlumnis'
+        topAlumnis: cleanTop,
+        // ⚠️ KEY FIX: Map frontend 'otherAlumnies' -> backend 'alumnis'
+        alumnis: cleanOther
+      };
 
-        // Use updateOrAdd to Handle PUT (Update) or POST (Create)
-        promises.push(
-          updateOrAdd(updateAlumniBySchool, addAlumni, schoolId, alumniPayload)
-        );
-      }
+      // Use updateOrAdd to Handle PUT (Update) or POST (Create)
+      promises.push(
+        updateOrAdd(updateAlumniBySchool, addAlumni, schoolId, alumniPayload)
+      );
 
 
       // Add/Update infrastructure
@@ -1500,7 +1506,7 @@ const RegistrationPage = () => {
         try {
           console.log('🔍 Fetching directly via Auth ID:', currentUser._id);
           // This calls the API: GET /schools/auth/:authId
-          const res = await getSchoolById(currentUser._id);
+          const res = await getSchoolByAuthId(currentUser._id);
 
           const foundData = res?.data?.data || res?.data;
 
@@ -1654,6 +1660,11 @@ const RegistrationPage = () => {
       const alumniData = (alumniRes.status === 'fulfilled' && alumniRes.value?.data?.data)
         ? alumniRes.value.data.data
         : {};
+
+      setFamousAlumnies(Array.isArray(alumniData.famousAlumnies) ? alumniData.famousAlumnies : []);
+      setTopAlumnies(Array.isArray(alumniData.topAlumnis) ? alumniData.topAlumnis : []);
+      setOtherAlumnies(Array.isArray(alumniData.alumnis) ? alumniData.alumnis : []);
+
       // Prefill arrays/booleans safely (preserve 0/false values)
       setFormData(prev => ({
         ...prev,
@@ -2019,7 +2030,8 @@ const RegistrationPage = () => {
         techRes,
         intlRes,
         facultyRes,
-        timelineRes
+        timelineRes,
+        alumniRes
       ] = await Promise.allSettled([
         getAmenitiesById(school._id),
         getActivitiesById(school._id),
@@ -2031,7 +2043,8 @@ const RegistrationPage = () => {
         getTechnologyAdoptionById(school._id),
         getInternationalExposureById(school._id),
         getFacultyById(school._id),
-        getAdmissionTimelineById(school._id)
+        getAdmissionTimelineById(school._id),
+        getAlumniBySchool(school._id)
       ]);
 
       const val = (s) => (s && s.status === 'fulfilled') ? (s.value?.data?.data ?? s.value?.data) : null;
@@ -2046,6 +2059,7 @@ const RegistrationPage = () => {
       const intl = val(intlRes) || {};
       const faculty = val(facultyRes) || {};
       const timeline = val(timelineRes) || {};
+      const alumniData = val(alumniRes) || {};
 
       // Prefill arrays/booleans safely
       setFormData(prev => ({

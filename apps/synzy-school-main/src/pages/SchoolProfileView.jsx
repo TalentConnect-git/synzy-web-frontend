@@ -562,7 +562,7 @@ const SchoolProfileView = () => {
 
       <Section title="Alumni">
         <div className="divide-y">
-          {alumni && (alumni.famousAlumnies?.length > 0 || alumni.topAlumnies?.length > 0 || alumni.otherAlumnies?.length > 0) ? (
+          {alumni && (alumni.famousAlumnies?.length > 0 || alumni.topAlumnis?.length > 0 || alumni.alumnis?.length > 0) ? (
             <>
               {alumni.famousAlumnies && alumni.famousAlumnies.length > 0 && (
                 <div className="py-3">
@@ -577,11 +577,11 @@ const SchoolProfileView = () => {
                   </div>
                 </div>
               )}
-              {alumni.topAlumnies && alumni.topAlumnies.length > 0 && (
+              {alumni.topAlumnis && alumni.topAlumnis.length > 0 && (
                 <div className="py-3">
                   <div className="font-semibold text-gray-700 mb-2">Top Performers</div>
                   <div className="space-y-2">
-                    {alumni.topAlumnies.map((alumniItem, idx) => (
+                    {alumni.topAlumnis.map((alumniItem, idx) => (
                       <div key={idx} className="text-sm">
                         <span className="font-medium">{alumniItem.name}</span>
                         {alumniItem.percentage && <span className="text-gray-600"> - {alumniItem.percentage}%</span>}
@@ -590,11 +590,11 @@ const SchoolProfileView = () => {
                   </div>
                 </div>
               )}
-              {alumni.otherAlumnies && alumni.otherAlumnies.length > 0 && (
+              {alumni.alumnis && alumni.alumnis.length > 0 && (
                 <div className="py-3">
                   <div className="font-semibold text-gray-700 mb-2">Other Alumni</div>
                   <div className="space-y-2">
-                    {alumni.otherAlumnies.map((alumniItem, idx) => (
+                    {alumni.alumnis.map((alumniItem, idx) => (
                       <div key={idx} className="text-sm">
                         <span className="font-medium">{alumniItem.name}</span>
                         {alumniItem.percentage && <span className="text-gray-600"> - {alumniItem.percentage}%</span>}

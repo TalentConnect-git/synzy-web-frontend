@@ -62,6 +62,8 @@ const AdminLoginPage = () => {
         localStorage.removeItem("adminRedirectPath");
       }
       
+      toast.success('Welcome back! Logged in successfully.');
+      
       // Always navigate to admin dashboard to avoid accessing restricted areas
       navigate("/admin/dashboard");
 

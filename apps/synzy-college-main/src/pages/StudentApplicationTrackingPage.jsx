@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getStudentForms, trackForm } from '../api/applicationService';
 import { getFormsByStudent, getUserProfile, generateStudentPdf } from '../api/userService';
@@ -41,7 +42,8 @@ const StatusBadge = ({ status }) => {
 };
 
 const ApplicationCard = ({ application, onViewDetails, onShowInterviewDetails }) => {
-  
+  const navigate = useNavigate();
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Not available';
     
@@ -57,17 +59,33 @@ const ApplicationCard = ({ application, onViewDetails, onShowInterviewDetails })
     });
   };
 
+  // Resolve college ID from the application data (may be an object or a string)
+  const collegeIdStr =
+    typeof application.collegeId === 'object'
+      ? application.collegeId?._id
+      : application.collegeId || null;
+
+  const collegeName =
+    application.collegeId?.name || application.collegeName || 'Unknown college';
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-blue-100 rounded-lg">
-            <college className="w-5 h-5 text-blue-600" />
+            <FileText className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {application.collegeId?.name || application.collegeName || 'Unknown college'}
-            </h3>
+            {collegeIdStr ? (
+              <button
+                onClick={() => navigate(`/college/${collegeIdStr}`)}
+                className="text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left transition-colors"
+              >
+                {collegeName}
+              </button>
+            ) : (
+              <h3 className="text-lg font-semibold text-gray-900">{collegeName}</h3>
+            )}
             <p className="text-sm text-gray-600">
               college Application
             </p>
@@ -79,12 +97,12 @@ const ApplicationCard = ({ application, onViewDetails, onShowInterviewDetails })
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="flex items-center text-sm text-gray-600">
           <CalendarIcon className="w-4 h-4 mr-2" />
-          <span>Submitted: {formatDate(application.submittedDate)}</span>
+          <span>Submitted: {formatDate(application.createdAt || application.submittedDate)}</span>
         </div>
-        {application.lastUpdated && (
+        {(application.updatedAt || application.lastUpdated) && (
           <div className="flex items-center text-sm text-gray-600">
             <Clock className="w-4 h-4 mr-2" />
-            <span>Updated: {formatDate(application.lastUpdated)}</span>
+            <span>Updated: {formatDate(application.updatedAt || application.lastUpdated)}</span>
           </div>
         )}
       </div>

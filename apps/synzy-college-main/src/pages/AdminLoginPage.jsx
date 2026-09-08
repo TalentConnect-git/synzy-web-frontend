@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Shield } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const adminLoginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -55,6 +56,8 @@ const AdminLoginPage = () => {
       } else {
         localStorage.removeItem("admin-rememberMe");
       }
+
+      toast.success('Welcome back! Logged in successfully.');
 
       // Clear any admin redirect path and always navigate to admin dashboard
       const redirectPath = localStorage.getItem("adminRedirectPath");

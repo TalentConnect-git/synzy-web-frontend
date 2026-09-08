@@ -1,6 +1,6 @@
 // src/utils/pdfHelper.js
 export const fetchPdfBlob = async (url) => {
-  const token = localStorage.getItem("token"); // adjust key if needed
+  const token = localStorage.getItem("authToken"); // matches what AuthContext stores
 
   const res = await fetch(url, {
     method: "GET",
@@ -10,7 +10,8 @@ export const fetchPdfBlob = async (url) => {
   });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch PDF");
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to fetch PDF (${res.status}): ${text}`);
   }
 
   return await res.blob();

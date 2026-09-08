@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getStudentForms, trackForm } from '../api/applicationService';
 import { getFormsByStudent, getUserProfile, generateStudentPdf } from '../api/userService';
@@ -65,9 +66,18 @@ const ApplicationCard = ({ application, onViewDetails }) => {
             <School className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {application.schoolId?.name || application.schoolName || 'Unknown School'}
-            </h3>
+            {application.schoolId?._id ? (
+              <Link
+                to={`/school/${application.schoolId._id}`}
+                className="text-lg font-semibold text-gray-900 hover:text-blue-600 hover:underline transition-colors"
+              >
+                {application.schoolId?.name || application.schoolName || 'Unknown School'}
+              </Link>
+            ) : (
+              <h3 className="text-lg font-semibold text-gray-900">
+                {application.schoolId?.name || application.schoolName || 'Unknown School'}
+              </h3>
+            )}
             <p className="text-sm text-gray-600">
               School Application
             </p>
@@ -79,12 +89,12 @@ const ApplicationCard = ({ application, onViewDetails }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="flex items-center text-sm text-gray-600">
           <CalendarIcon className="w-4 h-4 mr-2" />
-          <span>Submitted: {formatDate(application.submittedDate)}</span>
+          <span>Submitted: {formatDate(application.createdAt || application.submittedDate)}</span>
         </div>
-        {application.lastUpdated && (
+        {(application.updatedAt || application.lastUpdated) && (
           <div className="flex items-center text-sm text-gray-600">
             <Clock className="w-4 h-4 mr-2" />
-            <span>Updated: {formatDate(application.lastUpdated)}</span>
+            <span>Updated: {formatDate(application.updatedAt || application.lastUpdated)}</span>
           </div>
         )}
       </div>
