@@ -24,6 +24,9 @@ jobs:
 
             cd /root/synzy/synzy-web
 
+            echo "Fetching origin branches..."
+            git fetch origin
+
             echo "🔀 Switching to prod branch..."
             git checkout prod
 
@@ -37,18 +40,21 @@ jobs:
 
             echo "🏗️ Building synzy-college-main..."
             cd synzy-college-main
+            rm -rf dist
             npm i
             npm run build
             cd ..
 
             echo "🏫 Building synzy-school-main..."
             cd synzy-school-main
+            rm -rf dist
             npm i
             npm run build
             cd ..
 
             echo "🌐 Building synzy-main..."
             cd synzy-main
+            rm -rf dist
             npm i
             npm run build
             cd ..
