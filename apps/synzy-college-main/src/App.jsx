@@ -300,9 +300,18 @@ useEffect(() => {
             }
           />
           <Route path="/search" element={<AdvancedSearchPage />} />
-          <Route path="/search-colleges" element={<SearchPage />} />
-          <Route path="/predictor" element={<PredictorPage />} />
-          <Route path="/chatbot" element={<ChatbotPage />} />
+          <Route 
+            path="/predictor" 
+            element={
+              <PredictorPage 
+                onCompareToggle={handleCompareToggle}
+                comparisonList={comparisonList}
+                shortlist={shortlist}
+                onShortlistToggle={handleShortlistToggle}
+                currentUser={currentUser}
+              />
+            } 
+          />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:id" element={<BlogDetailsPage />} />
           <Route path="/application-status" element={<ApplicationStatusPage />} />

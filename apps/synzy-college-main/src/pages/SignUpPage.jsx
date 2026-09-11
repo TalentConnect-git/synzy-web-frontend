@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"; // Added ArrowLeft here
+import { Eye, EyeOff, ArrowLeft } from "lucide-react"; 
 import { toast } from "react-toastify";
 import { GoogleLogin } from '@react-oauth/google';
 import { googleLogin } from '../api/authService';
@@ -18,12 +18,22 @@ const signUpSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
-const SignUpPage = ({ iscollegeSignUp = false }) => {
+const SignUpPage = ({ iscollegeSignUp: propIscollegeSignUp = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const typeParam = searchParams.get('type');
+
   const { login } = useAuth();
   const { setAuthSession } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [accountType, setAccountType] = useState(
+    propIscollegeSignUp ? 'college' : (typeParam || 'college')
+  );
+
+  const iscollegeSignUp = accountType === 'college';
 
   const {
     register,
@@ -44,6 +54,7 @@ const SignUpPage = ({ iscollegeSignUp = false }) => {
         email: data.email,
         password: data.password,
         userType: iscollegeSignUp ? "college" : "student", 
+        accountType: accountType,
         authProvider: "email",
       };
 
@@ -88,6 +99,7 @@ const SignUpPage = ({ iscollegeSignUp = false }) => {
         tokenId,
         authProvider: 'google',
         userType: iscollegeSignUp ? 'college' : 'student',
+        accountType: accountType,
       };
 
       const res = await googleLogin(payload);
@@ -141,6 +153,32 @@ const SignUpPage = ({ iscollegeSignUp = false }) => {
           <p className="mt-2 text-sm text-gray-600">
             {iscollegeSignUp ? "Create your college account" : "Create your account"}
           </p>
+        </div>
+
+        {/* Account Type Selector */}
+        <div className="flex justify-center space-x-4 mb-4">
+          <button
+            type="button"
+            onClick={() => setAccountType('college')}
+            className={`px-4 py-2 text-sm font-medium rounded-md w-1/2 ${
+              accountType === 'college'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            College
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountType('college_user')}
+            className={`px-4 py-2 text-sm font-medium rounded-md w-1/2 ${
+              accountType === 'college_user'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            College User
+          </button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -246,7 +284,7 @@ const SignUpPage = ({ iscollegeSignUp = false }) => {
         {/* SIGN IN LINK */}
         <p className="text-sm text-center text-gray-600">
           {iscollegeSignUp ? "Already have a college account?" : "Already have an account?"}{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to={`/login?type=${accountType}`} className="text-blue-600 hover:underline">
             Sign In
           </Link>
         </p>

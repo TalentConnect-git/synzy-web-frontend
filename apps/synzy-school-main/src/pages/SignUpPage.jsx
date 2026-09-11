@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"; // Added ArrowLeft here
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 import { GoogleLogin } from '@react-oauth/google';
 import { googleLogin } from '../api/authService';
@@ -18,12 +18,20 @@ const signUpSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
-const SignUpPage = ({ isSchoolSignUp = false }) => {
+const SignUpPage = ({ isSchoolSignUp: propIsSchoolSignUp = false }) => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const typeParam = searchParams.get('type');
+
   const { setAuthSession } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [accountType, setAccountType] = useState(
+    propIsSchoolSignUp ? 'school' : (typeParam || 'school_user')
+  );
+
+  const isSchoolSignUp = accountType === 'school';
 
   const {
     register,
@@ -44,6 +52,7 @@ const SignUpPage = ({ isSchoolSignUp = false }) => {
         email: data.email,
         password: data.password,
         userType: isSchoolSignUp ? "school" : "student", 
+        accountType: accountType,
         authProvider: "email",
       };
 
@@ -88,6 +97,7 @@ const SignUpPage = ({ isSchoolSignUp = false }) => {
         tokenId,
         authProvider: 'google',
         userType: isSchoolSignUp ? 'school' : 'student',
+        accountType: accountType,
       };
 
       const res = await googleLogin(payload);
@@ -141,6 +151,32 @@ const SignUpPage = ({ isSchoolSignUp = false }) => {
           <p className="mt-2 text-sm text-gray-600">
             {isSchoolSignUp ? "Create your school account" : "Create your account"}
           </p>
+        </div>
+
+        {/* Account Type Selector */}
+        <div className="flex justify-center space-x-4 mb-4">
+          <button
+            type="button"
+            onClick={() => setAccountType('school_user')}
+            className={`px-4 py-2 text-sm font-medium rounded-md w-1/2 ${
+              accountType === 'school_user'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            School User
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountType('school')}
+            className={`px-4 py-2 text-sm font-medium rounded-md w-1/2 ${
+              accountType === 'school'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            School
+          </button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
