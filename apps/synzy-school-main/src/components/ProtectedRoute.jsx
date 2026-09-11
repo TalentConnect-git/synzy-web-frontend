@@ -28,7 +28,23 @@ const ProtectedRoute = () => {
   // If the user object is missing this field, their profile is incomplete.
   const isProfileComplete = user && user.hasOwnProperty('contactNo');
 
-  if (user.userType !== 'school' && user.userType !== 'admin' && !isProfileComplete) {
+  const path = location.pathname;
+
+  // Protect School Admin routes
+  if (path.startsWith('/school-portal') || path.startsWith('/school-registration')) {
+    if (user.userType !== 'school' && user.userType !== 'admin') {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
+  // Protect School User routes
+  if (path.startsWith('/dashboard') || path.startsWith('/my-applications') || path.startsWith('/create-profile')) {
+    if (user.userType === 'school') {
+      return <Navigate to="/school-portal" replace />;
+    }
+  }
+
+  if (user.userType !== 'school' && user.userType !== 'admin' && !isProfileComplete && !path.startsWith('/create-profile')) {
     // If the user is a student/parent and their profile is incomplete,
     // force them to the create-profile page.
     return <Navigate to="/create-profile" replace />;

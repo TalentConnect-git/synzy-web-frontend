@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"; // Added ArrowLeft here
+import { Eye, EyeOff, ArrowLeft } from "lucide-react"; 
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
@@ -25,6 +25,7 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [accountType, setAccountType] = useState('school_user');
 
   const {
     register,
@@ -53,7 +54,8 @@ const LoginPage = () => {
     setIsLoading(true);
     setServerError("");
     try {
-      const user = await login(data);
+      const loginData = { ...data, accountType };
+      const user = await login(loginData);
 
       if (rememberMe) {
         localStorage.setItem("school-finder-rememberMe", JSON.stringify(data));
@@ -91,7 +93,8 @@ const LoginPage = () => {
       const payload = {
         tokenId: credentialResponse.credential,
         authProvider: 'google',
-        userType: 'student',
+        userType: accountType === 'school' ? 'school' : 'student',
+        accountType: accountType,
       };
 
       const res = await googleLogin(payload);
@@ -138,6 +141,32 @@ const LoginPage = () => {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
             <p className="mt-2 text-sm text-gray-600">Please enter your details to login.</p>
+          </div>
+
+          {/* Account Type Selector */}
+          <div className="flex justify-center space-x-4 mb-4">
+            <button
+              type="button"
+              onClick={() => setAccountType('school_user')}
+              className={`px-4 py-2 text-sm font-medium rounded-md w-1/2 ${
+                accountType === 'school_user'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              School User
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountType('school')}
+              className={`px-4 py-2 text-sm font-medium rounded-md w-1/2 ${
+                accountType === 'school'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              School
+            </button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -242,7 +271,7 @@ const LoginPage = () => {
 
           <p className="text-sm text-center text-gray-600">
             Don't have an account?{" "}
-            <Link to="/signup" className="font-medium text-blue-600 hover:underline">Sign Up</Link>
+            <Link to={`/signup?type=${accountType}`} className="font-medium text-blue-600 hover:underline">Sign Up</Link>
           </p>
         </div>
       </div>

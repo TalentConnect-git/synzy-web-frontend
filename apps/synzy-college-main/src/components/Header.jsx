@@ -71,7 +71,7 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
   
   {/* Right Section - Auth/Profile */}
   <div className="hidden md:flex items-center space-x-4">
-    {currentUser ? (
+    {currentUser && (currentUser.userType === 'parent' || currentUser.userType === 'student') ? (
         <>
             <NotificationIcon />
             <ProfileDropdown currentUser={currentUser} onLogout={onLogout} />
@@ -116,7 +116,7 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
                     
 
         <div className="px-6 py-4 border-t">
-          {currentUser ? (
+          {currentUser && (currentUser.userType === 'parent' || currentUser.userType === 'student') ? (
             <>
               <div className="mb-4">
                 <NotificationIcon />
