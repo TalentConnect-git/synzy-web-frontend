@@ -140,10 +140,8 @@ useEffect(() => {
 
   const handleLogout = () => {
     logout();
-
-    navigate("/");
-
-   
+    const mainPortalUrl = import.meta.env.VITE_MAIN_PORTAL_URL || 'http://localhost:5173';
+    window.location.href = mainPortalUrl;
   };
 
   const handleShortlistToggle = async (school) => {

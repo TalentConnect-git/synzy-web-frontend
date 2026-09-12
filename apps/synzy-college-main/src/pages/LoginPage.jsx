@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,8 +16,10 @@ const loginSchema = z.object({
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const [searchParams] = useSearchParams();
+  const typeParam = searchParams.get('type');
+  const { login, setAuthSession } = useAuth();
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '61664057766-ral4biepjmo0e3ueqtgghv0cfvprbact.apps.googleusercontent.com';
 
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -25,7 +27,15 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-  const [accountType, setAccountType] = useState('college');
+  const [accountType, setAccountType] = useState(
+    typeParam === 'college_user' ? 'college_user' : 'college'
+  );
+
+  useEffect(() => {
+    if (typeParam === 'college_user' || typeParam === 'college') {
+      setAccountType(typeParam);
+    }
+  }, [typeParam]);
 
   const {
     register,
@@ -77,7 +87,9 @@ const LoginPage = () => {
         setUserEmail(data.email);
         toast.info("Please check your email inbox for verification link.");
       } else {
-        setServerError(error.response?.data?.message || "Invalid email or password.");
+        const msg = error.response?.data?.message || error.message || "Invalid email or password.";
+        setServerError(msg);
+        toast.error(msg);
       }
     } finally {
       setIsLoading(false);
@@ -90,11 +102,13 @@ const LoginPage = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       setIsLoading(true);
+      setServerError("");
       const payload = {
         tokenId: credentialResponse.credential,
         authProvider: 'google',
         userType: accountType === 'college' ? 'college' : 'student', 
         accountType: accountType,
+        action: 'signin',
       };
 
       const res = await googleLogin(payload);
@@ -102,9 +116,13 @@ const LoginPage = () => {
       if (res.data.status === "success") {
         const { token, auth } = res.data.data;
 
-        await login(auth, token); 
+        setAuthSession(auth, token); 
 
-        toast.success('Logged in successfully!');
+        toast.success(
+          accountType === 'college'
+            ? 'Logged in to College account successfully!'
+            : 'Logged in to College User account successfully!'
+        );
 
         if (auth.userType === 'college') {
           navigate('/college-portal/register');
@@ -114,7 +132,9 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error('Google Login Error:', error);
-      toast.error(error.response?.data?.message || 'Google Login failed');
+      const errorMsg = error.response?.data?.message || error.message || 'Google Login failed';
+      setServerError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { googleLogin } from '../api/authService';
 import { useAuth } from "../context/AuthContext";
 import { registerUser } from "../api/authService";
@@ -21,15 +21,22 @@ const signUpSchema = z.object({
 const SignUpPage = ({ isSchoolSignUp: propIsSchoolSignUp = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  const [searchParams] = useSearchParams();
   const typeParam = searchParams.get('type');
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '61664057766-ral4biepjmo0e3ueqtgghv0cfvprbact.apps.googleusercontent.com';
 
   const { setAuthSession } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [accountType, setAccountType] = useState(
-    propIsSchoolSignUp ? 'school' : (typeParam || 'school_user')
+    propIsSchoolSignUp ? 'school' : (typeParam === 'school' ? 'school' : 'school_user')
   );
+
+  useEffect(() => {
+    if (typeParam === 'school' || typeParam === 'school_user') {
+      setAccountType(typeParam);
+    }
+  }, [typeParam]);
 
   const isSchoolSignUp = accountType === 'school';
 
@@ -98,6 +105,7 @@ const SignUpPage = ({ isSchoolSignUp: propIsSchoolSignUp = false }) => {
         authProvider: 'google',
         userType: isSchoolSignUp ? 'school' : 'student',
         accountType: accountType,
+        action: 'signup',
       };
 
       const res = await googleLogin(payload);
@@ -132,7 +140,8 @@ const SignUpPage = ({ isSchoolSignUp: propIsSchoolSignUp = false }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4 relative">
+    <GoogleOAuthProvider clientId={clientId}>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4 relative">
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
@@ -282,12 +291,13 @@ const SignUpPage = ({ isSchoolSignUp: propIsSchoolSignUp = false }) => {
         {/* SIGN IN LINK */}
         <p className="text-sm text-center text-gray-600">
           {isSchoolSignUp ? "Already have a school account?" : "Already have an account?"}{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to={`/login?type=${accountType}`} className="text-blue-600 hover:underline">
             {isSchoolSignUp ? "Sign In" : "User Sign In"}
           </Link>
         </p>
       </div>
     </div>
+    </GoogleOAuthProvider>
   );
 };
 
