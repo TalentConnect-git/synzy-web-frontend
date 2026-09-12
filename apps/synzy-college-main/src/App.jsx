@@ -140,8 +140,19 @@ useEffect(() => {
 
   const handleLogout = () => {
     logout();
-    const mainPortalUrl = import.meta.env.VITE_MAIN_PORTAL_URL || 'http://localhost:5173';
-    window.location.href = mainPortalUrl;
+    const isLocalhost = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    let targetUrl = import.meta.env.VITE_MAIN_PORTAL_URL;
+    if (!isLocalhost) {
+      if (!targetUrl || targetUrl.includes('localhost') || targetUrl.includes('127.0.0.1')) {
+        targetUrl = 'https://synzy.in';
+      }
+    } else {
+      targetUrl = targetUrl || 'http://localhost:5173';
+    }
+
+    window.location.href = targetUrl;
   };
 
   const handleShortlistToggle = async (college) => {
