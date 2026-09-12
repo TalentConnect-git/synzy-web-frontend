@@ -59,6 +59,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials, userType = 'user') => {
     try {
       console.log('🔐 Starting login process for userType:', userType);
+
+      // If called with already authenticated user object and a JWT token (e.g. login(auth, token))
+      if (typeof userType === 'string' && userType.length > 20 && credentials && (credentials._id || credentials.authId || credentials.email)) {
+        setAuthSession(credentials, userType);
+        return credentials;
+      }
+
       // Clear any existing user state first to prevent conflicts
       setUser(null);
       setToken(null);

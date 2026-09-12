@@ -70,19 +70,17 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
   
   {/* Right Section - Auth/Profile */}
   <div className="hidden md:flex items-center space-x-4">
-    {currentUser && (currentUser.userType === 'parent' || currentUser.userType === 'student') ? (
+    {currentUser ? (
         <>
-            <NotificationIcon />
+            {(currentUser.userType === 'parent' || currentUser.userType === 'student') && <NotificationIcon />}
+            {currentUser.userType === 'school' && (
+              <Link to="/school-portal" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                Dashboard
+              </Link>
+            )}
             <ProfileDropdown currentUser={currentUser} onLogout={onLogout} />
         </>
-    ) : (
-        <>
-            <div className="flex items-center gap-2">
-              <School size={16} className="text-blue-600" />
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">User Login</Link>
-            </div>
-        </>
-    )}
+    ) : null}
   </div>
   
   {/* Mobile Menu Button */}
@@ -112,27 +110,19 @@ const Header = ({ isMobileMenuOpen, setMobileMenuOpen, compareCount, shortlistCo
         {currentUser && (currentUser.userType === 'parent' || currentUser.userType === 'student') && (
           <Link to="/application-status" className="block py-2 px-6 text-gray-600 hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>Application Status</Link>
         )}
-                    
 
-        <div className="px-6 py-4 border-t">
-          {currentUser && (currentUser.userType === 'parent' || currentUser.userType === 'student') ? (
-            <>
+        {currentUser && (
+          <div className="px-6 py-4 border-t">
+            {(currentUser.userType === 'parent' || currentUser.userType === 'student') && (
               <div className="mb-4">
                 <NotificationIcon />
               </div>
-              <button onClick={() => { onLogout(); setMobileMenuOpen(false); }} className="w-full text-center text-gray-600 hover:text-blue-600 flex items-center justify-center">
-                  <LogOut size={16} className="mr-1" /> Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="flex items-center justify-center gap-2 w-full text-center text-blue-600 hover:text-blue-700 py-2" onClick={() => setMobileMenuOpen(false)}>
-                <User size={16} />
-                <span className="font-medium">User Login</span>
-              </Link>
-            </>
-          )}
-        </div>
+            )}
+            <button onClick={() => { onLogout(); setMobileMenuOpen(false); }} className="w-full text-center text-gray-600 hover:text-blue-600 flex items-center justify-center">
+                <LogOut size={16} className="mr-1" /> Logout
+            </button>
+          </div>
+        )}
       </div>
     )}
   </header>

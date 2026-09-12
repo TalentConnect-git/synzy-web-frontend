@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +32,12 @@ const SignUpPage = ({ iscollegeSignUp: propIscollegeSignUp = false }) => {
   const [accountType, setAccountType] = useState(
     propIscollegeSignUp ? 'college' : (typeParam || 'college')
   );
+
+  useEffect(() => {
+    if (typeParam === 'college_user' || typeParam === 'college') {
+      setAccountType(typeParam);
+    }
+  }, [typeParam]);
 
   const iscollegeSignUp = accountType === 'college';
 
@@ -100,6 +106,7 @@ const SignUpPage = ({ iscollegeSignUp: propIscollegeSignUp = false }) => {
         authProvider: 'google',
         userType: iscollegeSignUp ? 'college' : 'student',
         accountType: accountType,
+        action: 'signup',
       };
 
       const res = await googleLogin(payload);
@@ -110,7 +117,7 @@ const SignUpPage = ({ iscollegeSignUp: propIscollegeSignUp = false }) => {
         if (token && auth) {
           setAuthSession(auth, token); 
           
-          toast.success(iscollegeSignUp ? 'Google college signup successful!' : 'Google signup successful!');
+          toast.success(iscollegeSignUp ? 'Google college account created successfully!' : 'Google college user account created successfully!');
           
           if (iscollegeSignUp) {
             navigate('/college-portal/register', { replace: true });

@@ -1224,78 +1224,207 @@ const RegistrationPage = () => {
   };
 
   const handleUseCurrentLocation = () => {
+    setIsFetchingLocation(true);
+
+    const applyLocationData = (loc) => {
+      setFormData((prev) => ({
+        ...prev,
+        latitude: loc.latitude != null ? String(loc.latitude) : prev.latitude,
+        longitude: loc.longitude != null ? String(loc.longitude) : prev.longitude,
+        city: loc.city || prev.city,
+        state: loc.state || prev.state,
+        country: loc.country || prev.country || "India",
+        pincode: loc.pincode ? String(loc.pincode) : prev.pincode,
+        area: loc.area || prev.area || "",
+        address: loc.address || prev.address || "",
+      }));
+    };
+
+    const fetchReverseGeocode = async (latitude, longitude) => {
+      // 1️⃣ Priority: Call our backend reverse-geocoding service (powered by Nominatim + Photon + BDC)
+      try {
+        const res = await apiClient.get("/colleges/reverse-geocode", {
+          params: { lat: latitude, lon: longitude },
+          timeout: 6000,
+        });
+        if (res?.data?.success && res?.data?.data) {
+          return res.data.data;
+        }
+      } catch (backendErr) {
+        console.warn("Backend reverse-geocode failed, attempting direct client fallbacks:", backendErr.message);
+      }
+
+      // 2️⃣ Direct fallback: Photon (OSM-based)
+      let city = "";
+      let state = "";
+      let country = "India";
+      let pincode = "";
+      let area = "";
+      let address = "";
+
+      try {
+        const res = await fetch(
+          `https://photon.komoot.io/reverse?lat=${latitude}&lon=${longitude}`
+        );
+        const data = await res.json();
+        const props = data?.features?.[0]?.properties;
+        if (props) {
+          pincode = props.postcode ? String(props.postcode) : "";
+          city = props.city || props.district || props.county || props.locality || "";
+          state = props.state || "";
+          country = props.country || "India";
+          area = props.locality || props.district || props.county || "";
+          if (props.street || props.name) {
+            address = [props.name, props.street, area, city].filter(Boolean).join(", ");
+          }
+        }
+      } catch (err) {
+        console.warn("Photon reverse geocode failed:", err.message);
+      }
+
+      // 3️⃣ Direct fallback: BigDataCloud
+      try {
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        const data = await res.json();
+        if (data) {
+          if (!city) city = data.city || data.locality || "";
+          if (!state) state = data.principalSubdivision || "";
+          if (!country) country = data.countryName || "India";
+          if (!pincode && data.postcode) pincode = String(data.postcode);
+          if (!area && data.locality) area = data.locality;
+        }
+      } catch (err) {
+        console.warn("BigDataCloud reverse geocode failed:", err.message);
+      }
+
+      if (!address) {
+        address = [area, city, state, pincode].filter(Boolean).join(", ");
+      }
+
+      return {
+        latitude: Number(latitude).toFixed(6),
+        longitude: Number(longitude).toFixed(6),
+        city,
+        state,
+        country,
+        pincode,
+        area,
+        address,
+      };
+    };
+
+    const tryIpFallback = async (reason = "") => {
+      console.warn("Attempting IP location fallback. Reason:", reason);
+      let lat = null;
+      let lon = null;
+      let initialCity = "";
+      let initialState = "";
+      let initialCountry = "India";
+      let initialPincode = "";
+
+      // Try ipwho.is first
+      try {
+        const res = await fetch("https://ipwho.is/");
+        const data = await res.json();
+        if (data && data.success !== false && data.latitude && data.longitude) {
+          lat = data.latitude;
+          lon = data.longitude;
+          initialCity = data.city || "";
+          initialState = data.region || "";
+          initialCountry = data.country || "India";
+          initialPincode = data.postal ? String(data.postal) : "";
+        }
+      } catch (e) {
+        console.warn("ipwho.is failed, trying ipinfo:", e.message);
+      }
+
+      // If ipwho failed, try ipinfo.io
+      if (!lat || !lon) {
+        try {
+          const res = await fetch("https://ipinfo.io/json");
+          const data = await res.json();
+          if (data && data.loc) {
+            const parts = data.loc.split(",");
+            lat = parseFloat(parts[0]);
+            lon = parseFloat(parts[1]);
+            initialCity = data.city || "";
+            initialState = data.region || "";
+            initialCountry = data.country === "IN" ? "India" : (data.country || "India");
+            initialPincode = data.postal ? String(data.postal) : "";
+          }
+        } catch (e) {
+          console.warn("ipinfo.io fallback failed:", e.message);
+        }
+      }
+
+      if (lat && lon) {
+        // Apply immediate IP location data
+        applyLocationData({
+          latitude: Number(lat).toFixed(6),
+          longitude: Number(lon).toFixed(6),
+          city: initialCity,
+          state: initialState,
+          country: initialCountry,
+          pincode: initialPincode,
+          address: [initialCity, initialState, initialPincode].filter(Boolean).join(", "),
+        });
+
+        // Enrich with detailed reverse geocode
+        try {
+          const details = await fetchReverseGeocode(lat, lon);
+          applyLocationData(details);
+        } catch (_) {}
+
+        toast.success("Location detected via network connection!");
+        return true;
+      }
+
+      return false;
+    };
+
     if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser.");
+      tryIpFallback("Geolocation not supported by browser").finally(() => {
+        setIsFetchingLocation(false);
+      });
       return;
     }
-    setIsFetchingLocation(true);
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
+          // Set coordinates immediately so latitude and longitude are never lost
+          applyLocationData({
+            latitude: Number(latitude).toFixed(6),
+            longitude: Number(longitude).toFixed(6),
+          });
 
-          // 1️⃣ BigDataCloud (city/state)
-          const res1 = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-          );
-          const data1 = await res1.json();
+          // Fetch detailed reverse geocoding
+          const details = await fetchReverseGeocode(latitude, longitude);
+          applyLocationData(details);
 
-          let city = data1.city || data1.locality || '';
-          let state = data1.principalSubdivision || '';
-          let pincode = '';
-
-          // 2️⃣ OpenStreetMap (CORRECT WAY)
-          const res2 = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            {
-              headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'https://smart-college-finder-beta.vercel.app/' // REQUIRED
-              }
-            }
-          );
-
-          const data2 = await res2.json();
-
-          // 🔥 STRONG PINCODE EXTRACTION
-          if (data2?.address) {
-            pincode =
-              data2.address.postcode ||
-              data2.address.postal_code ||
-              data2.address.zip ||
-              '';
-          }
-
-          setFormData((prev) => ({
-            ...prev,
-            latitude: latitude.toFixed(6),
-            longitude: longitude.toFixed(6),
-            city,
-            state,
-            pincode
-          }));
-
-          if (!pincode) {
-            toast.warning("Pincode not found . Please enter manually.");
-          } else {
-            toast.success("Location fetched successfully.");
-          }
+          toast.success("Location & address detected successfully!");
         } catch (error) {
-          console.error(error);
-          toast.error("Failed to fetch location details.");
+          console.error("Geocoding failed:", error);
+          toast.warning("Coordinates saved, but some address details could not be resolved.");
         } finally {
           setIsFetchingLocation(false);
         }
       },
-      (err) => {
-        if (err.code === 1) toast.error("Permission denied for location.");
-        else if (err.code === 2) toast.error("Position unavailable.");
-        else if (err.code === 3) toast.error("Location request timed out.");
-        else toast.error("Could not get current location.");
-
+      async (err) => {
+        console.warn("Browser GPS unavailable, switching to network location:", err.message);
+        const fallbackSuccess = await tryIpFallback(err.message);
+        if (!fallbackSuccess) {
+          if (err.code === 1) toast.error("Location permission denied. Please enter your location manually.");
+          else if (err.code === 2) toast.error("Position unavailable. Please enter your location manually.");
+          else if (err.code === 3) toast.error("Location request timed out. Please enter your location manually.");
+          else toast.error("Could not determine current location. Please enter manually.");
+        }
         setIsFetchingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
     );
   };
 
