@@ -7,4 +7,8 @@ export const predictSchools = async (filters) => {
 	return data;
 };
 
-
+// Reverse geocode latitude and longitude to city/state/area
+export const reverseGeocodeLocation = async (lat, lon) => {
+	const { data } = await apiClient.get(`/schools/reverse-geocode?lat=${lat}&lon=${lon}`);
+	return data?.data || data;
+};

@@ -2,9 +2,10 @@ import axios from 'axios';
 
 console.log("ENV VAR:", import.meta.env.VITE_API_BASE_URL);
 console.log("ALL ENV:", import.meta.env);
-// Use dev proxy (Vite) in development; direct base URL in production builds
+// Base URL comes directly from environment variables:
+// - In dev: .env (http://localhost:8082/api)
+// - In production: .env.production (https://school-api.synzy.in/api)
 const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://api.synzy.in/api';
-// const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api';
 console.log('🔧 Axios Base URL:', apiBaseURL);
 
 const apiClient = axios.create({
