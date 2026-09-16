@@ -5,7 +5,7 @@ import {
   Search, Sparkles, X, RefreshCw, Award, Filter
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { predictSchools } from '../api/predictorService';
+import { predictSchools, reverseGeocodeLocation } from '../api/predictorService';
 import SchoolCard from '../components/SchoolCard';
 import { toast } from 'react-toastify';
 import BackButton from '../components/BackButton';
@@ -43,8 +43,8 @@ const interestsOptions = [
 /**
  * FieldWrapper: Standardizes label, error message, and layout for form controls
  */
-const FieldWrapper = ({ label, required, error, children, id }) => (
-  <div className="flex flex-col mb-4" id={id}>
+const FieldWrapper = ({ label, required, error, children, id, className = '' }) => (
+  <div className={`flex flex-col mb-4 ${className}`} id={id}>
     <label className="text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
       {label}
       {required && <span className="text-red-500 ml-1 font-bold">*</span>}
@@ -136,7 +136,7 @@ const DropdownField = ({
   }, [options, searchQuery]);
 
   return (
-    <FieldWrapper label={label} required={required} error={error} id={field}>
+    <FieldWrapper label={label} required={required} error={error} id={field} className={isOpen ? 'relative z-30' : 'relative'}>
       <div
         ref={containerRef}
         className={`relative w-full custom-dropdown-container ${isOpen ? 'z-50' : 'z-10'}`}
@@ -182,7 +182,7 @@ const DropdownField = ({
 
         {isOpen && !disabled && (
           <div
-            className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden"
+            className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200/90 rounded-2xl shadow-2xl z-50 py-1.5 overflow-hidden ring-1 ring-black/5"
             role="listbox"
           >
             {searchable && (
@@ -447,70 +447,162 @@ const PredictorPage = ({
   };
 
   /**
-   * GPS / Auto-fill Location handler
+   * Helper to normalize and resolve State from geocoding data
+   */
+  const resolveStateName = (rawState) => {
+    if (!rawState) return '';
+    const cleanRaw = rawState
+      .replace(/^(state of|union territory of|ut of|nct of|national capital territory of)\s+/i, '')
+      .replace(/\s+(state|ut)$/i, '')
+      .trim();
+
+    // 1. Exact match
+    const exact = stateOptions.find(s => s.toLowerCase() === cleanRaw.toLowerCase());
+    if (exact) return exact;
+
+    // 2. Contains match
+    const contains = stateOptions.find(s =>
+      cleanRaw.toLowerCase().includes(s.toLowerCase()) ||
+      s.toLowerCase().includes(cleanRaw.toLowerCase())
+    );
+    if (contains) return contains;
+
+    return rawState;
+  };
+
+  /**
+   * GPS / Auto-fill Location handler with multi-tier fallbacks:
+   * 1. Dual accuracy geolocation (tries high-accuracy then standard WiFi/IP accuracy)
+   * 2. Dual reverse geocoder (Backend API with Nominatim/Photon/BDC, fallback to direct browser geocode)
    */
   const handleGoogleLocation = () => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by this browser.');
+      toast.error('Geolocation is not supported by your browser.');
       return;
     }
 
     setIsLocationLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
+
+    // Process latitude/longitude coordinates through reverse geocoders
+    const processCoordinates = async (coords) => {
+      const { latitude, longitude } = coords;
+      let rawState = '';
+      let rawCity = '';
+      let rawArea = '';
+
+      // Tier 1: Try application's backend reverse-geocoding endpoint
+      try {
+        const res = await reverseGeocodeLocation(latitude, longitude);
+        if (res) {
+          rawState = res.state || '';
+          rawCity = res.city || '';
+          rawArea = res.area || '';
+        }
+      } catch (backendErr) {
+        console.warn('Backend reverse geocode failed, trying browser direct geocode:', backendErr.message);
+      }
+
+      // Tier 2: Direct browser fallback to BigDataCloud if state was not retrieved
+      if (!rawState) {
         try {
-          const { latitude, longitude } = position.coords;
           const response = await fetch(
             `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
           );
-          const data = await response.json();
-
-          if (data.countryName && data.countryName !== 'India') {
-            toast.error('Location service is currently tailored for India.');
-            setIsLocationLoading(false);
-            return;
+          if (response.ok) {
+            const data = await response.json();
+            rawState = data.principalSubdivision || '';
+            rawCity = data.city || data.locality || data.localityInfo?.administrative?.[3]?.name || '';
+            rawArea = data.locality || '';
           }
-
-          const rawState = data.principalSubdivision || '';
-          const matchedState = stateOptions.find(s =>
-            s.toLowerCase() === rawState.toLowerCase() ||
-            rawState.toLowerCase().includes(s.toLowerCase()) ||
-            s.toLowerCase().includes(rawState.toLowerCase())
-          );
-
-          const finalState = matchedState || rawState;
-          const detectedCity = data.city || data.locality || data.localityInfo?.administrative?.[3]?.name || '';
-
-          if (finalState) {
-            console.log("State selected from GPS:", finalState);
-            const citiesForState = getCitiesForState(finalState);
-            setCityOptions(citiesForState);
-
-            setFormData(prev => ({
-              ...prev,
-              state: finalState,
-              city: detectedCity || '',
-              area: data.locality || prev.area
-            }));
-
-            setErrors(prev => ({ ...prev, state: '', city: '', area: '' }));
-            toast.success(`Location detected: ${detectedCity ? detectedCity + ', ' : ''}${finalState}`);
-          }
-        } catch (error) {
-          console.error('Error fetching location:', error);
-          toast.error('Failed to auto-detect location. Please select state manually.');
-        } finally {
-          setIsLocationLoading(false);
+        } catch (bdcErr) {
+          console.warn('BigDataCloud direct fetch failed:', bdcErr.message);
         }
-      },
-      (error) => {
-        if (error.code === 1) toast.error('Permission denied for location access.');
-        else if (error.code === 2) toast.error('Position unavailable.');
-        else if (error.code === 3) toast.error('Location request timed out.');
-        else toast.error('Unable to access your location.');
+      }
+
+      // Tier 3: Direct browser fallback to OpenStreetMap
+      if (!rawState) {
+        try {
+          const osmRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          if (osmRes.ok) {
+            const osmData = await osmRes.json();
+            const addr = osmData.address || {};
+            rawState = addr.state || '';
+            rawCity = addr.city || addr.town || addr.village || addr.county || '';
+            rawArea = addr.suburb || addr.neighbourhood || addr.locality || '';
+          }
+        } catch (osmErr) {
+          console.warn('OSM fallback failed:', osmErr.message);
+        }
+      }
+
+      const finalState = resolveStateName(rawState);
+
+      if (!finalState) {
+        toast.error('Could not identify your state from GPS coordinates. Please select State manually.');
         setIsLocationLoading(false);
+        return;
+      }
+
+      // Load state's canonical cities
+      const citiesForState = getCitiesForState(finalState);
+
+      // Match city to state's list if possible, or preserve raw city
+      let matchedCity = '';
+      if (rawCity) {
+        const canonical = citiesForState.find(c =>
+          c.toLowerCase() === rawCity.toLowerCase() ||
+          c.toLowerCase().includes(rawCity.toLowerCase()) ||
+          rawCity.toLowerCase().includes(c.toLowerCase())
+        );
+        matchedCity = canonical || rawCity;
+      }
+
+      // Ensure city is available in options list
+      if (matchedCity && !citiesForState.includes(matchedCity)) {
+        setCityOptions([matchedCity, ...citiesForState]);
+      } else {
+        setCityOptions(citiesForState);
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        state: finalState,
+        city: matchedCity || '',
+        area: rawArea || prev.area
+      }));
+
+      setErrors(prev => ({ ...prev, state: '', city: '', area: '' }));
+      toast.success(`📍 Location detected: ${matchedCity ? matchedCity + ', ' : ''}${finalState}`);
+      setIsLocationLoading(false);
+    };
+
+    // Geolocation with fallback from High Accuracy to Standard Accuracy
+    navigator.geolocation.getCurrentPosition(
+      (position) => processCoordinates(position.coords),
+      (highAccError) => {
+        console.warn('High-accuracy GPS timed out/failed, retrying with standard WiFi/IP accuracy:', highAccError.message);
+        navigator.geolocation.getCurrentPosition(
+          (position) => processCoordinates(position.coords),
+          (lowAccError) => {
+            console.error('Geolocation failed completely:', lowAccError);
+            if (lowAccError.code === 1) {
+              toast.error('Location permission denied. Please allow location access in your browser settings.');
+            } else if (lowAccError.code === 2) {
+              toast.error('Position unavailable. Please ensure location services are enabled on your device.');
+            } else if (lowAccError.code === 3) {
+              toast.error('Location request timed out. Please select your State manually.');
+            } else {
+              toast.error('Unable to retrieve location. Please select State manually.');
+            }
+            setIsLocationLoading(false);
+          },
+          { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
+        );
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
     );
   };
 
@@ -610,7 +702,7 @@ const PredictorPage = ({
           <BackButton />
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-2xl overflow-hidden">
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl relative">
           {/* Header Banner */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 p-8 sm:p-10 text-center relative overflow-hidden rounded-t-3xl">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
@@ -628,18 +720,18 @@ const PredictorPage = ({
             </div>
           </div>
 
-          <div className="p-6 sm:p-10">
+          <div className="p-6 sm:p-8 lg:p-10">
             <form onSubmit={handleGetSchools}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 lg:gap-x-12 gap-y-6">
 
                 {/* Academic Preferences Column */}
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2 mb-6 pb-2 border-b border-gray-100">
-                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                  <div className="flex items-center space-x-2.5 mb-5 pb-3 border-b border-gray-100">
+                    <div className="bg-blue-100 p-2.5 rounded-xl text-blue-600 shadow-xs">
                       <GraduationCap className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-800">Academic Preferences</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Academic Preferences</h2>
                       <p className="text-xs text-gray-500">Fine-tune grade level, curriculum, and structure</p>
                     </div>
                   </div>
@@ -718,33 +810,17 @@ const PredictorPage = ({
                     onClose={() => setOpenDropdown(null)}
                     onSelect={(val) => handleInputChange('gender', val)}
                   />
-
-                  {/* 6. Extracurricular Interests */}
-                  {/* <DropdownField
-                    label="Extracurricular Interests"
-                    field="interests"S
-                    icon={Heart}
-                    options={interestsOptions}
-                    placeholder="Select Primary Interest"
-                    isOpen={openDropdown === 'interests'}
-                    selectedValue={formData.interests}
-                    error={errors.interests}
-                    onToggle={() => setOpenDropdown(prev => prev === 'interests' ? null : 'interests')}
-                    onClose={() => setOpenDropdown(null)}
-                    onSelect={(val) => handleInputChange('interests', val)}
-                    searchable={true}
-                  /> */}
                 </div>
 
                 {/* Location Preferences Column */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-6 pb-2 border-b border-gray-100">
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+                  <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="bg-indigo-100 p-2.5 rounded-xl text-indigo-600 shadow-xs">
                         <MapPin className="w-5 h-5" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-800">Location Preferences</h2>
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-800">Location Preferences</h2>
                         <p className="text-xs text-gray-500">Pick state and city or auto-detect GPS</p>
                       </div>
                     </div>
@@ -753,7 +829,7 @@ const PredictorPage = ({
                       type="button"
                       onClick={handleGoogleLocation}
                       disabled={isLocationLoading}
-                      className="text-xs sm:text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-colors flex items-center disabled:opacity-50 border border-indigo-200 cursor-pointer"
+                      className="text-xs sm:text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3.5 py-1.5 rounded-full transition-all flex items-center disabled:opacity-50 border border-indigo-200 cursor-pointer active:scale-95 shadow-xs"
                       title="Auto-fill your current location"
                     >
                       {isLocationLoading ? (
@@ -765,7 +841,7 @@ const PredictorPage = ({
                     </button>
                   </div>
 
-                  {/* 7. State (Searchable Custom Dropdown) */}
+                  {/* 6. State (Searchable Custom Dropdown) */}
                   <DropdownField
                     label="State"
                     field="state"
@@ -782,7 +858,7 @@ const PredictorPage = ({
                     searchable={true}
                   />
 
-                  {/* 8. City (Dependent Searchable Custom Dropdown) */}
+                  {/* 7. City (Dependent Searchable Custom Dropdown) */}
                   <div>
                     <DropdownField
                       label="City"
@@ -811,9 +887,12 @@ const PredictorPage = ({
                     />
 
                     {/* Quick City Suggestion Pills */}
-                    <div className="mt-1 mb-3">
-                      <span className="text-xs font-semibold text-gray-500 mr-2">Quick Cities:</span>
-                      <div className="inline-flex flex-wrap gap-1.5 mt-1">
+                    <div className="mt-2 mb-3">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        <span className="text-xs font-semibold text-gray-600">Quick Cities:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
                         {popularCities.map((item) => {
                           const isActive = formData.city?.toLowerCase() === item.city.toLowerCase() &&
                             formData.state?.toLowerCase() === item.state.toLowerCase();
@@ -823,8 +902,8 @@ const PredictorPage = ({
                               type="button"
                               onClick={() => handleQuickCitySelect(item)}
                               className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${isActive
-                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm font-medium'
-                                : 'bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-blue-600 border-gray-200'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-semibold'
+                                : 'bg-gray-50/90 hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 border-gray-200/90 hover:border-indigo-200'
                                 }`}
                             >
                               {item.city}
@@ -835,7 +914,7 @@ const PredictorPage = ({
                     </div>
                   </div>
 
-                  {/* 9. Area / Locality */}
+                  {/* 8. Area / Locality */}
                   <TextInputField
                     label="Area / Locality"
                     field="area"
@@ -844,42 +923,46 @@ const PredictorPage = ({
                     value={formData.area}
                     error={errors.area}
                     onChange={handleInputChange}
+                    helperText="Optional: Narrows matches to a specific neighborhood"
                   />
+                </div>
+              </div>
 
-                  {/* Submit and Action Box */}
-                  <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100 shadow-inner">
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transform hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center cursor-pointer"
-                    >
-                      {isLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                          Predicting Ideal Matches...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-5 h-5 mr-2 text-yellow-300" />
-                          Discover Best Schools
-                          <CheckCircle2 className="w-5 h-5 ml-2" />
-                        </>
-                      )}
-                    </button>
+              {/* Full-Width Form Action Footer */}
+              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center text-xs text-gray-500 space-x-2 order-2 sm:order-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span>Matches based on verified school data &amp; AI insights</span>
+                </div>
 
-                    <div className="mt-4 flex items-center justify-between text-xs text-gray-500 px-1">
-                      <span>Matches based on verified school data</span>
-                      <button
-                        type="button"
-                        onClick={clearAll}
-                        className="inline-flex items-center font-medium text-gray-500 hover:text-red-600 transition-colors cursor-pointer"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                        Reset form
-                      </button>
-                    </div>
-                  </div>
+                <div className="flex items-center space-x-3 w-full sm:w-auto order-1 sm:order-2">
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="px-4 py-3 text-sm font-medium text-gray-600 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded-xl border border-gray-200 transition-colors flex items-center justify-center cursor-pointer"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-1.5" />
+                    Reset
+                  </button>
 
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex-1 sm:flex-none px-8 py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl font-bold text-base shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/35 transform hover:-translate-y-0.5 active:translate-y-0 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center cursor-pointer"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2.5"></div>
+                        Predicting Ideal Matches...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5 mr-2 text-yellow-300" />
+                        Discover Best Schools
+                        <CheckCircle2 className="w-5 h-5 ml-2" />
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </form>
